@@ -1,0 +1,3 @@
+#!/bin/sh -f
+
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local/wt/3.2.3 -DBOOST_DIR=/usr/local/boost/1.52.0 -DENABLE_GM=ON -DGM_PREFIX=/exp/si/barrand/usr/local/GraphicsMagick/1.3.17 -DENABLE_PANGO=OFF -DSHARED_LIBS=OFF -DBUILD_TESTS=OFF -DCONFIGDIR=/usr/local/wt/3.2.3/etc/wt -DENABLE_SSL=OFF -DHTTP_WITH_ZLIB=OFF ../

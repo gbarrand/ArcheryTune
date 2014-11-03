@@ -1,0 +1,23 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file exlib.license for terms.
+
+#ifndef exlib_X11_dispatcher
+#define exlib_X11_dispatcher
+
+#include <X11/Xlib.h>
+
+namespace exlib {
+namespace X11 {
+
+class dispatcher {
+public:
+  virtual ~dispatcher(){}
+public:
+  virtual bool dispatch(XEvent&) = 0;
+  virtual Window window() const = 0; //to rm dispatcher.
+  virtual dispatcher* copy() const = 0;
+};
+
+}}
+
+#endif

@@ -1,0 +1,25 @@
+
+# to be sourced in <app>/mgr/build scripts.
+
+if [ ${build_visual} = "yes" ] ; then
+  use_win32=yes
+elif [ ${build_cocoa} = "yes" -o ${build_cocoa_gnu} = "yes" ] ; then
+  use_Cocoa=yes
+elif [ ${build_ios} = "yes" -o ${build_ios_gnu} = "yes" -o ${build_iossim} = "yes" ] ; then
+  use_ios=yes
+elif [ ${build_x11} = "yes" ] ; then
+  use_X11=yes
+  use_GLX=yes
+elif [ ${build_android} = "yes" ] ; then
+  echo dummy > /dev/null
+elif [ ${build_native_android} = "yes" ] ; then
+  use_NativeAndroid=yes
+fi
+
+. ${exlib_mgr}/use_X11
+. ${exlib_mgr}/use_win32
+. ${exlib_mgr}/use_Cocoa
+. ${exlib_mgr}/use_ios
+. ${exlib_mgr}/use_GL
+. ${exlib_mgr}/use_NativeAndroid
+

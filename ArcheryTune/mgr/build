@@ -1,0 +1,129 @@
+#!/bin/sh -f
+
+#set -x
+
+build_args=
+while test $# -ge 1 ; do build_args="${build_args} $1";shift;done
+
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+
+exlib_mgr=../../inexlib/exlib/mgr
+
+. ${exlib_mgr}/build_app_header
+
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+
+if [ ${build_visual} = "yes" ] ; then
+  cppflags="${cppflags} /wd4800 /wd4305 /wd4244"
+  cppflags="${cppflags} /wd4996"
+  cppflags="${cppflags} /bigobj"
+
+  echo "NOTE : today -DEXLIB_HAS_GL_VBO not supported."
+
+elif [ ${build_cocoa} = "yes" -o ${build_cocoa_gnu} = "yes" ] ; then
+  mmfiles="${mmfiles} ../Cocoa/GLView.mm"
+
+  cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+
+elif [ ${build_ios} = "yes" -o ${build_ios_gnu} = "yes" -o ${build_iossim} = "yes" ] ; then
+  mmfiles="${mmfiles} ../iOS/Classes/GLView.mm"
+  cppflags="${cppflags} -I.."
+  cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+
+elif [ ${build_native_android} = "yes" ] ; then
+
+  cppflags="${cppflags} -DEXLIB_HAS_EDEP"
+  cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+  cppflags="${cppflags} -DEXLIB_HAS_DCMTK"
+
+  cppfiles="${cppfiles} ../NativeAndroid/jni/main.cpp"
+
+elif [ ${build_android} = "yes" ] ; then
+  #cppfiles="${cppfiles} ../Android/jni/jni.cpp"
+  echo dummy > /dev/null
+
+else
+  if [ `uname` = Darwin ] ; then
+    cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+    cppflags="${cppflags} -DEXLIB_HAS_GL_LIST"
+  else
+    cppflags="${cppflags} -DEXLIB_HAS_GL_LIST"
+    if [ "${build_enforce_vbo}" = "yes" ] ; then
+      cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+    else
+      # NOTE : Linux to remote X11 : EXLIB_HAS_GL_VBO crashes
+      echo "NOTE : cpp macro EXLIB_HAS_GL_VBO not set."
+    fi
+  fi
+fi
+
+if [ "${build_no_wall}" = "no" ] ; then
+  cppflags="${cppflags} -DRM_WALL_DATA_CLIENT"
+fi
+
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+
+use_archive=yes
+
+use_inlib=yes
+use_exlib=yes
+
+use_gl2ps=yes
+if [ ${build_WebGL} = "yes" -o ${build_Wt} = "yes" ] ; then
+  cppflags="${cppflags} -DOUREX_GL2PS_NO_GL"
+else
+  use_GL=yes
+fi
+
+use_zlib=yes
+use_csz=yes
+use_glutess=yes
+use_png=yes
+use_expat=yes
+use_freetype=yes
+use_jpeg=yes
+
+. ${inlib_mgr}/use_inlib
+. ${exlib_mgr}/use_exlib
+
+. ${exlib_mgr}/use_screen
+
+. ${exlib_mgr}/use_gl2ps
+. ${exlib_mgr}/use_csz
+. ${exlib_mgr}/use_jpeg
+. ${exlib_mgr}/use_png
+
+. ${exlib_mgr}/use_freetype
+. ${exlib_mgr}/use_expat
+. ${exlib_mgr}/use_zlib
+. ${exlib_mgr}/use_glutess
+
+if [ ${build_WebGL} = "yes" ] ; then
+  use_tntnet=yes
+  use_zip=yes
+  use_thread=yes
+  use_dl=yes
+  . ${exlib_mgr}/use_tntnet
+  . ${exlib_mgr}/use_zip
+  . ${inlib_mgr}/use_thread
+  . ${inlib_mgr}/use_dl
+fi
+
+if [ ${build_Wt} = "yes" ] ; then
+  use_Wt=yes
+  use_boost=yes
+  . ${exlib_mgr}/use_Wt
+  . ${exlib_mgr}/use_boost
+fi
+
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+
+. ${exlib_mgr}/build_app_trailer

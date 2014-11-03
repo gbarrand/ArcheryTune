@@ -1,0 +1,13 @@
+#!/bin/sh -f
+
+build_args=
+while test $# -ge 1 ; do build_args="${build_args} $1";shift; done
+
+. ../mgr/build_header
+
+if [ ${build_visual} = "yes" ] ; then
+  # yes, yes :
+  libs="${libs} gdi32.lib user32.lib wsock32.lib"
+fi
+
+. ../mgr/build_generic

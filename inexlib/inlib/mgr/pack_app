@@ -1,0 +1,95 @@
+#!/bin/sh -f
+
+what=
+
+build_args=
+while test $# -ge 1 ; do
+  case $1 in
+    -*) build_args="${build_args} $1";;
+     *) if [ $# = 1 ] ; then
+          what=$1
+        else         
+          echo "unknown option : $1"
+        fi
+        ;;
+  esac
+  shift
+done
+
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+#base_name=`basename ${what}`
+
+if [ ! -f "${what}" ] ; then
+  echo "not found."
+  exit
+fi
+
+dir=`dirname ${what}`
+base_name=`basename ${what}`
+
+name=`echo ${base_name} | sed -e 's:\.cpp::g'`
+
+app=${name}
+#echo "${app}"
+
+version="`./appvers`"
+zip_name=inlib-${app}_source-${version}.zip
+#echo ${zip_name}
+
+#exit
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+
+save_dir=`pwd`
+
+cd ../../..
+
+inlib_mgr=./inexlib/inlib/mgr
+inlib_incs=./inlib_incs
+c++ -o ${inlib_incs} -I${inlib_mgr}/.. ${inlib_mgr}/${what}
+#exit
+
+to=/tmp/inlib-${app}
+/bin/rm -R -f ${to}
+/bin/rm -f /tmp/${zip_name}
+
+/bin/mkdir -p ${to}
+
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+#verbose=-verbose
+
+#dirs=./inexlib/inlib:./inexlib/exlib
+dirs=./inexlib/inlib
+
+${inlib_incs} ${verbose} -pack -dirs=${dirs} -to=${to} ./inexlib/inlib/apps/${name}.cpp
+
+/bin/rm -f ${inlib_incs}
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+/bin/cp -R ./inexlib/inlib/mgr ${to}/inexlib/inlib/.
+
+/bin/cp -R ./inexlib/inlib/inlib/version ${to}/inexlib/inlib/inlib/.
+
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+
+${inlib_mgr}/find_rm ${to} 'bin_*'
+${inlib_mgr}/find_rm ${to} 'CVS'
+${inlib_mgr}/find_rm ${to} '.git'
+${inlib_mgr}/find_rm ${to} '.DS_Store'
+
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+#///////////////////////////////////////////////////
+cd /tmp
+/bin/rm -f ${zip_name}
+zip -qr ${zip_name} inlib-${app}
+
+cd ${save_dir}

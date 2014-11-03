@@ -1,0 +1,74 @@
+
+#build_use_not_our_bpy=yes
+build_use_not_our_bpy=no  #use ourex/bpy
+
+if [ "${use_bpy}" = "yes" ] ; then
+if [ "${build_use_not_our_bpy}" = "yes" ] ; then
+  use_sys_bpy=yes
+  use_our_bpy=no
+else
+  use_sys_bpy=no
+  use_our_bpy=yes
+fi
+fi
+
+if [ "${use_sys_bpy}" = "yes" ] ; then
+  if [ "${build_visual}" = "yes" ] ; then
+    echo "exlib/mgr/use_bpy : cl.exe : not supported."
+    exit
+  fi
+
+  if [ "`uname -n | grep lal.in2p3.fr | grep lx`" != "" ] ; then
+    bpy_home=/exp/si/barrand/usr/local/boost/1.52.0
+  elif [ `uname` = Darwin ] ; then
+    bpy_home=/opt/local
+  else
+#    bpy_home=/home/barrand/usr/local/boost/1.55.0
+    bpy_home=/usr
+  fi
+
+  cppflags="${cppflags} -I${bpy_home}/include"
+
+  libs="${libs} -L${bpy_home}/lib -lboost_python-mt"
+  libs="${libs} -lpthread"
+
+fi
+
+if [ "${use_our_bpy}" = "yes" ] ; then
+  if [ "${bpy_home}" = "" ] ; then
+    bpy_home=../../ourex/bpy
+  fi
+
+  if [ ${build_visual} = "yes" ] ; then aI='/I'; else aI='-I'; fi
+
+  bpy_incs=
+  bpy_incs="${bpy_incs} ${aI}${bpy_home}"
+
+  cppflags="${cppflags} ${bpy_incs}"
+
+  #//////////////////////////////////////////
+  #//////////////////////////////////////////
+  #//////////////////////////////////////////
+
+  bpy_build_dir="${bpy_home}/${build_dir}"
+
+  if [ ! -d ${bpy_build_dir} ] ; then
+    bpy_old_dir=`pwd`
+    cd ${bpy_home}
+    ./build ${args_ourex}
+    cd ${bpy_old_dir}
+  fi
+
+  if [ ! -d ${bpy_build_dir} ] ; then
+    echo "exlib/mgr/use_bpy : directory ${bpy_build_dir} not found."
+    exit
+  fi
+
+  if [ "${use_archive}" = "yes" ] ; then
+    libs="${libs} ${bpy_build_dir}/libourex_bpy.a"
+  else
+    libs="${libs} -L${bpy_build_dir} -lourex_bpy"
+  fi
+
+fi
+

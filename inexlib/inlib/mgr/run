@@ -1,0 +1,55 @@
+#!/bin/sh -f
+
+build_verbose=no
+
+while test $# -ge 1 ; do
+  case $1 in
+    -v) build_verbose=yes;;
+    -*) echo "unknown option : $1" ; exit ;;
+     *) echo "unknown option : $1" ; exit ;;
+  esac
+  shift
+done
+
+if [ ${build_verbose} = "yes" ] ; then
+  set -x
+fi
+
+bin_dir=.
+
+if [ -x ./inlib_plug ] ; then
+  echo "run inlib_plug ..."
+  ${bin_dir}/inlib_plug -plugin=plugin -symbol=test_init
+fi
+
+exes=
+exes="${exes} ${bin_dir}/inlib_test_test"
+exes="${exes} ../examples/cpp/inlib_example_f2cmn"
+exes="${exes} ../examples/cpp/inlib_example_histo"
+exes="${exes} ${bin_dir}/inlib_test_algebra"
+exes="${exes} ${bin_dir}/inlib_test_symbolic"
+for exe in ${exes} ; do
+  if [ -x ${exe} ] ; then
+    echo "${exe} ..."
+    ${exe}
+  else
+    echo "WARNING, WARNING : ${exe} not found."
+  fi
+done
+
+###########################
+#echo "ftp..."
+#${bin_dir}/inlib_ftp ftp://ftp.lal.in2p3.fr/pub/OpenScientist/data/inlib/empty
+#${bin_dir}/inlib_ftp ftp://ftp.lal.in2p3.fr/pub/OpenScientist/data/iv/so_web.iv
+# dir :
+#${bin_dir}/inlib_ftp -dir ftp://ftp.lal.in2p3.fr/pub/OpenScientist/16.11
+#${bin_dir}/inlib_ftp -dir ftp://ftp.lal.in2p3.fr/pub/OpenScientist/data/inlib/empty_dir
+###########################
+#echo "http..."
+#${bin_dir}/inlib_http http://root.cern.ch/root/v522/Version522.news.html
+#${bin_dir}/inlib_http http://OpenScientist.lal.in2p3.fr/download/data/inlib/empty
+#${bin_dir}/inlib_http http://root.cern.ch/root/v522/Version522.news.htmlx
+## dir :
+#${bin_dir}/inlib_http http://OpenScientist.lal.in2p3.fr/download/16.11
+#${bin_dir}/inlib_http http://OpenScientist.lal.in2p3.fr/download/data/inlib/empty_dir
+###########################

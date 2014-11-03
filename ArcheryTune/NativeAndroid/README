@@ -1,0 +1,6 @@
+
+  From a csh flavoured shell script :
+    UNIX> cd <source_path>/ArcheryTune/NativeAndroid
+    csh> source ../../inexlib/exlib/mgr/app_NativeAndroid_setup_r7.csh
+    UNIX> ../../inexlib/exlib/mgr/app_NativeAndroid_build
+

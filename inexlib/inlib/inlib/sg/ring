@@ -1,0 +1,219 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_sg_ring
+#define inlib_sg_ring
+
+#include "node"
+#include "sf"
+#include "render_action"
+#include "pick_action"
+#include "bbox_action"
+#include "gstos"
+
+#include "../mathf"
+
+namespace inlib {
+namespace sg {
+
+class ring : public node, public gstos {
+  INLIB_NODE(ring,inlib::sg::ring,node)
+public:
+  sf<float> rmin;
+  sf<float> rmax;
+  sf<float> angle; //rad
+  sf<unsigned int> steps;
+public:
+  virtual const std::vector<field_desc>& node_fields() const {
+    static std::vector<field_desc> s_v;
+    if(s_v.empty()) {
+      s_v = parent::node_fields();
+      INLIB_ADD_FIELD_DESC(rmin)
+      INLIB_ADD_FIELD_DESC(rmax)
+      INLIB_ADD_FIELD_DESC(angle)
+      INLIB_ADD_FIELD_DESC(steps)
+    }
+    return s_v;
+  }
+private:
+  void add_fields(){
+    add_field(&rmin);
+    add_field(&rmax);
+    add_field(&angle);
+    add_field(&steps);
+  }
+protected:
+  typedef float* floatp;
+protected: //gstos
+  virtual unsigned int create_gsto(std::ostream& a_out,sg::gl_manager& a_mgr) {
+    std::vector<float> gsto_data;
+
+    unsigned int num = m_xys.size()/2;
+
+    if(num<3) {
+      a_out << "inlib::sg::ring::create_gsto :"
+            << " triangle strip or fan with " << num << " points."
+            << std::endl;
+      return 0;
+    }
+
+    unsigned int ntri = num-2;
+    unsigned int ngsto = ntri*3*3;
+    unsigned int sz = gsto_data.size();
+    gsto_data.resize(sz+ngsto);
+    float* pxyz = inlib::vec_data<float>(gsto_data)+sz;
+
+    const float* data = inlib::vec_data<float>(m_xys);
+    if(m_mode==inlib::gl::triangle_fan()) {
+      inlib::gl::triangle_fan_to_triangles_2to3(num,data,pxyz);
+    } else if(m_mode==inlib::gl::triangle_strip()) {
+      inlib::gl::triangle_strip_to_triangles_2to3(num,data,pxyz);
+    }
+
+    m_gsto_sz = gsto_data.size();
+    if(gsto_data.empty()) return 0;
+    return a_mgr.create_gsto_from_data(gsto_data);
+  }
+
+public:
+  virtual void render(render_action& a_action) {
+    if(touched()) {
+      update_sg();
+      reset_touched();
+    }
+
+    const state& state = a_action.state();
+
+    if(state.m_use_gsto) {
+      unsigned int _id = get_gsto_id(a_action.out(),a_action.gl_manager());
+      if(_id) {
+        a_action.begin_gsto(_id);
+        a_action.draw_gsto_v(inlib::gl::triangles(),m_gsto_sz/3,0);
+        a_action.end_gsto();
+        return;
+  
+      } else { //!_id
+        // use immediate rendering.
+      }
+
+    } else {
+      clean_gstos(&a_action.gl_manager());
+    }
+
+    // immediate rendering :
+    if(m_mode==inlib::gl::triangle_fan()) {
+      a_action.draw_vertex_array_xy(inlib::gl::triangle_fan(),
+                                    m_xys.size(),inlib::vec_data<float>(m_xys));
+    } else if(m_mode==inlib::gl::triangle_strip()) {
+      a_action.draw_vertex_array_xy(inlib::gl::triangle_strip(),
+                                    m_xys.size(),inlib::vec_data<float>(m_xys));
+    }
+
+  }
+
+  virtual void pick(pick_action&) {
+    if(touched()) {
+      update_sg();
+      reset_touched();
+    }
+    //WARNING : for ArcheyTune, the ring cache must not be pickable.
+    //a_action.add__triangle_strip(*this,m_xyzs,true);
+  }
+  virtual void bbox(bbox_action& a_action) {
+    if(touched()) {
+      update_sg();
+      reset_touched();
+    }
+    a_action.add_points_xy(m_xys);
+  }
+public:
+  ring()
+  :parent()
+  ,rmin(0.25f)
+  ,rmax(0.5f)
+  ,angle(inlib::ftwo_pi())
+  ,steps(48)
+
+  ,m_mode(inlib::gl::triangle_strip())
+  {
+    add_fields();
+  }
+  virtual ~ring(){}
+public:
+  ring(const ring& a_from)
+  :parent(a_from)
+  ,gstos(a_from)
+  ,rmin(a_from.rmin)
+  ,rmax(a_from.rmax)
+  ,angle(a_from.angle)
+  ,steps(a_from.steps)
+
+  ,m_mode(a_from.m_mode)
+  {
+    add_fields();
+  }
+  ring& operator=(const ring& a_from){
+    parent::operator=(a_from);
+    gstos::operator=(a_from);
+
+    rmin = a_from.rmin;
+    rmax = a_from.rmax;
+    angle = a_from.angle;
+    steps = a_from.steps;
+
+    m_mode = a_from.m_mode;
+
+    return *this;
+  }
+protected:
+  void update_sg() {
+    m_xys.clear();
+
+    clean_gstos(); //must reset for all gl_manager.
+
+    unsigned int nstep = steps.value();
+    if(!nstep) return;
+    if(angle.value()<=0) return;
+    float rmn = rmin.value();
+    float rmx = rmax.value();
+    if(rmn>=rmx) return;
+
+    float dangle = angle.value()/nstep;
+    float _angle = 0;
+    float ca,sa;
+
+    if(rmn<=0) {
+      // build a triangle fan :
+      m_mode = inlib::gl::triangle_fan();
+      m_xys.push_back(0);
+      m_xys.push_back(0);
+      for(unsigned int index=0;index<=nstep;index++,_angle+=dangle) {
+        ca = inlib::fcos(_angle);
+        sa = inlib::fsin(_angle);
+        m_xys.push_back(rmx*ca);
+        m_xys.push_back(rmx*sa);
+      }    
+
+    } else {
+      // build a triangle strip :
+      m_mode = inlib::gl::triangle_strip();
+      for(unsigned int index=0;index<=nstep;index++,_angle+=dangle) {
+        ca = inlib::fcos(_angle);
+        sa = inlib::fsin(_angle);
+        m_xys.push_back(rmn*ca);
+        m_xys.push_back(rmn*sa);
+
+        m_xys.push_back(rmx*ca);
+        m_xys.push_back(rmx*sa);
+      }    
+    }
+  }
+protected:
+  std::vector<float> m_xys;
+  inlib::gl::mode_t m_mode;
+  unsigned int m_gsto_sz;
+};
+
+}}
+
+#endif

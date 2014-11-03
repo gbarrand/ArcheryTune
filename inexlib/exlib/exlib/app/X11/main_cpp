@@ -1,0 +1,359 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file exlib.license for terms.
+
+// this file needs the cpp macros :
+// - EXLIB_APP : for exa #define EXLIB_APP ioda
+// It needs also to have included before it a :
+//    #include "../<app>/main"
+
+#include <GL/glx.h>
+#include <X11/cursorfont.h>
+
+#include "../../sg/pv_holder"
+#include "../../sg/GL_VIEWER"
+
+namespace app_X11 {
+
+//IMPORTANT : pv_holder must come first.
+
+class main : protected exlib::sg::pv_holder, public EXLIB_APP::main {
+  typedef EXLIB_APP::main parent;
+public:
+  EXLIB_GL_VIEWER_METHODS
+public: //exlib::sg::viewer
+  virtual bool set_cursor_shape(inlib::sg::cursor_shape a_shape) {
+    if(!EXLIB_APP::main::set_cursor_shape(a_shape)) return false;
+    if(a_shape==inlib::sg::cursor_default) {
+      ::XUndefineCursor(m_display,m_window);
+      ::XSync(m_display,False);
+      return true;
+    } else if(a_shape==inlib::sg::cursor_target) {
+      Cursor cursor = ::XCreateFontCursor(m_display,XC_X_cursor);
+      if(!cursor) return false;
+      ::XDefineCursor(m_display,m_window,cursor);
+      ::XSync(m_display,False);
+      return true;
+    } else {
+      return false;
+    }
+  }
+public:
+  virtual void win_render() {
+    if(::glXMakeCurrent(m_display,m_window,m_ctx)==False){
+      m_out << "app_X11::main::win_render :"
+            << " glXMakeCurrent failed."
+            << std::endl;
+      return;
+    }
+    render();
+    ::glXSwapBuffers(m_display,m_window);
+  }
+public:
+  main(std::ostream& a_out,
+       const std::string& a_data_dir,
+       const std::string& a_res_dir,
+       const std::string& a_out_dir,
+       const std::string& a_tmp_dir,
+       bool a_verbose,
+       Display* a_display,
+       Window a_window,
+       GLXContext a_ctx)
+  :exlib::sg::pv_holder(a_out)
+  ,parent(a_out,
+          exlib::sg::pv_holder::m_mgr_GL,exlib::sg::pv_holder::m_ttf,
+          a_data_dir,a_res_dir,a_out_dir,a_tmp_dir,a_verbose,0)
+  ,m_display(a_display)
+  ,m_window(a_window)
+  ,m_ctx(a_ctx)
+  {
+    push_home();
+  }
+  virtual ~main(){}
+//public:
+//  Display* display() const {return m_display;}
+//  Window window() const {return m_window;}
+protected:
+  Display* m_display;
+  Window m_window;
+  GLXContext m_ctx;
+};
+
+}
+
+#include "../../X11/gui_dispatcher"
+
+#ifdef INLIB_MEM
+#include <inlib/mem>
+#endif
+
+#include <inlib/args>
+
+#include <iostream>
+#include <cstdlib>
+
+#include <inlib/app>
+
+int exlib_main(int argc,char** argv,bool a_land = true) { //enforce landscape by default for desktop oapps.
+  bool verbose = false;
+
+#ifdef INLIB_MEM
+  inlib::mem::set_check_by_class(true);{
+#endif
+
+  std::string exe_path; //for res_dir
+  if(!inlib::program_path(argv[0],exe_path)) {
+    std::cout << "exlib_main : can't get exe path." << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  inlib::args args(argc,argv);
+  if(a_land) args.add("-land","");
+
+  verbose = args.is_arg("-verbose");
+
+  std::string home_dir = inlib::dir::home();
+  if(home_dir.empty()) {
+    std::cout << "exlib_main : can't get home directory." << std::endl;
+    return EXIT_FAILURE;
+  }  
+  std::string doc_app_dir = "Documents";
+  doc_app_dir += inlib::sep();
+  doc_app_dir += EXLIB_APP_NAME;
+
+  std::string doc_dir = home_dir;
+  doc_dir += inlib::sep();
+  doc_dir += doc_app_dir;
+
+  std::string data_dir = doc_dir;
+  std::string res_dir; //application data.
+  if(exe_path.size()) {
+    res_dir = exe_path+"/../res";
+  }
+  std::string out_dir = doc_dir;
+  std::string tmp_dir = "/tmp";
+
+  exlib::X11::session x11(std::cout);
+  if(!x11.display()) return EXIT_FAILURE;
+
+  unsigned int ww,wh;
+  inlib::window_size_from_args(args,ww,wh);
+
+  Window win = x11.create_window(EXLIB_APP_NAME,0,0,ww,wh);
+  if(win==0L) return EXIT_FAILURE;
+  if(args.is_arg("-full_screen")){
+    int dw = ::XDisplayWidth(x11.display(),::XDefaultScreen(x11.display()));
+    int dh = ::XDisplayHeight(x11.display(),::XDefaultScreen(x11.display()));
+    ::XMoveResizeWindow(x11.display(),win,0,0,dw,dh);
+    x11.set_wm_no_decorations(win);
+  } else if(args.is_arg("-no_decos")){
+    x11.set_override_redirect(win);
+  }
+
+  x11.map_raise_window(win);
+  //x11.show_window(win); //it waits a MapNotify.
+
+ {app_X11::main _main(std::cout,
+                           data_dir,res_dir,out_dir,tmp_dir,verbose,
+                           x11.display(),win,x11.context());
+
+ {std::string DOCUMENT;
+  if(!args.file(DOCUMENT)) args.find("-document",DOCUMENT);  
+  if(verbose) {
+    std::cout << "exlib_main :"
+              << " document is " << inlib::sout(DOCUMENT) << "."
+              << std::endl;
+  }
+  if(DOCUMENT.size()) {
+    _main.create_gui();
+    bool done;
+    _main.opener().open(DOCUMENT,inlib::file::s_format_guessed(),
+                        inlib::args(),done);
+  }}
+
+  //////////////////////////////////////////////////////////////////
+  /// steering /////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////
+  x11.add_dispatcher(new exlib::X11::gui_dispatcher(x11,win,_main));
+
+  //Atom atom = ::XInternAtom(x11.display(),"WM_DELETE_WINDOW",False);
+#ifdef WALL_DATA_CLIENT
+
+  while(true) {
+    XEvent xevent;
+    ::XNextEvent(x11.display(),&xevent);
+    if((xevent.type==Expose)&&(xevent.xany.window==win)) break;
+    x11.dispatch(xevent);
+  }
+
+  int fd_X11 = ::XConnectionNumber(x11.display());
+  std::vector<int> socks;
+  socks.push_back(fd_X11);
+
+  if(verbose) {
+    std::cout << "exlib_main :"
+              << " enter steering loop ..."
+              << std::endl;
+  }
+
+  while(!_main.to_exit()) { 
+
+    if(_main.num_cbks()) {
+
+      bool dc_connected = _main.data_client().socket().is_connected();
+
+      _main.do_works();
+
+      if(!dc_connected && _main.data_client().socket().is_connected()) {
+        //was not connected, but the do_works() did a connection.
+        socks.clear();
+        socks.push_back(fd_X11);
+        socks.push_back(_main.data_client().socket().socket());
+      }
+
+      if(dc_connected && !_main.data_client().socket().is_connected()) {
+        //was connected, but the do_works() did a disconnection.
+        socks.clear();
+        socks.push_back(fd_X11);
+      }
+
+      if(::XPending(x11.display())) {
+        XEvent xevent;
+        ::XNextEvent(x11.display(),&xevent);
+        if(xevent.type==ClientMessage) {
+          if(xevent.xclient.data.l[0]==(long)x11.SESSION_EXIT_STEER_atom())
+            break;
+        }
+        if(!x11.dispatch(xevent)) {
+          if(xevent.type==KeyPress) {
+            KeySym keySym;
+            ::XLookupString(&(xevent.xkey),NULL,0,&keySym,NULL);
+            if(keySym==XK_F1)  {
+              int width,height;
+              x11.window_size(win,width,height);
+              x11.resize_window(win,height,width);
+            }
+          }
+        }
+      }
+ 
+      if(_main.data_client().socket().is_connected()) {
+        bool have_socks_input;
+        if(!_main.data_client().socket().is_there_input(have_socks_input)) {
+          std::cout << "exlib_main :"
+                    << " inlib::net::is_there_input failed."
+                    << std::endl;
+          break;
+        }
+        if(have_socks_input) {
+          if(_main.data_client().socket().is_connected()) {
+            if(!_main.data_client().poll()) {}
+            if(!_main.data_client().socket().is_connected()) {
+              //we have received a inlib::wall::protocol::disconnect()
+              _main.map_warn("disconnected");
+              _main.win_render();
+              socks.clear();
+              socks.push_back(fd_X11);
+            }
+          }
+        }
+      }
+  
+      continue;
+    }
+
+    if(verbose) {
+      std::cout << "exlib_main :"
+                << " inlib::net::wait_input() ..."
+                << std::endl;
+    }
+
+    if(!inlib::net::wait_input(socks)) {
+      std::cout << "exlib_main :"
+                << " inlib::net::wait_input failed."
+                << std::endl;
+      break;
+    }
+
+    if(::XPending(x11.display())) {
+      XEvent xevent;
+      ::XNextEvent(x11.display(),&xevent);
+      if(xevent.type==ClientMessage) {
+        if(xevent.xclient.data.l[0]==(long)x11.SESSION_EXIT_STEER_atom())
+          break;
+      }
+      if(!x11.dispatch(xevent)) {
+        if(xevent.type==KeyPress) {
+          KeySym keySym;
+          ::XLookupString(&(xevent.xkey),NULL,0,&keySym,NULL);
+          if(keySym==XK_F1)  {
+            int width,height;
+            x11.window_size(win,width,height);
+            x11.resize_window(win,height,width);
+          }
+        }
+      }
+
+    } else { //from data client.
+
+      if(_main.data_client().socket().is_connected()) {
+        if(!_main.data_client().poll()) {}
+        if(!_main.data_client().socket().is_connected()) {
+          //we have received a inlib::wall::protocol::disconnect()
+          _main.map_warn("disconnected");
+          _main.win_render();
+          socks.clear();
+          socks.push_back(fd_X11);
+        }
+      }
+
+    }
+
+  }
+#else
+
+  while(!_main.to_exit()) { 
+
+    //std::cout << "exlib_main : loop..." << std::endl;
+    if(_main.num_cbks()) {
+      _main.do_works();
+      if(!::XPending(x11.display())) continue;
+    }
+
+    XEvent xevent;
+    ::XNextEvent(x11.display(),&xevent);
+    if(xevent.type==ClientMessage) {
+      if(xevent.xclient.data.l[0]==(long)x11.SESSION_EXIT_STEER_atom())
+        break;
+    }
+    if(!x11.dispatch(xevent)) {
+      if(xevent.type==KeyPress) {
+        KeySym keySym;
+        ::XLookupString(&(xevent.xkey),NULL,0,&keySym,NULL);
+        if(keySym==XK_F1)  {
+          int width,height;
+          x11.window_size(win,width,height);
+          x11.resize_window(win,height,width);
+        }
+      }
+    }
+
+  }
+
+#endif
+
+  } //_main
+
+  if(win!=0L) x11.delete_window(win);
+
+#ifdef INLIB_MEM
+  }inlib::mem::balance(std::cout);
+#endif
+
+  if(verbose) {
+    std::cout << "exlib_main : exit..." << std::endl;
+  }
+
+  return EXIT_SUCCESS;
+}
+
+//exlib_build_use skip
