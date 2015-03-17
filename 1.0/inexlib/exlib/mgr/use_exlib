@@ -1,9 +1,0 @@
-
-if [ "${use_exlib}" = "yes" ] ; then
-  if [ ${build_visual} = "yes" ] ; then
-    cppflags="${cppflags} /I${exlib_mgr}/.."
-  else
-    cppflags="${cppflags} -I${exlib_mgr}/.."
-  fi
-fi
-
