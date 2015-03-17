@@ -1,0 +1,3 @@
+#!/bin/sh -f
+
+./configure --prefix=/usr/local/GraphicsMagick/1.3.17 --disable-openmp --without-ttf --without-jpeg --without-tiff --without-magick-plus-plus --without-xml --without-bzlib --without-zlib --without-threads --without-x

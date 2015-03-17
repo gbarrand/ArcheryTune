@@ -1,0 +1,217 @@
+
+# to be sourced from an <app>/mgr/build scripts.
+
+# shared between ourex, inlib, exlib, apps.
+
+build_gnu=no
+build_gnu_11=no
+build_intel=no
+build_clang=no
+build_visual=no
+build_sdk_mac=no
+build_sdk_mac_gnu=no
+build_sdk_ios=no
+build_sdk_ios_gnu=no
+build_sdk_iossim=no
+build_sdk_android=no
+
+build_m32=no
+
+build_debug=no
+build_set_x=no
+build_verbose=no
+build_mem=no	
+build_rmo=no
+build_rma=no
+build_clean=no
+
+build_compile=yes
+build_archive=yes
+build_app=yes
+build_plugin=yes
+build_distrib=yes
+
+build_compile_only=no
+build_archive_only=no
+build_app_only=no
+build_distrib_only=no
+build_plugin_only=no
+build_link_only=no
+
+build_shlib=yes
+
+build_use_our_stl=no
+build_no_wall=no
+build_g4flags=no
+
+build_args_file=
+
+args_distrib=
+
+#echo "inlib/mgr/build_header : build_args : ${build_args}"
+
+args_ourex=
+
+for arg in ${build_args} ; do
+  case ${arg} in
+    -gnu)         build_gnu=yes;         args_ourex="${args_ourex} ${arg}";;
+    -gnu_11)      build_gnu_11=yes;      args_ourex="${args_ourex} ${arg}";;
+    -intel)       build_intel=yes;       args_ourex="${args_ourex} ${arg}";;
+    -clang)       build_clang=yes;       args_ourex="${args_ourex} ${arg}";;
+    -visual)      build_visual=yes;      args_ourex="${args_ourex} ${arg}";;
+    -sdk_mac)     build_sdk_mac=yes;     args_ourex="${args_ourex} ${arg}";;
+    -sdk_mac_gnu) build_sdk_mac_gnu=yes; args_ourex="${args_ourex} ${arg}";;
+    -sdk_ios)     build_sdk_ios=yes;     args_ourex="${args_ourex} ${arg}";;
+    -sdk_ios_gnu) build_sdk_ios_gnu=yes; args_ourex="${args_ourex} ${arg}";;
+    -sdk_iossim)  build_sdk_iossim=yes;  args_ourex="${args_ourex} ${arg}";;
+    -sdk_android) build_sdk_android=yes; args_ourex="${args_ourex} ${arg}";;
+
+    -g)            build_debug=yes;      args_ourex="${args_ourex} ${arg}";;
+    -x)            build_set_x=yes;      args_ourex="${args_ourex} ${arg}";;
+    -v)            build_verbose=yes;    args_ourex="${args_ourex} ${arg}";;
+
+    -clean)        build_clean=yes;; #we don't want -clean in args_ourex.
+
+    -rmo)          build_rmo=yes;;
+    -rma)          build_rma=yes;;
+
+    -compile_only) build_compile_only=yes;;
+    -archive_only) build_archive_only=yes;;
+    -plugin_only)  build_plugin_only=yes;;
+    -app_only)     build_app_only=yes;;
+    -distrib_only) build_distrib_only=yes;;
+    -link_only)    build_link_only=yes;;
+    -a_only)       build_shlib=no;;
+
+    -mem)        build_mem=yes;;
+    -m32)        build_m32=yes;;
+
+    -g4flags)    build_g4flags=yes;;
+    -inlib_stl)  build_use_our_stl=yes;;
+    -no_wall)    build_no_wall=yes;;
+
+    -*) echo "inlib/mgr/build_header : unknown option : $arg" ; exit ;;
+
+#    *) echo "inlib/mgr/build_header : unknown option : $arg" ; exit ;;
+     *) if [ "${build_args_file}" != "" ] ; then
+          echo "inlib/mgr/build_header : only one arg file supported."
+          exit
+        else
+          build_args_file="${arg}"
+        fi
+        ;;
+  esac
+done
+
+if [ ${build_set_x} = "yes" ] ; then set -x; fi
+
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+
+. ${inlib_mgr}/guess_compiler
+
+. ${inlib_mgr}/use_cc
+. ${inlib_mgr}/use_cpp
+. ${inlib_mgr}/use_sys # after the two uppers.
+
+#////////////////////////////////////
+#////////////////////////////////////
+#////////////////////////////////////
+
+/bin/rm -f c_tmp cc_tmp cxx_tmp cpp_tmp C_tmp m_tmp mm_tmp
+
+cfiles=
+ccfiles=
+cxxfiles=
+cppfiles=
+C_files=
+mfiles=
+mmfiles=
+
+objs=
+libs=
+
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+
+# WARNING : build_dir is used as a relative path.
+#           Then if "/aa/bb", it is going to be used
+#           as "./aa/bb" in a local directory.
+
+build_dir="bin_${config_name}"
+if [ ${build_m32} = yes ] ; then build_dir="${build_dir}_m32"; fi
+build_path="./${build_dir}"
+
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+
+build_do_compile=yes
+
+if [ ${build_compile_only} = "yes" ] ; then
+  build_app=no
+  build_archive=no
+  build_plugin=no
+  build_distrib=no
+fi
+
+if [ ${build_app_only} = "yes" ] ; then
+  build_app=yes
+
+  build_compile=no
+  build_archive=no
+  build_plugin=no
+  build_distrib=no
+fi
+
+if [ ${build_archive_only} = "yes" ] ; then
+  build_archive=yes
+
+  build_compile=yes
+  build_do_compile=no
+
+  build_app=no
+  build_plugin=no
+  build_distrib=no
+fi
+
+if [ ${build_plugin_only} = "yes" ] ; then
+  build_plugin=yes
+
+  build_compile=yes
+  build_do_compile=no
+
+  build_app=no
+  build_distrib=no
+fi
+
+if [ ${build_distrib_only} = "yes" ] ; then
+  build_distrib=yes
+
+  build_compile=no
+  build_do_compile=no
+  build_archive=no
+  build_app=no
+  build_plugin=no
+fi
+
+if [ ${build_link_only} = "yes" ] ; then
+  build_app=yes
+
+  build_compile=yes
+  build_do_compile=no
+
+  build_distrib=no
+  build_archive=no
+  build_plugin=no
+fi
+
+if [ ${build_clean} = "yes" -o ${build_rmo} = "yes" -o ${build_rma} = "yes" ] ; then
+  build_compile=no
+  build_archive=no
+  build_app=no
+  build_distrib=no
+fi
+

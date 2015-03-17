@@ -1,0 +1,30 @@
+
+if [ "${use_GLX}" = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    echo "exlib/mgr/use_X11 : cl.exe : GLX not supported."
+    exit
+  fi
+  if [ `uname` = Darwin ] ; then
+    cppflags="${cppflags} -I/usr/X11R6/include"
+    ccflags="${ccflags} -I/usr/X11R6/include"
+    # glX functions are in the below GL lib !
+    libs="${libs} -L/usr/X11R6/${lib} -lGL"
+  fi
+fi
+
+if [ "${use_X11}" = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    echo "exlib/mgr/use_X11 : cl.exe : not supported."
+    exit
+  fi
+  if [ `uname` = Darwin ] ; then
+    cppflags="${cppflags} -I/usr/X11R6/include"
+    ccflags="${ccflags} -I/usr/X11R6/include"
+    libs="${libs} -L/usr/X11R6/lib -lXi -lXext -lXpm -lX11"
+  else
+    cppflags="${cppflags} -I/usr/X11R6/include"
+    ccflags="${ccflags} -I/usr/X11R6/include"
+    libs="${libs} -L/usr/X11R6/${lib} -lXi -lXext -lXpm -lX11"
+  fi
+fi
+

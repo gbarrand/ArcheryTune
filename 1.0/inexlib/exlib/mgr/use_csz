@@ -1,0 +1,28 @@
+
+if [ "${use_csz}" = "yes" ] ; then
+  if [ "${csz_home}" = "" ] ; then
+    csz_home=../../ourex/csz
+  fi
+
+  csz_build_dir="${csz_home}/${build_dir}"
+
+  if [ ! -d ${csz_build_dir} ] ; then
+    csz_old_dir=`pwd`
+    cd ${csz_home}
+    ./build ${args_ourex}
+    cd ${csz_old_dir}
+  fi
+
+  if [ ! -d ${csz_build_dir} ] ; then
+    echo "directory ${csz_build_dir} not found."
+    exit
+  fi
+
+  if [ "${use_archive}" = "yes" ] ; then
+    libs="${libs} ${csz_build_dir}/libourex_csz.a"
+  else
+    libs="${libs} -L${csz_build_dir} -lourex_csz"
+  fi
+
+fi
+

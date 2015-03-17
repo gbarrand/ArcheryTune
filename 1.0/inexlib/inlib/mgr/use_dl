@@ -1,0 +1,11 @@
+
+if [ "${use_dl}" = "yes" ] ; then
+
+  if [ `uname` = "Darwin" ] ; then
+    libs="${libs}"
+  elif [ `uname` = "Linux" ] ; then
+    #libs="${libs} -L/usr/${lib} -ldl"
+    libs="${libs} /usr/${lib}/libdl.so"
+  fi
+
+fi

@@ -1,0 +1,30 @@
+
+if [ "${use_XmOpenGLArea}" = "yes" ] ; then
+  if [ "${XmOpenGLArea_home}" = "" ] ; then
+    XmOpenGLArea_home=../../ourex/XmOpenGLArea
+  fi
+
+  cppflags="${cppflags} -I${XmOpenGLArea_home}"
+
+  xmopenglarea_build_dir="${XmOpenGLArea_home}/${build_dir}"
+
+  if [ ! -d ${xmopenglarea_build_dir} ] ; then
+    xmopenglarea_old_dir=`pwd`
+    cd ${XmOpenGLArea_home}
+    ./build ${args_ourex}
+    cd ${xmopenglarea_old_dir}
+  fi
+
+  if [ ! -d ${xmopenglarea_build_dir} ] ; then
+    echo "directory ${xmopenglarea_build_dir} not found."
+    exit
+  fi
+
+  if [ "${use_archive}" = "yes" ] ; then
+    libs="${libs} ${xmopenglarea_build_dir}/libourex_XmOpenGLArea.a"
+  else
+    libs="${libs} -L${xmopenglarea_build_dir} -lourex_XmOpenGLArea"
+  fi
+
+fi
+

@@ -1,0 +1,24 @@
+#!/bin/sh -f
+
+wrap_exe=../../inlib/mgr/bin_clang/wrap
+
+#wrap_exe=_wrap
+#./check_app _wrap '_wrap program not found."
+#use_status=$?;if [ ${use_status} != 0 ] ; then exit ${use_status};fi
+
+if [ ! -x ${wrap_exe} ] ; then
+  echo "${wrap_exe} not found."
+  exit
+fi
+
+find ../exlib/WebGL -name 'wrap_*' -exec /bin/rm -f {} \;
+
+find ../exlib/WebGL -name '*.js' -print > tmp_0
+find ../exlib/WebGL -name '*.js.map' -print >> tmp_0
+for file in $(cat tmp_0) ; do
+  name=`basename ${file}`
+  name=`echo ${name} | sed -e 's:\.:\_:g' | sed -e 's:\-:\_:g'`
+  #echo "${name}"
+  ${wrap_exe} ${file} ../exlib/WebGL/wrap_${name}
+done
+/bin/rm -f tmp_0
