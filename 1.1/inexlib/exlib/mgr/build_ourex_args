@@ -1,0 +1,79 @@
+
+ourex_args_gl2ps=
+ourex_args=
+for arg in ${build_args} ; do
+  case ${arg} in
+    -gnu)         ourex_args="${ourex_args} ${arg}";;
+    -gnu_11)      ourex_args="${ourex_args} ${arg}";;
+    -intel)       ourex_args="${ourex_args} ${arg}";;
+    -clang)       ourex_args="${ourex_args} ${arg}";;
+    -visual)      ourex_args="${ourex_args} ${arg}";;
+    -sdk_mac)     ourex_args="${ourex_args} ${arg}";;
+    -sdk_mac_gnu) ourex_args="${ourex_args} ${arg}";;
+    -sdk_ios)     ourex_args="${ourex_args} ${arg}";;
+    -sdk_ios_gnu) ourex_args="${ourex_args} ${arg}";;
+    -sdk_iossim)  ourex_args="${ourex_args} ${arg}";;
+    -sdk_android) ourex_args="${ourex_args} ${arg}";;
+    -g)           ourex_args="${ourex_args} ${arg}";;
+    -x)           ourex_args="${ourex_args} ${arg}";;
+    -v)           ourex_args="${ourex_args} ${arg}";;
+    -a_only)      ourex_args="${ourex_args} ${arg}";;
+    -m32)         ourex_args="${ourex_args} ${arg}";;
+    -bin_*)       ourex_args="${ourex_args} ${arg}";;
+#   -clean)       ourex_args="${ourex_args} ${arg}";; #we don't want -clean in ourex_args.
+  esac
+done
+
+#//////////////////////////////////////////////////////
+#/// ourex locations : ////////////////////////////////
+#//////////////////////////////////////////////////////
+
+if [ "${exlib_mgr}" = "" ] ; then
+  echo "exlib/mgr/build_ourex_args : exlib_mgr variable not set."
+  exit
+fi
+
+ourex_dir=${exlib_mgr}/../../ourex
+ourex_mgr=${exlib_mgr}/../../ourex/mgr
+
+# common ourex :
+gtkglarea_home=${ourex_dir}/gtkglarea
+XmOpenGLArea_home=${ourex_dir}/XmOpenGLArea
+CoinGL_home=${ourex_dir}/CoinGL
+HEPVis_home=${ourex_dir}/HEPVis
+SOPHYA_home=${ourex_dir}/SOPHYA
+cfitsio_home=${ourex_dir}/cfitsio
+wcslib_home=${ourex_dir}/wcslib
+csz_home=${ourex_dir}/csz
+dcmtk_home=${ourex_dir}/dcmtk
+freetype_home=${ourex_dir}/freetype
+expat_home=${ourex_dir}/expat
+geant4_home=${ourex_dir}/geant4
+gl2ps_home=${ourex_dir}/gl2ps
+glutess_home=${ourex_dir}/glutess
+graphviz_home=${ourex_dir}/graphviz
+hdf5_home=${ourex_dir}/hdf5
+jpeg_home=${ourex_dir}/jpeg
+lua_home=${ourex_dir}/lua
+Python_home=${ourex_dir}/Python
+png_home=${ourex_dir}/png
+pythia8_home=${ourex_dir}/pythia8
+#xercesc_home=${ourex_dir}/xercesc
+zip_home=${ourex_dir}/zip
+zlib_home=${ourex_dir}/zlib
+fruitstrap_home=${ourex_dir}/fruitstrap
+AIDA_home=${ourex_dir}/AIDA
+tntnet_home=${ourex_dir}/tntnet
+Getline_home=${ourex_dir}/Getline
+cernlib_home=${ourex_dir}/cernlib
+boost_home=${ourex_dir}/boost
+
+# for osc :
+CoinPython_home=${ourex_dir}/CoinPython
+HEPVisPython_home=${ourex_dir}/HEPVisPython
+CoinXt_home=${ourex_dir}/CoinXt
+CoinGtk_home=${ourex_dir}/CoinGtk
+CoinQt_home=${ourex_dir}/CoinQt
+CoinNextStep_home=${ourex_dir}/CoinNextStep
+KUIP_home=${ourex_dir}/KUIP
+

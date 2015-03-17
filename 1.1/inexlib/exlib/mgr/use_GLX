@@ -1,0 +1,26 @@
+
+if [ "${use_GLX}" = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    echo "exlib/mgr/use_X11 : cl.exe : GLX not supported."
+    exit
+  fi
+
+  GLX_home=/usr/X11R6
+  if [ ! -d ${GLX_home} ] ; then
+    GLX_home=/usr
+    if [ ! -f ${GLX_home}/include/GL/glx.h ] ; then
+      echo "exlib/mgr/use_GLX : GL/glx.h not found under /usr/X11R6 and /usr."
+      exit
+    fi
+  fi
+
+  cppflags="${cppflags} -I${GLX_home}/include"
+  ccflags="${ccflags} -I${GLX_home}/include"
+
+  if [ `uname` = Darwin ] ; then
+    # glX functions are in the below GL lib !
+    libs="${libs} -L/usr/X11R6/${lib} -lGL"
+  else
+    libs="${libs} -L${GLX_home}/${lib} -lGLU -lGL" 
+  fi
+fi

@@ -1,0 +1,62 @@
+# to be sources.
+
+#/////////////////////////////////////////////////////////////
+#/// look for an //exlib_build_use in ${auto_use_file} file ///
+#/////////////////////////////////////////////////////////////
+
+app_uses=`grep 'exlib_build_use' ${auto_use_file}`
+if [ "${app_uses}" != "" ] ; then
+  app_uses=`echo ${app_uses} | sed -e 's:exlib_build_use::g'`
+  for item in ${app_uses} ; do
+    #echo "set use_${item}"
+    if [ ${item} = "//" -o ${item} = '/*' -o ${item} = '*/' -o ${item} = '#' ] ; then
+      echo dummy > /dev/null
+    else
+      use_var="use_${item}"
+      eval ${use_var}=yes
+    fi
+  done
+fi
+
+app_cppfiles=`grep 'exlib_build_cppfile' ${auto_use_file}`
+if [ "${app_cppfiles}" != "" ] ; then
+  app_cppfiles=`echo ${app_cppfiles} | sed -e 's:exlib_build_cppfile::g'`
+  for item in ${app_cppfiles} ; do
+    if [ ${item} != "//" ] ; then
+      #echo "app : cppfile ${item}"
+      cppfiles="${cppfiles} ${item}"
+    fi
+  done
+fi
+
+# default is use_archive=yes
+app_use_shlib=`grep 'exlib_use_shlib' ${auto_use_file}`
+if [ "${app_use_shlib}" != "" ] ; then
+  use_archive=no
+fi
+
+app_cppflags=`grep 'exlib_build_cppflags' ${auto_use_file}`
+if [ "${app_cppflags}" != "" ] ; then
+  app_cppflags=`echo ${app_cppflags} | sed -e 's:exlib_build_cppflags::g'`
+  for item in ${app_cppflags} ; do
+    if [ ${item} != "//" ] ; then
+      cppflags="${cppflags} ${item}"
+    fi
+  done
+fi
+
+
+app_compilers=`grep 'exlib_build_compiler' ${auto_use_file}`
+if [ "${app_compilers}" != "" ] ; then
+  app_compilers=`echo ${app_compilers} | sed -e 's:exlib_build_compiler::g'`
+  for item in ${app_compilers} ; do
+    #echo "set compiler_${item}"
+    if [ ${item} = "//" -o ${item} = '/*' -o ${item} = '*/' -o ${item} = '#' ] ; then
+      echo dummy > /dev/null
+    else
+      compiler_var="compiler_${item}"
+      eval ${compiler_var}=yes
+    fi
+  done
+fi
+

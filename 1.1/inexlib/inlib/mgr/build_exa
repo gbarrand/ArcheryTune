@@ -1,0 +1,12 @@
+#!/bin/sh -f
+
+args=
+while test $# -ge 1 ; do args="${args} $1";shift;done
+
+pwd_dir=`pwd`
+
+cd ../examples/cpp
+#echo ${args}
+./build ${args}
+
+cd ${pwd_dir}

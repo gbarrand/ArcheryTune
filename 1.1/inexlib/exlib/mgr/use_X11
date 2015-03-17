@@ -1,0 +1,25 @@
+
+if [ "${use_X11}" = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    echo "exlib/mgr/use_X11 : cl.exe : not supported."
+    exit
+  fi
+
+  X11_home=/usr/X11R6
+  if [ ! -d ${X11_home} ] ; then
+    X11_home=/usr
+    if [ ! -d ${X11_home}/include/X11 ] ; then
+      echo "exlib/mgr/use_X11 : X11 not found under /usr and /usr/X11R6."
+      exit
+    fi
+  fi
+
+  cppflags="${cppflags} -I${X11_home}/include"
+  ccflags="${ccflags} -I${X11_home}/include"
+  libs="${libs} -L${X11_home}/${lib} -lX11"
+
+# WARNING : Xpm not found on all machines.
+#  libs="${libs} -lXi -lXext -lXpm -lX11"
+
+fi
+

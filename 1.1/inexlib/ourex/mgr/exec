@@ -1,0 +1,30 @@
+#!/bin/sh -f
+
+args=
+while test $# -ge 1 ; do args="${args} $1";shift;done
+
+#gldum hbook md5 o2scl xercesc
+
+packs=
+packs="${packs} SOPHYA cfitsio dcmtk expat freetype gl2ps glutess"
+packs="${packs} graphviz hdf5 jpeg lua png pythia8 zip zlib csz KUIP"
+packs="${packs} XmOpenGLArea gtkglarea Wt"
+packs="${packs} CoinGL HEPVis CoinXt CoinGtk CoinNextStep"
+packs="${packs} geant4"
+
+save_dir="`pwd`"
+
+for pack in ${packs} ; do
+  echo "do ${pack} ..."
+  cd ${save_dir}/../${pack}
+  #./build ${args}
+  #./build -android -v -clean
+  #./build -gnu
+  #mv build_dir_gnu build_out_gnu
+  #mv build_dir_clang build_out_clang
+  #mv build_out_cocoa build_out_sdk_mac
+  _upgrade build
+  #mv build_out_ios build_out_sdk_ios
+  #mv build_out_iossim build_out_sdk_iossim
+done
+

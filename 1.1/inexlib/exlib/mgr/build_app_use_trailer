@@ -1,0 +1,31 @@
+#//////////////////////////////////////////////////////
+#/// common uses : ////////////////////////////////////
+#//////////////////////////////////////////////////////
+
+. ${inlib_mgr}/use_inlib
+. ${exlib_mgr}/use_exlib
+
+. ${exlib_mgr}/use_screen
+
+. ${exlib_mgr}/use_jpeg
+. ${exlib_mgr}/use_png
+. ${exlib_mgr}/use_freetype
+. ${exlib_mgr}/use_expat
+. ${exlib_mgr}/use_zlib
+. ${exlib_mgr}/use_glutess
+. ${exlib_mgr}/use_gl2ps
+
+if [ ${build_tntnet} = "yes" ] ; then
+  use_tntnet=yes
+  use_zip=yes
+  use_thread=yes
+  use_dl=yes
+  . ${exlib_mgr}/use_tntnet
+  . ${exlib_mgr}/use_zip
+  . ${inlib_mgr}/use_thread
+  . ${inlib_mgr}/use_dl
+fi
+
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////
+#//////////////////////////////////////////////////////

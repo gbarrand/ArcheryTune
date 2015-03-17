@@ -1,0 +1,32 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_cbk_tag
+#define inlib_cbk_tag
+
+#include "../sg/bcbk"
+
+namespace inlib {
+namespace cbk {
+
+class tag : public sg::bcbk {
+  typedef sg::bcbk parent;
+public:
+  virtual bool cp(tag*&) const = 0;
+public:
+  tag():parent(),m_tag(){}
+  virtual ~tag(){}
+public:
+  tag(const tag& a_from):parent(a_from),m_tag(a_from.m_tag){}
+  tag& operator=(const tag& a_from){
+    parent::operator=(a_from);
+    m_tag = a_from.m_tag;
+    return *this;
+  }
+public:
+  std::string m_tag;
+};
+
+}}
+
+#endif

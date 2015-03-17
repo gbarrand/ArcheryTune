@@ -1,0 +1,32 @@
+#!/bin/sh -f
+
+#set -x
+
+wrap_exe=./bin_clang/wrap
+
+#wrap_exe=_wrap
+#./check_app _wrap '_wrap program not found.'
+#use_status=$?;if [ ${use_status} != 0 ] ; then exit ${use_status};fi
+
+if [ ! -x ${wrap_exe} ] ; then
+  echo "${wrap_exe} not found."
+  exit
+fi
+
+find ../inlib/help -name 'help_*' -exec /bin/rm -f {} \;
+
+find ../inlib/help -name '*.help' -print > tmp_0
+for file in $(cat tmp_0) ; do
+  name=`basename ${file}`
+  name=`echo ${name} | sed -e 's:.help::g' | sed -e 's:./::g'`
+  #echo "${name}"
+  ${wrap_exe} ${file} ../inlib/help/help_${name}
+done
+/bin/rm -f tmp_0
+
+#/bin/rm -f ./help.txt
+#echo "DESCRIPTION"  >>help.txt;cat description.help  >> help.txt
+#echo "WEB"          >>help.txt;cat web.help          >> help.txt
+#echo "USAGE"        >>help.txt;cat usage.help        >> help.txt
+#echo "MENU PANEL"   >>help.txt;cat menu_panel.help   >> help.txt
+#echo "CAMERA PANEL" >>help.txt;cat camera_panel.help >> help.txt
