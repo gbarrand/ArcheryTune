@@ -1,0 +1,57 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_sg_sf_enum
+#define inlib_sg_sf_enum
+
+#include "sf"
+
+#include "enums" //hjust,vjust
+
+namespace inlib {
+namespace sg {
+
+template <class T>
+class sf_enum : public bsf<T> {
+  typedef bsf<T> parent;
+public:
+  INLIB_T_SCLASS(T,inlib::sg::sf_enum);
+  virtual void* cast(const std::string& a_class) const {
+    if(void* p = cmp_cast< sf_enum<T> >(this,a_class)) {return p;}
+    return parent::cast(a_class);
+  }
+  virtual const std::string& s_cls() const {return s_class();}
+public:
+  virtual bool write(io::iwbuf& a_buffer) {
+    return a_buffer.write((int16)parent::m_value);
+  }
+  virtual bool read(io::irbuf& a_buffer) {
+    int16 v;
+    if(!a_buffer.read(v)) return false;
+    parent::m_value = (T)v;
+    return true;
+  }
+  virtual bool dump(std::ostream&) {
+    //a_out << parent::m_value << std::endl;
+    return true;
+  }
+public:
+  sf_enum():parent(){}
+  sf_enum(const T& a_value):parent(a_value){}
+  virtual ~sf_enum(){}
+public:
+  sf_enum(const sf_enum& a_from):parent(a_from){}
+  sf_enum& operator=(const sf_enum& a_from){
+    parent::operator=(a_from);
+    return *this;
+  }
+public:
+  sf_enum& operator=(const T& a_value){
+    parent::operator=(a_value);
+    return *this;
+  }
+};
+
+}}
+
+#endif

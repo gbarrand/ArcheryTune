@@ -1,0 +1,32 @@
+
+if [ "${use_gmp}" = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    echo "exlib/mgr/use_gmp : cl.exe : gmp not yet supported."
+    exit
+  fi
+
+  if [ `uname` = Darwin ] ; then
+    ccflags="${ccflags} -I/opt/local/include"
+    cppflags="${cppflags} -I/opt/local/include"
+
+    if [ "${use_archive}" = "yes" ] ; then
+      libs="${libs} /opt/local/lib/libmpfr.a"
+      libs="${libs} /opt/local/lib/libgmpxx.a"
+      libs="${libs} /opt/local/lib/libgmp.a"
+    else
+      libs="${libs} -L/opt/local/lib -lmpfr -lgmpxx -lgmp"
+    fi
+
+  else
+    ccflags="${ccflags} -I/usr/include"
+    cppflags="${cppflags} -I/usr/include"
+
+    if [ "${use_archive}" = "yes" ] ; then
+      libs="${libs} /usr/${lib}/libmpfr.a"
+      libs="${libs} /usr/${lib}/libgmpxx.a"
+      libs="${libs} /usr/${lib}/libgmp.a"
+    else
+      libs="${libs} -L/usr/${lib} -lmpfr -lgmpxx -lgmp"
+    fi
+  fi
+fi

@@ -1,0 +1,121 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file exlib.license for terms.
+
+#ifndef exlib_sg_GL_VIEWER
+#define exlib_sg_GL_VIEWER
+
+#include "render_GL"
+#include "../set_img"
+
+#define EXLIB_GL_VIEWER_METHODS \
+public:\
+  virtual void render() {\
+    this->check_gui_cursor();\
+    if(!parent::m_ww||!parent::m_wh) return;\
+    parent::m_gl_mgr.begin_render(parent::m_ww,parent::m_wh,\
+                          parent::m_clear_color.r(),\
+                          parent::m_clear_color.g(),\
+                          parent::m_clear_color.b(),\
+                          parent::m_clear_color.a());\
+    \
+    exlib::sg::render_GL action(m_mgr_GL,parent::m_out,parent::m_ww,parent::m_wh);\
+    action.state().m_use_gsto = parent::m_use_gsto;\
+    \
+    parent::m_sg.render(action);\
+    if(!action.end()) {\
+      parent::m_out << "EXLIB_GL_VIEWER_METHODS::render() :"\
+                    << " bad gl_action end."\
+                    << std::endl;\
+    }\
+    \
+    this->after_render();\
+    \
+    parent::m_gl_mgr.end_render();\
+  }\
+public:\
+  virtual bool set_img_from_file(std::ostream& a_out,\
+                                 const std::string& a_res_dir,\
+                                 const std::string& a_file,\
+                                 inlib::img_byte& a_img) {\
+    return exlib::set_img_from_file(a_out,a_res_dir,a_file,a_img);\
+  }\
+public:/*public for iOS*/\
+  void after_render() {\
+    /*WARNING : it does OpenGL. Under Android it should be executed\
+                in the OpenGL thread.*/\
+    /*WARNING : if having more m_produce_xxx, look exlib/app/iOS/GLView_mm.*/\
+    \
+    std::ostream& _out = parent::m_out;\
+    const std::string& _out_dir = this->out_dir();\
+    if(parent::m_produce_out_jpg) {\
+      parent::m_produce_out_jpg = false;\
+      \
+      std::string file;\
+      if(_out_dir.size()) {\
+        if(!inlib::check_dir(_out,_out_dir)) {\
+          this->map_warn_failed();\
+          return;\
+        }\
+        file = _out_dir+inlib::sep();\
+      }\
+      file += "out.jpg";\
+      \
+      unsigned int bpp = 4;\
+      unsigned char* buffer = exlib::sg::manager_GL::get_rgbas(parent::m_ww,parent::m_wh);\
+      if(!buffer) {\
+        _out << "EXLIB_GL_VIEWER_METHODS::after_render() :"\
+             << " can't get image."\
+             << std::endl;\
+        this->map_warn_failed();\
+        return;\
+      }\
+      \
+      /*NOTE : jpeg wants bpp=3.*/\
+      inlib::img_byte rgba(parent::m_ww,parent::m_wh,bpp,buffer,true); /*true=img owns buffer.*/\
+      inlib::img_byte rgb;\
+      if(!rgba.rgba2rgb(rgb)) {\
+        _out << "EXLIB_GL_VIEWER_METHODS::after_render() :"\
+             << " can't convert rgba image to rgb."\
+             << std::endl;\
+        this->map_warn_failed();\
+        return;\
+      }\
+      \
+      if(!exlib::jpeg::write(_out,file,rgb.buffer(),rgb.width(),rgb.height(),rgb.bpp(),100)) {\
+        this->map_warn_failed();\
+      }\
+    }\
+    \
+    if(parent::m_produce_out_png) {\
+      parent::m_produce_out_png = false;\
+      \
+      std::string file;\
+      if(_out_dir.size()) {\
+        if(!inlib::check_dir(_out,_out_dir)) {\
+          this->map_warn_failed();\
+          return;\
+        }\
+        file = _out_dir+inlib::sep();\
+      }\
+      file += "out.png";\
+      \
+      unsigned int bpp = 4;\
+      unsigned char* buffer = exlib::sg::manager_GL::get_rgbas(parent::m_ww,parent::m_wh);\
+      if(!buffer) {\
+        _out << "EXLIB_GL_VIEWER_METHODS::after_render() :"\
+             << " can't get image."\
+             << std::endl;\
+        this->map_warn_failed();\
+        return;\
+      }\
+      \
+      if(!exlib::png::write(_out,file,buffer,parent::m_ww,parent::m_wh,bpp)) {\
+        this->map_warn_failed();\
+      }\
+      delete [] buffer;\
+    }\
+  }
+
+#endif
+
+//exlib_build_use inlib png jpeg zlib GL

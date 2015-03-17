@@ -1,0 +1,363 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file exlib.license for terms.
+
+// this file needs the cpp macros :
+// - EXLIB_APP : for exa #define EXLIB_APP ioda
+// It needs also to have included before it a :
+//    #include "../<app>/main"
+
+#ifdef INLIB_MEM
+#include <inlib/mem>
+#endif
+
+#include "../../Windows/session"
+#include "../../Windows/window"
+#include "../../Windows/glarea"
+
+#include "../../sg/pv_holder"
+#include "../../sg/GL_VIEWER"
+
+namespace app_Windows {
+
+class main 
+:protected exlib::sg::pv_holder
+,public EXLIB_APP::main
+,public exlib::Windows::window 
+,public exlib::Windows::glarea
+{
+  typedef EXLIB_APP::main parent;
+public:
+  EXLIB_GL_VIEWER_METHODS
+public: //exlib::sg::viewer
+  virtual bool set_cursor_shape(inlib::sg::cursor_shape a_shape) {
+    if(!parent::set_cursor_shape(a_shape)) return false;
+    if(a_shape==inlib::sg::cursor_default) {
+      HCURSOR r = ::LoadCursor(NULL,IDC_ARROW);   
+      if(r==NULL) return false;
+      ::SetCursor(r);
+      ::SetClassLongPtr(glarea::m_window,GCL_HCURSOR,(LONG_PTR)r);
+      return true;
+    } else if(a_shape==inlib::sg::cursor_target) {
+      HCURSOR r = ::LoadCursor(NULL,IDC_CROSS);   
+      if(r==NULL) return false;
+      ::SetCursor(r);
+      ::SetClassLongPtr(glarea::m_window,GCL_HCURSOR,(LONG_PTR)r);
+      return true;
+    } else {
+      return false;
+    }
+  }
+public: //EXLIB_APP::main
+  virtual void win_render() {
+    //send_paint();
+    wm_paint();
+  }
+public: //exlib::Windows::window
+  virtual void key_up(){
+    if(do_key(inlib::sg::key_up,m_key_shift,m_key_ctrl)) win_render();
+  }
+  virtual void key_down(){
+    if(do_key(inlib::sg::key_down,m_key_shift,m_key_ctrl)) win_render();
+  }
+  virtual void key_left(){
+    if(do_key(inlib::sg::key_left,m_key_shift,m_key_ctrl)) win_render();
+  }
+  virtual void key_right(){
+    if(do_key(inlib::sg::key_right,m_key_shift,m_key_ctrl)) win_render();
+  }
+  virtual void key_escape(){
+    if(m_key_shift) {
+      toggle_param_viewing();
+    } else {
+      do_escape();
+    }
+    win_render();
+  }
+  virtual void close(){
+    set_to_exit();
+  }
+public: //exlib::Windows::glarea
+  virtual void resize(unsigned int a_w,unsigned int a_h){
+    //std::cout << "glarea::resize " << a_w << " " << a_h << std::endl;
+    //NOTE : this is not called at startup.
+    set_size(a_w,a_h);
+  }
+  virtual void paint(unsigned int a_w,unsigned int a_h) {
+    //std::cout << "glarea::paint" << std::endl;
+    if(!width() && !height()) set_size(a_w,a_h);
+    render();
+  }
+  virtual void left_button_down(unsigned int a_x,unsigned int a_y) {
+    touch_down(a_x,a_y);
+  }
+  virtual void left_button_up(unsigned int a_x,unsigned int a_y) {
+    add_work_check_arm_buttons();
+    touch_up(a_x,a_y);
+  }
+  virtual void mouse_move(unsigned int a_x,unsigned int a_y,bool a_ldown) {
+    if(a_ldown) {
+      // part of the touch gesture :
+      if(touch_move(a_x,a_y)) win_render();
+    } else {
+      // notify the viewer. Needed in case of wall cursor remote control.
+      if(mouse_motion(a_x,a_y)) win_render();
+    }
+  }
+public:
+  main(std::ostream& a_out,
+       const std::string& a_data_dir,
+       const std::string& a_res_dir,
+       const std::string& a_out_dir,
+       const std::string& a_tmp_dir,
+       unsigned int a_w,unsigned int a_h)
+  :exlib::sg::pv_holder(a_out)
+  ,parent(a_out,
+          exlib::sg::pv_holder::m_mgr_GL,exlib::sg::pv_holder::m_ttf,
+          a_data_dir,a_res_dir,a_out_dir,a_tmp_dir,false,0)
+  ,exlib::Windows::window(a_w,a_h)
+  ,exlib::Windows::glarea(exlib::Windows::window::m_window)
+  {
+    push_home();
+  }
+  virtual ~main(){}
+};
+
+}
+
+#include <inlib/args>
+#include <inlib/app>
+#include <iostream>
+#include <cstdlib>
+
+int exlib_main(int argc,char** argv) {
+  bool verbose = false;
+
+#ifdef INLIB_MEM
+  inlib::mem::set_check_by_class(true);{
+#endif
+
+  std::string exe_path; //for res_dir
+  if(!inlib::program_path(argv[0],exe_path)) {
+    std::cout << "exlib_main : can't get exe path." << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  inlib::args args(argc,argv);
+
+  verbose = args.is_arg("-verbose");
+
+  std::string home_dir = inlib::dir::home();
+  if(home_dir.empty()) {
+    std::cout << "exlib_main : can't get home directory." << std::endl;
+    return EXIT_FAILURE;
+  }  
+  std::string doc_app_dir = "Documents";
+  doc_app_dir += inlib::sep();
+  doc_app_dir += EXLIB_APP_NAME;
+
+  std::string doc_dir = home_dir;
+  doc_dir += inlib::sep();
+  doc_dir += doc_app_dir;
+
+  std::string data_dir = doc_dir;
+  std::string res_dir; //application data.
+  if(exe_path.size()) {
+    res_dir = exe_path+"\\..\\res";
+  }
+  std::string out_dir = doc_dir;
+
+  char* env_TEMP = ::getenv("TEMP");
+  if(!env_TEMP) {
+    std::cout << "exlib_main : can't get TEMP env variable." << std::endl;
+    return EXIT_FAILURE;
+  }
+  std::string tmp_dir = std::string(env_TEMP);
+
+  unsigned int ww,wh;
+  inlib::window_size_from_args(args,ww,wh);
+
+  exlib::Windows::session wdoz(std::cout);
+
+  app_Windows::main _main(std::cout,
+                        data_dir,res_dir,out_dir,tmp_dir,
+                        ww,wh);
+
+  wdoz.show_window(_main.window::hwnd());
+
+ {std::string DOCUMENT;
+  if(!args.file(DOCUMENT)) args.find("-document",DOCUMENT);  
+  if(verbose) {
+    std::cout << "exlib_main :"
+              << " document is " << inlib::sout(DOCUMENT) << "."
+              << std::endl;
+  }
+  if(DOCUMENT.size()) {
+    _main.create_gui();
+    bool done;
+    _main.opener().open(DOCUMENT,inlib::file::s_format_guessed(),
+                        inlib::args(),done);
+  }}
+
+#ifdef WALL_DATA_CLIENT
+
+  int fd_Windows = 0;
+  std::vector<int> socks;
+  socks.push_back(fd_Windows);
+
+  while(!_main.to_exit()) { 
+
+    if(_main.num_cbks()) {
+
+      bool dc_connected = _main.data_client().socket().is_connected();
+
+      _main.do_works();
+
+      if(!dc_connected && _main.data_client().socket().is_connected()) {
+        //was not connected, but the do_works() did a connection.
+        socks.clear();
+        socks.push_back(fd_Windows);
+        socks.push_back(_main.data_client().socket().socket());
+      }
+
+      if(dc_connected && !_main.data_client().socket().is_connected()) {
+        //was connected, but the do_works() did a disconnection.
+        socks.clear();
+        socks.push_back(fd_Windows);
+      }
+
+     {MSG event;
+      if(::PeekMessage(&event,NULL,0,0,PM_REMOVE)) {
+        ::TranslateMessage(&event);
+        ::DispatchMessage(&event);
+      }}
+ 
+      if(_main.data_client().socket().is_connected()) {
+        bool have_socks_input;
+        if(!_main.data_client().socket().is_there_input(have_socks_input)) {
+          std::cout << "exlib_main :"
+                    << " inlib::net::is_there_input failed."
+                    << std::endl;
+          break;
+        }
+        if(have_socks_input) {
+          if(_main.data_client().socket().is_connected()) {
+            if(!_main.data_client().poll()) {}
+            if(!_main.data_client().socket().is_connected()) {
+              //we have received a inlib::wall::protocol::disconnect()
+              _main.map_warn("disconnected");
+              _main.win_render();
+              socks.clear();
+              socks.push_back(fd_Windows);
+            }
+          }
+        }
+      }
+  
+      continue;
+    }
+
+    if(verbose) {
+      std::cout << "exlib_main :"
+                << " inlib::net::wait_input() ..."
+                << std::endl;
+    }
+
+/*
+    // How to wait on both Windows thread and data client socket ?
+    if(!inlib::net::wait_input(socks)) {
+      std::cout << "exlib_main :"
+                << " inlib::net::wait_input failed."
+                << std::endl;
+      break;
+    }
+*/
+
+    // How to wait on both Windows thread and data client socket ?
+    if(socks.size()==1) {
+      while(true){
+        MSG event;
+        if(::PeekMessage(&event,NULL,0,0,PM_NOREMOVE)) break;
+      }
+    } else { //2
+      bool status = true;
+      while(true){
+        MSG event;
+        if(::PeekMessage(&event,NULL,0,0,PM_NOREMOVE)) break;
+        bool have_socks_input;
+        if(!_main.data_client().socket().is_there_input(have_socks_input)) {
+          std::cout << "exlib_main :"
+                    << " inlib::net::is_there_input failed."
+                    << std::endl;
+          status = false;
+          break;
+        }
+        if(have_socks_input) break;
+      }
+      if(!status) break;
+    }
+
+   {MSG event;
+    if(::PeekMessage(&event,NULL,0,0,PM_REMOVE)) {
+      ::TranslateMessage(&event);
+      ::DispatchMessage(&event);
+
+    } else { //from data client.
+
+      if(_main.data_client().socket().is_connected()) {
+        if(!_main.data_client().poll()) {}
+        if(!_main.data_client().socket().is_connected()) {
+          //we have received a inlib::wall::protocol::disconnect()
+          _main.map_warn("disconnected");
+          _main.win_render();
+          socks.clear();
+          socks.push_back(fd_Windows);
+        }
+      }
+
+    }}
+
+  }
+
+#else
+
+  while(!_main.to_exit()) {
+
+    if(_main.num_cbks()) {
+      _main.do_works();
+
+      MSG event;
+      if(::PeekMessage(&event,NULL,0,0,PM_REMOVE)) {
+        ::TranslateMessage(&event);
+        ::DispatchMessage(&event);
+      }
+    } else {
+      MSG event;
+      BOOL status = ::GetMessage(&event,NULL,0,0);
+      if(status == -1) { // This may happen (dixit Microsoft doc).
+        std::cout << "exlib_main : GetMessage returned -1." << std::endl;
+        break;
+      } else if(status == 0) { //WM_QUIT
+        //std::cout << "exlib_main : WM_QUIT." << std::endl;
+        break;
+      } else {
+        ::TranslateMessage(&event);
+        ::DispatchMessage(&event);
+      }
+    }
+
+  }
+
+#endif
+
+#ifdef INLIB_MEM
+  }inlib::mem::balance(std::cout);
+#endif
+
+  if(verbose) {
+    std::cout << "exlib_main : exit..." << std::endl;
+  }
+
+  return EXIT_SUCCESS;
+}
+
+//exlib_build_use skip

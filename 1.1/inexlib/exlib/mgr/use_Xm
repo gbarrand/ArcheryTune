@@ -1,0 +1,24 @@
+
+if [ "${use_Xm}" = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    echo "exlib/mgr/use_Xm : cl.exe : Xm not supported."
+    exit
+  fi
+
+  Xm_home=/opt/local
+  if [ ! -d ${Xm_home}/include/Xm ] ; then
+    Xm_home=/usr
+    if [ ! -d ${Xm_home}/include/Xm ] ; then
+      echo "exlib/mgr/use_Xm : Xm not found under /opt/local and /usr."
+      exit
+    fi
+  fi
+
+  cppflags="${cppflags} -I${Xm_home}/include"
+  ccflags="${ccflags} -I${Xm_home}/include"
+
+  # WARNING : Xmu must be after Xm.
+  libs="${libs} -L${Xm_home}/${lib} -lXm -lXmu -lXt"
+  libs="${libs} -lXi -lXext -lXpm"
+
+fi

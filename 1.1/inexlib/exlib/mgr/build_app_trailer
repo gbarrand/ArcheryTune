@@ -1,0 +1,99 @@
+
+# to be sourced in <app>/mgr/build scripts.
+
+if [ ${build_visual} = "yes" ] ; then
+  #4996 : C functions deprecated!
+  cppflags="${cppflags} /wd4996"
+  ccflags0="${ccflags0} /wd4996"
+
+  echo "NOTE : today -DEXLIB_HAS_GL_VBO not supported."
+
+elif [ ${build_cocoa} = "yes" -o ${build_cocoa_gnu} = "yes" ] ; then
+  cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+
+elif [ ${build_ios} = "yes" -o ${build_ios_gnu} = "yes" -o ${build_iossim} = "yes" ] ; then
+  cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+
+elif [ ${build_android} = "yes" ] ; then
+  cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+
+elif [ ${build_x11_no_gl} = "yes" ] ; then
+  echo dummy > /dev/null
+
+else
+  if [ `uname` = Darwin ] ; then
+    cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+    cppflags="${cppflags} -DEXLIB_HAS_GL_LIST"
+  else
+    cppflags="${cppflags} -DEXLIB_HAS_GL_LIST"
+    if [ "${build_enforce_vbo}" = "yes" ] ; then
+      cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+    else
+      # NOTE : Linux to remote X11 : EXLIB_HAS_GL_VBO crashes
+      echo "NOTE : cpp macro EXLIB_HAS_GL_VBO not set."
+    fi
+  fi
+fi
+
+if [ "${app_src}" = "" ] ; then
+
+  if [ ${build_batch} = "yes" ] ; then
+    /bin/cp ${exlib_mgr}/../exlib/app/batch/app_main_cpp ./main.cpp
+    /bin/rm -f tmp_0;sed -e "s:EXLIB_APP:${app}:g" ./main.cpp > tmp_0;/bin/mv tmp_0 ./main.cpp
+    app_src=./main.cpp
+    to_rm="${to_rm} ./main.cpp"
+
+  elif [ ${build_WebGL} = "yes" ] ; then
+    /bin/cp ${exlib_mgr}/../exlib/app/WebGL/app_main_cpp ./main.cpp
+    /bin/rm -f tmp_0;sed -e "s:EXLIB_APP:${app}:g" ./main.cpp > tmp_0;/bin/mv tmp_0 ./main.cpp
+    app_src=./main.cpp
+    to_rm="${to_rm} ./main.cpp"
+
+  elif [ ${build_tntnet} = "yes" ] ; then
+    /bin/cp ${exlib_mgr}/../exlib/app/tntnet/app_main_cpp ./main.cpp
+    /bin/rm -f tmp_0;sed -e "s:EXLIB_APP:${app}:g" ./main.cpp > tmp_0;/bin/mv tmp_0 ./main.cpp
+    app_src=./main.cpp
+    to_rm="${to_rm} ./main.cpp"
+
+  elif [ ${build_visual} = "yes" ] ; then
+    /bin/cp ${exlib_mgr}/../exlib/app/Windows/app_main_cpp ./main.cpp
+    /bin/rm -f tmp_0;sed -e "s:EXLIB_APP:${app}:g" ./main.cpp > tmp_0;/bin/mv tmp_0 ./main.cpp
+    app_src=./main.cpp
+    to_rm="${to_rm} ./main.cpp"
+
+  elif [ ${build_cocoa} = "yes" -o ${build_cocoa_gnu} = "yes" ] ; then
+    mmfiles="${mmfiles} ../Cocoa/GLView.mm"
+    app_src=../Cocoa/main.mm
+
+  elif [ ${build_ios} = "yes" -o ${build_ios_gnu} = "yes" -o ${build_iossim} = "yes" ] ; then
+    mmfiles="${mmfiles} ../iOS/Classes/GLView.mm"
+    app_src=../iOS/main.m
+
+  elif [ ${build_x11} = "yes" ] ; then
+    /bin/cp ${exlib_mgr}/../exlib/app/X11/app_main_cpp ./main.cpp
+    /bin/rm -f tmp_0;sed -e "s:EXLIB_APP:${app}:g" ./main.cpp > tmp_0;/bin/mv tmp_0 ./main.cpp
+    app_src=./main.cpp
+    to_rm="${to_rm} ./main.cpp"
+
+  elif [ ${build_android} = "yes" ] ; then
+    /bin/cp ${exlib_mgr}/../exlib/app/Android/app_main_cpp ./main.cpp
+    /bin/rm -f tmp_0;sed -e "s:EXLIB_APP:${app}:g" ./main.cpp > tmp_0;/bin/mv tmp_0 ../Android/main.cpp
+    /bin/cp ${exlib_mgr}/../exlib/app/Android/Main_java ./Main.java
+    /bin/rm -f tmp_0;sed -e "s:EXLIB_APP:${app}:g" ./Main.java > tmp_0;/bin/mv tmp_0 ../Android//src/fr/in2p3/lal/${app}/Main.java
+
+    cppfiles="${cppfiles} ../Android/main.cpp"
+    app_src=../Android/src/fr/in2p3/lal/${app}/Main.java 
+
+  else
+    echo "exlib/build_app_trailer : can't guess main app_src. Continue."
+    #exit # not fatal
+  fi
+fi
+
+. ${exlib_mgr}/build_install
+
+. ${inlib_mgr}/build_app
+
+. ${exlib_mgr}/build_app_distrib
+
+for file in "${to_rm}" ; do /bin/rm -f ${file}; done

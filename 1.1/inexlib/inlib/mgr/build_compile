@@ -1,0 +1,27 @@
+
+# to be sourced from another build script.
+
+if [ "${build_args_file}" != "" ] ; then
+  mmfiles=
+  cfiles=
+  ccfiles=
+  f77files=
+  cppfiles="${build_args_file}"
+fi
+
+if [ ${build_verbose} = yes ] ; then
+  echo "build path is ${build_path}"
+fi
+
+/bin/mkdir -p ${build_path}
+
+if [ ${build_verbose} = yes ] ; then
+  echo "inlib/mgr/build_compile : package ${build_pack} ..."
+fi
+
+. ${inlib_mgr}/build_compile_f77
+. ${inlib_mgr}/build_compile_c
+. ${inlib_mgr}/build_compile_cpp
+. ${inlib_mgr}/build_compile_m
+. ${inlib_mgr}/build_compile_mm
+

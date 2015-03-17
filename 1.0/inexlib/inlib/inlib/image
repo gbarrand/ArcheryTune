@@ -1,0 +1,572 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_image
+#define inlib_image
+
+#include <vector>
+#include <cstring> //memcpy
+#include <cstdio> //fopen
+
+#include "mnmx"
+#include "forit"
+
+namespace inlib {
+namespace image {
+
+// give a set of cols*rows same size rgb-image and build 
+// a big image :
+inline unsigned char* concatenate(unsigned char** a_buffers,
+                                  unsigned int a_w,unsigned int a_h,
+                                  unsigned int a_bpp,
+                                  unsigned int a_cols,unsigned int a_rows,
+                                  unsigned int a_bw,unsigned int a_bh,
+                                  unsigned char a_bc,
+                                  unsigned int& a_rw,unsigned int& a_rh){
+
+  // assume a_buffers has a_cols*a_rows entries.
+  // a_buffers[0] is bottom-left
+  // a_row=0 is bottom.
+
+  unsigned int wbw = a_w + 2*a_bw;
+  unsigned int hbh = a_h + 2*a_bh;
+
+  a_rw = wbw * a_cols;
+  a_rh = hbh * a_rows;
+
+  //printf("debug : %d %d\n",a_rw,a_rh);
+
+  // on big concatenated image the below may fail :
+  unsigned char* rb = new unsigned char[a_rh*a_rw*a_bpp];
+  if(!rb) {a_rw = 0;a_rh = 0;return 0;}
+
+  unsigned int wbw3 = wbw*a_bpp;
+  unsigned int aw3 = a_w*a_bpp;
+  
+  //copy tiles :  
+  unsigned int index = 0;
+  for(unsigned int j=0;j<a_rows;j++) {
+    for(unsigned int i=0;i<a_cols;i++) {
+      unsigned char* tile = a_buffers[index];
+
+      for(unsigned int r=0;r<hbh;r++) {
+        unsigned char* pos = rb + (j*hbh+r)*a_rw*a_bpp + i*wbw*a_bpp;
+        ::memset(pos,a_bc,wbw3);
+      }
+
+      for(unsigned int r=0;r<a_h;r++) {
+        unsigned char* pos = rb + (j*hbh+r+a_bh)*a_rw*a_bpp + 
+          (i*wbw+a_bw)*a_bpp;
+        unsigned char* ptile = tile+r*aw3;        
+        for(unsigned int c=0;c<aw3;c++) *pos++ = *ptile++;
+      }
+
+      index++;
+    }
+  }
+
+  return rb;
+}
+
+/*
+inline unsigned char* expand(unsigned char* a_buffer,
+                             unsigned int a_w,unsigned int a_h,
+                             unsigned int a_factor) {
+  if(!a_factor) return 0;
+  if(a_factor==1) return a_buffer; //WARNING : same buffer.
+
+  unsigned int nw = a_w*a_factor;
+  unsigned int nh = a_h*a_factor;
+
+  //std::cout << "debug :"
+  //          << " " << a_w << " " << a_h
+  //          << " " << a_rw << " " << a_rh
+  //          << std::endl;
+
+  unsigned char* nb = new unsigned char[nh*(nw*3)];
+  if(!nb) return 0;
+
+  for(unsigned int j=0;j<a_h;j++) {
+    for(unsigned int i=0;i<a_w;i++) {
+      //position in the original image.
+      unsigned char* pos = a_buffer + j * (a_w * 3) + i*3;
+
+      for(unsigned int fr=0;fr<a_factor;fr++) {
+        for(unsigned int fc=0;fc<a_factor;fc++) {
+          //position in the new image.
+          unsigned char* npos = 
+            nb + (j*a_factor+fr) * (nw * 3) + (i*a_factor+fc)*3;
+          *npos = *pos;
+          *(npos+1) = *(pos+1);
+          *(npos+2) = *(pos+2);
+        }
+      }
+
+    }
+  }
+
+  return nb;
+}
+
+inline unsigned char* to_texture(unsigned char* a_buffer,
+                                 unsigned int a_w,unsigned int a_h,
+                                 bool a_expand,
+                                 unsigned char a_r,
+                                 unsigned char a_g,
+                                 unsigned char a_b,
+                                 unsigned int& a_rw,unsigned int& a_rh) {
+
+  if(a_expand) {
+    // if a_w, a_h are not power of two, we expand
+    // the image and fill new spaces with rgb.
+
+    // are a_w, a_h power of two ?
+    a_rw = 2;
+    while(true) {if(a_rw>=a_w) break;a_rw *=2;}
+    a_rh = 2;
+    while(true) {if(a_rh>=a_h) break;a_rh *=2;}
+  
+    if((a_rw==a_w)&&(a_rh==a_h)) return a_buffer; //WARNING : same buffer.
+  
+    //std::cout << "debug :"
+    //          << " " << a_w << " " << a_h
+    //          << " " << a_rw << " " << a_rh
+    //          << std::endl;
+  
+    unsigned char* rb = new unsigned char[a_rh*(a_rw*3)];
+    if(!rb) {a_rw = 0;a_rh = 0;return 0;}
+  
+    // initialize with given color :
+    for(unsigned int j=0;j<a_rh;j++) {  //j=0 -> bottom.
+      unsigned char* pos = rb + j * (a_rw * 3);
+      for(unsigned int i=0;i<a_rw;i++) {
+        *pos = a_r;pos++;
+        *pos = a_g;pos++;
+        *pos = a_b;pos++;
+      }
+    }
+  
+    // center :
+    unsigned int col = (a_rw-a_w)/2;  
+    unsigned int row = (a_rh-a_h)/2;  
+  
+    // copy original image in a centered part of the new one :
+    for(unsigned int j=0;j<a_h;j++) {
+      unsigned char* pos = a_buffer + j * (a_w * 3);
+      unsigned char* rpos = rb + (j+row) * (a_rw * 3) + col*3;
+      ::memcpy(rpos,pos,a_w*3);
+    }
+  
+    return rb;
+  } else {
+
+    // closest w,h power of two :
+    unsigned int sw = 2;
+    while(true) {if((sw*2)>a_w) break;sw *=2;}
+    unsigned int sh = 2;
+    while(true) {if((sh*2)>a_h) break;sh *=2;}
+
+    if((sw==a_w)&&(sh==a_h)) {
+      a_rw = sw;
+      a_rh = sh;
+      return a_buffer; //WARNING : same buffer.
+    }
+
+    unsigned int sx = (a_w-sw)/2;
+    unsigned int sy = (a_h-sh)/2;
+
+    return inlib::image::get_part(a_buffer,a_w,a_h,sx,sy,sw,sh,a_rw,a_rh);
+
+  }
+
+}
+*/
+
+}}
+
+#include <ostream>
+#include <string>
+
+namespace inlib {
+namespace image {
+
+typedef unsigned char* (*file_reader)(std::ostream&,const std::string&,unsigned int&,unsigned int&,unsigned int&);
+
+inline unsigned char* concatenate(std::ostream& a_out,
+                                  const std::vector<std::string>& a_files,
+                                  unsigned int a_cols,unsigned int a_rows,
+                                  unsigned int a_bw,unsigned int a_bh,
+                                  unsigned char a_bc,
+                                  file_reader a_file_reader,
+                                  unsigned int& a_w,unsigned int& a_h,
+                                  unsigned int& a_bpp) {
+  // a_files[0] is cols=0, rows=0
+  // a_files[1] is cols=1, rows=0
+  // a_files[2] is cols=2, rows=0
+  // ...
+  // and row=0 is bottom of big image.
+
+  unsigned int number = a_cols*a_rows;
+  if(number!=a_files.size()) {
+    a_out << "inlib::image::concatenate :"
+              << " bad number of files. " << number << " expected."
+              << std::endl;
+    a_bpp = a_w = a_h = 0;
+    return 0;
+  }
+  if(a_files.empty()) {
+    a_out << "inlib::image::concatenate :"
+          << " list of files is empty."
+          << std::endl;
+    a_bpp = a_w = a_h = 0;
+    return 0;
+  }
+
+  unsigned int w1 = 0;
+  unsigned int h1 = 0;
+  unsigned int bpp1 = 0;
+   
+  typedef unsigned char* buffer_t;
+  buffer_t* bs = new buffer_t[number];
+ {for(unsigned int i=0;i<number;i++) {bs[i] = 0;}}
+
+  bool read_failed = false;
+  unsigned int index = 0;
+  for(unsigned int j=0;j<a_rows;j++) {
+    for(unsigned int i=0;i<a_cols;i++) {
+      const std::string& file = a_files[index];
+      unsigned int w,h,bpp;
+      unsigned char* b = a_file_reader(a_out,file,w,h,bpp);
+      if(!b) {
+        a_out << "inlib::image::concatenate :"
+              << " can't read " << file << " expected."
+              << std::endl;
+        read_failed = true;
+        break;
+      }
+      if(!index) {
+        w1 = w;
+        h1 = h;
+        bpp1 = bpp;
+      } else {
+        if(w!=w1) {
+          a_out << "inlib::image::concatenate :"
+                << " file " << file
+                << " does not have same width image as the first file one."
+                << " (" << w << "," << w1 << ")."
+                << std::endl;
+          delete [] b;
+          read_failed = true;
+          break;
+        }
+        if(h!=h1) {
+          a_out << "inlib::image::concatenate :"
+                << " file " << file
+                << " does not have same height image as the first file one."
+                << " (" << h << "," << h1 << ")."
+                << std::endl;
+          delete [] b;
+          read_failed = true;
+          break;
+        }
+        if(bpp!=bpp1) {
+          a_out << "inlib::image::concatenate :"
+                << " file " << file
+                << " does not have same bytes per pixel as the first file one."
+                << " (" << h << "," << h1 << ")."
+                << std::endl;
+          delete [] b;
+          read_failed = true;
+          break;
+        }
+      }
+
+      bs[index] = b;
+
+      index++;
+    }
+    if(read_failed) break;
+  }
+
+  if(read_failed) {
+    {for(unsigned int i=0;i<number;i++) {delete [] bs[i];}}
+    a_bpp = a_w = a_h = 0;
+    return 0;
+  }
+
+  unsigned int wa,ha;
+  unsigned char* ba = 
+    inlib::image::concatenate(bs,w1,h1,bpp1,
+                              a_cols,a_rows,a_bw,a_bh,a_bc,wa,ha);
+  if(!ba) {
+    a_out << "inlib::image::concatenate :"
+          << " failed to concatenate all buffers."
+          << std::endl;
+    {for(unsigned int i=0;i<number;i++) {delete [] bs[i];}}
+    a_bpp = a_w = a_h = 0;
+    return 0;
+  } 
+
+  {for(unsigned int i=0;i<number;i++) {delete [] bs[i];}}
+
+  a_w = wa;
+  a_h = ha;
+  a_bpp = bpp1;
+  return ba;
+}
+
+#if defined(__CINT__)
+// something does not pass with the below.
+#else
+typedef unsigned char* (*reader)(FILE*,unsigned int&,unsigned int&);
+typedef bool(*writer)(FILE*,unsigned char*,unsigned int,unsigned int);
+
+inline bool convert(std::ostream& a_out,
+                    const std::string& a_sin,
+                    reader a_reader,
+                    const std::string& a_sout,
+                    writer a_writer){
+  
+  FILE* fin = ::fopen(a_sin.c_str(),"rb");
+  if(!fin) {
+    a_out << "inlib::image::convert :"
+          << " can't open " << a_sin
+          << std::endl;
+    return false;
+  }
+
+  unsigned int w,h;
+  unsigned char* b = a_reader(fin,w,h);
+  if(!b) {
+    a_out << "inlib::image::convert :"
+          << " can't read " << a_sin
+          << std::endl;
+    ::fclose(fin);
+    return false;
+  }
+  ::fclose(fin);
+
+  FILE* fout = ::fopen(a_sout.c_str(),"wb");
+  if(!fout) {
+    a_out << "inlib::image::convert :"
+          << " can't open " << a_sout
+          << std::endl;
+    delete [] b;
+    return false;
+  }
+
+  if(!a_writer(fout,b,w,h)) {
+    a_out << "inlib::image::convert :"
+          << " can't write " << a_sout
+          << std::endl;
+    ::fclose(fout);
+    delete [] b;
+    return false;
+  }
+  ::fclose(fout);
+  delete [] b;
+  return true;
+}
+#endif
+
+}}
+
+namespace inlib {
+namespace image {
+
+class ireader {
+public:
+  virtual ~ireader() {}
+public:
+  virtual ireader* copy() const = 0;
+  virtual bool is(const std::string&) const = 0;
+  virtual bool infos(std::ostream& a_out,const std::string& a_file,
+                     unsigned int& a_width,unsigned int& a_height,
+                     unsigned int& a_bpp) const = 0;
+  virtual unsigned char* read(std::ostream& a_out,const std::string& a_file,
+                              unsigned int& a_width,unsigned int& a_height,
+                              unsigned int& a_bpp) const = 0;
+  virtual unsigned char* read_part(std::ostream& a_out,
+                                   const std::string& a_file,
+                                   unsigned int a_sx,unsigned int a_sy,
+                                   unsigned int a_sw,unsigned int a_sh,
+                                   unsigned int& a_rw,unsigned int& a_rh,
+                                   unsigned int& a_rbpp) const = 0;
+};
+
+}}
+
+#include "sout"
+
+#include "S_STRING"
+#ifdef INLIB_MEM
+#include "mem"
+#endif
+
+namespace inlib {
+namespace image {
+
+class iterator {
+public:
+  INLIB_SCLASS(inlib::image::iterator)
+public:
+  virtual ~iterator(){}
+public:
+  virtual unsigned int entries() const = 0;
+  virtual bool next() = 0;
+  virtual bool rewind() = 0;
+public:
+  virtual unsigned int index() const = 0;
+  virtual unsigned char* read_image(unsigned int& a_w,unsigned int& a_h,
+                                    unsigned int& a_bpp) = 0;
+};
+
+class iterator_reader : public virtual iterator {
+public:
+  INLIB_SCLASS(inlib::image::iterator_reader)
+public:
+  //still virtual :
+  //virtual unsigned int entries() const = 0;
+  //virtual bool next() = 0;
+  //virtual bool rewind() = 0;
+  //virtual unsigned int index() const = 0;
+  virtual unsigned char* read_image(unsigned int& a_w,unsigned int& a_h,
+                                    unsigned int& a_bpp) {
+
+    std::string file;
+    if(begin_file(file)) {
+      inlib_vforcit(inlib::image::ireader*,m_readers,it) {
+        if((*it)->is(file)) {
+          unsigned char* buffer = _open(*(*it),file,a_w,a_h,a_bpp);
+          end_file(file);
+          return buffer;        
+        }
+      }
+      end_file(file);
+    }
+    a_w = 0;a_h = 0;a_bpp = 0;
+    return 0;
+  }
+public:
+  virtual bool begin_file(std::string&) = 0;
+  virtual bool end_file(const std::string&) = 0;
+public:
+  iterator_reader(std::ostream& a_out,unsigned int a_limit)
+  :m_out(a_out)
+  ,m_limit(a_limit)
+  {
+#ifdef INLIB_MEM
+    mem::increment(s_class().c_str());
+#endif
+  }
+  virtual ~iterator_reader(){
+    _clean();
+#ifdef INLIB_MEM
+    mem::decrement(s_class().c_str());
+#endif
+  }
+public:
+  iterator_reader(const iterator_reader& a_from)
+  :iterator(a_from)
+  ,m_out(a_from.m_out)
+  ,m_limit(a_from.m_limit)
+  {
+#ifdef INLIB_MEM
+    mem::increment(s_class().c_str());
+#endif
+    _copy(a_from.m_readers);
+  }
+  iterator_reader& operator=(const iterator_reader& a_from){
+    if(&a_from==this) return *this;
+    m_limit = a_from.m_limit;
+    _copy(a_from.m_readers);
+    return *this;
+  }
+public:
+  void add_reader(ireader* a_reader) {
+    m_readers.push_back(a_reader); //take ownership.
+  }
+protected:
+  unsigned char* _open(const inlib::image::ireader& a_reader,
+                       const std::string& a_path,
+                       unsigned int& a_w,unsigned int& a_h,
+                       unsigned int& a_bpp){
+    // permit to put in common code for jpeg and png.
+
+    unsigned char* buffer = 0;
+
+    if(m_limit) {
+      if(!a_reader.infos(m_out,a_path,a_w,a_h,a_bpp)) {
+        m_out << "inlib::image::iterator_reader::_open :"
+              << " for file " << sout(a_path)
+              << " ireader::infos failed."
+              << std::endl;
+        a_w = 0;a_h = 0;a_bpp = 0;
+        return 0;
+      }
+      if((a_w*a_h*a_bpp)>m_limit) {
+
+        //unsigned int sw;
+        //unsigned int sh;
+        //float aspect = float(w)/float(h);
+        //if(aspect>=1) {
+        //  sh = 2;
+        //  sw = aspect*sh;
+        //} else {
+        //  sw = 2;
+        //  sh = sw/aspect;
+        //}
+    
+        unsigned int sw = 2;
+        unsigned int sh = 2;
+        while(true) {
+          if(((2*sw)*(2*sh)*a_bpp)>m_limit) break;
+          sw *=2;
+          sh *=2;
+        }
+    
+        unsigned int sx = (a_w-sw)/2;
+        unsigned int sy = (a_h-sh)/2;
+    
+        buffer = a_reader.read_part
+                   (m_out,a_path,sx,sy,sw,sh,a_w,a_h,a_bpp);
+      } else {
+        buffer = a_reader.read(m_out,a_path,a_w,a_h,a_bpp);
+      }
+    } else {
+      buffer = a_reader.read(m_out,a_path,a_w,a_h,a_bpp);
+    }
+  
+    if(!buffer) {
+      m_out << "inlib::image::iterator_reader::_open :"
+            << " for file " << inlib::sout(a_path)
+            << " read failed."
+            << std::endl;
+      a_w = 0;a_h = 0;a_bpp = 0;
+      return 0;
+    }
+    
+    return buffer;
+  }
+
+  void _clean() {
+    std::vector<ireader*>::iterator it;
+    for(it=m_readers.begin();it!=m_readers.end();) {
+      ireader* obj = *it;
+      it = m_readers.erase(it);
+      delete obj;
+    }
+  }
+  void _copy(const std::vector<ireader*>& a_from) {
+    _clean();
+    inlib_vforcit(ireader*,a_from,it) m_readers.push_back((*it)->copy());
+  }
+protected:
+  std::ostream& m_out; 
+  unsigned int m_limit;
+  std::vector<ireader*> m_readers;
+};
+
+}}
+
+#endif

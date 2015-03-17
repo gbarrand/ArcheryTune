@@ -1,0 +1,265 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_wall_event
+#define inlib_wall_event
+
+#include "../typedefs"
+#include <cstring>
+
+namespace inlib {
+namespace wall {
+
+typedef struct user_event {
+	uchar type;	/**< EVT_USEREVENT through EVT_NUMEVENTS-1 */
+	int code;	/**< User defined event code */
+	void* data1;	/**< User defined data pointer */
+	void* data2;	/**< User defined data pointer */
+} user_event;
+
+typedef enum {
+	KEY_UNKNOWN		= 0,
+	KEY_ESCAPE              = 27,
+	KEY_a			= 97, /* match ASCII code */
+	KEY_UP			= 273,
+	KEY_DOWN		= 274,
+	KEY_RIGHT		= 275,
+	KEY_LEFT		= 276
+} key;
+
+typedef enum {
+	KMOD_NONE  = 0x0000,
+	KMOD_LSHIFT= 0x0001,
+	KMOD_RSHIFT= 0x0002,
+	KMOD_LCTRL = 0x0040,
+	KMOD_RCTRL = 0x0080
+} mod;
+
+typedef struct keysym {
+	key sym;			/**< SDL virtual keysym */
+	wall::mod mod;			/**< current key modifiers */
+} keysym;
+
+typedef struct keyboard_event {
+	uchar type;	/**< EVT_KEYDOWN or EVT_KEYUP */
+	wall::keysym keysym;
+} keyboard_event;
+
+
+typedef uint32 coord_t;
+typedef int32 rcoord_t;
+
+typedef struct mouse_motion_event {
+	uchar type;	/**< EVT_MOUSEMOTION */
+	uchar which;	/**< The mouse device index */
+	uchar state;	/**< The current button state */
+	coord_t x, y;	/**< The X/Y coordinates of the mouse */
+	rcoord_t xrel;	/**< The relative motion in the X direction */
+	rcoord_t yrel;	/**< The relative motion in the Y direction */
+} mouse_motion_event;
+
+typedef struct mouse_button_event {
+	uchar type;	/**< EVT_MOUSEBUTTONDOWN or EVT_MOUSEBUTTONUP */
+	uchar which;	/**< The mouse device index */
+	uchar button;	/**< The mouse button index */
+	uchar state;	/**< PRESSED or RELEASED */
+	coord_t x, y;	/**< The X/Y coordinates of the mouse at press time */
+} mouse_button_event;
+
+/*
+typedef union _event {
+	uchar type;
+        keyboard_event key;
+        mouse_motion_event motion;
+        mouse_button_event button;
+	user_event user;
+} _event;
+*/
+
+typedef enum {
+       EVT_NOEVENT = 0,			/**< Unused (do not remove) */
+       EVT_KEYDOWN = 2,			/**< Keys pressed */
+       EVT_KEYUP,			/**< Keys released */
+       EVT_MOUSEMOTION,			/**< Mouse moved */
+       EVT_MOUSEBUTTONDOWN,		/**< Mouse button pressed */
+       EVT_MOUSEBUTTONUP,		/**< Mouse button released */
+       EVT_QUIT = 12,			/**< User-requested quit */
+       EVT_USEREVENT = 24
+} event_type;
+
+typedef enum {
+	MASK_MOUSEBUTTONDOWN	= (1<<(EVT_MOUSEBUTTONDOWN))
+} event_mask;
+
+}}
+
+#ifdef INLIB_MEM
+#include "../mem"
+#include "../S_STRING"
+#endif
+
+namespace inlib {
+namespace wall {
+class event {
+#ifdef INLIB_MEM
+  INLIB_SCLASS(inlib::wall::event)
+#endif
+public:
+  event():type(EVT_NOEVENT){
+#ifdef INLIB_MEM
+    mem::increment(s_class().c_str());
+#endif
+  }
+  virtual ~event(){
+#ifdef INLIB_MEM
+    mem::decrement(s_class().c_str());
+#endif
+  }
+public:
+  event(const event& a_from)
+  {
+#ifdef INLIB_MEM
+    mem::increment(s_class().c_str());
+#endif
+    _copy(a_from);
+  }
+  event& operator=(const event& a_from){
+    if(&a_from==this) return *this;
+    _copy(a_from);
+    return *this;
+  }
+protected:
+  void _copy(const event& a_from){
+    switch(a_from.type) {
+    case EVT_NOEVENT:
+    case EVT_QUIT:
+      type = a_from.type;
+      break;
+    case EVT_KEYDOWN:
+    case EVT_KEYUP:
+      key = a_from.key;
+      break;
+    case EVT_MOUSEMOTION:
+      motion = a_from.motion;
+      break;
+    case EVT_MOUSEBUTTONDOWN:
+    case EVT_MOUSEBUTTONUP:
+      button = a_from.button;
+      break;
+    case EVT_USEREVENT:
+      user = a_from.user; //WARNING : void* data1,data2 are only copied.
+    };
+  }
+public:
+  union {
+    uchar type;
+    keyboard_event key;
+    mouse_motion_event motion;
+    mouse_button_event button;
+    user_event user;
+  };
+};
+
+inline uchar RELEASED()    {return 0;}
+inline uchar PRESSED()     {return 1;}
+inline uchar BUTTON_LEFT() {return 1;}
+
+inline ushort KMOD_CTRL()  {return (KMOD_LCTRL|KMOD_RCTRL);}
+inline ushort KMOD_SHIFT() {return (KMOD_LSHIFT|KMOD_RSHIFT);}
+
+inline void set_left_button_down(coord_t a_x,coord_t a_y,event& a_event){
+  a_event.type = EVT_MOUSEBUTTONDOWN;
+  a_event.button.type = EVT_MOUSEBUTTONDOWN;
+  a_event.button.button = BUTTON_LEFT();
+  a_event.button.state = PRESSED();
+  a_event.button.x = a_x;
+  a_event.button.y = a_y;    
+}
+
+inline void set_left_button_up(coord_t a_x,coord_t a_y,event& a_event){
+  a_event.type = EVT_MOUSEBUTTONUP;
+  a_event.button.type = EVT_MOUSEBUTTONUP;
+  a_event.button.button = BUTTON_LEFT();
+  a_event.button.state = RELEASED();
+  a_event.button.x = a_x;
+  a_event.button.y = a_y;    
+}
+
+inline void set_mouse_motion(int a_x,int a_y,uchar a_state,event& a_event){
+  a_event.type = EVT_MOUSEMOTION;
+  a_event.motion.type = EVT_MOUSEMOTION;
+  a_event.motion.which = 0;
+  a_event.motion.state = a_state;
+  a_event.motion.x = (uint16)a_x;
+  a_event.motion.y = (uint16)a_y;    
+  a_event.motion.xrel = 0;
+  a_event.motion.yrel = 0;
+}
+
+}}
+
+#include <ostream>
+
+namespace inlib {
+namespace wall {
+
+inline void dump_event(std::ostream& a_out,const event& a_event) {
+  a_out << "dump_event : event.type :" 
+        << " \"" << (unsigned int)a_event.type << "\"" << std::endl;
+  switch (a_event.type) {
+  case EVT_MOUSEMOTION:
+    a_out << " EVT_MOUSEMOTION :"
+          << " which " << a_event.motion.which
+          << ", state " << a_event.motion.state
+          << ", x " << a_event.motion.x
+          << ", y " << a_event.motion.y
+          << ", xrel " << a_event.motion.xrel
+          << ", yrel " << a_event.motion.yrel
+          << std::endl;
+    break;
+  case EVT_MOUSEBUTTONDOWN:
+    a_out << " EVT_MOUSEBUTTONDOWN :"
+          << " which " << a_event.button.which
+          << ", button " << a_event.button.button
+          << ", state " << a_event.button.state
+          << ", x " << a_event.button.x
+          << ", y " << a_event.button.y
+          << std::endl;
+    break;
+  case EVT_MOUSEBUTTONUP:
+    a_out << " EVT_MOUSEBUTTONUP :"
+          << " which " << a_event.button.which
+          << ", button " << a_event.button.button
+          << ", state " << a_event.button.state
+          << ", x " << a_event.button.x
+          << ", y " << a_event.button.y
+          << std::endl;
+    break;
+  case EVT_KEYDOWN:
+    a_out << " EVT_KEYDOWN :"
+          << " keysym " << a_event.key.keysym.sym
+          << std::endl;
+    break;
+  case EVT_USEREVENT:
+    a_out << " EVT_USEREVENT :"
+          << " code " << a_event.user.code
+          << ", data1 " << a_event.user.data1
+          << ", data2 " << a_event.user.data2
+          << std::endl;
+    break;
+  case EVT_QUIT:
+    a_out << " EVT_QUIT :"
+          << std::endl;
+    break;
+  default:
+    a_out << " EVT_<> :"
+          << " no full dump yet."
+          << std::endl;
+    break;			
+  }
+}
+
+}}
+
+#endif
+

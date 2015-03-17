@@ -1,0 +1,125 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file exlib.license for terms.
+
+#ifndef exlib_xml_wall
+#define exlib_xml_wall
+
+#include "loader"
+#include <inlib/forit>
+
+namespace exlib {
+namespace xml {
+
+class wall {
+public:
+  wall(){}
+  wall(const std::string& a_host)
+  :m_host(a_host)
+  {}
+  virtual ~wall(){}
+public:
+  wall(const wall& a_from)
+  :m_host(a_from.m_host)
+  {}
+  wall& operator=(const wall& a_from){
+    m_host = a_from.m_host;
+    return *this;
+  }
+public:
+  const std::string& host() const {return m_host;}
+protected:
+  std::string m_host;
+};
+
+class xml_wall {
+public:
+  xml_wall(){}
+  virtual ~xml_wall(){}
+public:
+  xml_wall(const xml_wall& a_from)
+  :m_walls(a_from.m_walls)
+  {}
+  xml_wall& operator=(const xml_wall& a_from){
+    m_walls = a_from.m_walls;
+    return *this;
+  }
+public:
+  std::vector<wall> walls() {return m_walls;}
+  const std::vector<wall>& walls() const {return m_walls;}  
+  void add_wall(const std::string& a_host) {
+    //look if already in the list :
+    inlib_vforcit(wall,m_walls,it){
+      if( ((*it).host()==a_host) ) return;
+    }
+    m_walls.push_back(wall(a_host));
+  }
+
+  //bool save_walls(const std::string& a_path) {
+  //  std::vector<std::string> lines;
+  //  lines.push_back("<walls>");
+  //  inlib_vforcit(wall,m_walls,it){
+  //    lines.push_back("  <wall>");
+  //    lines.push_back("    <host>"+(*it).host()+"</host>");
+  //    lines.push_back("  </wall>");
+  //  }    
+  //  lines.push_back("</walls>");
+  //  return inlib::file::write(a_path,lines);
+  //}
+
+  bool load_wall_file(std::ostream& a_out,const std::string& a_file) {
+    inlib::xml::default_factory factory;
+    exlib::xml::loader ml(factory,a_out,false);
+    std::vector<std::string> tags;
+    tags.push_back("walls");
+    tags.push_back("wall");
+    ml.set_tags(tags);
+    if(!ml.load_file(a_file,false)) return false;
+    inlib::xml::tree* top = ml.top_item();
+    if(!top) return true; //File could be empty.
+    return scan_wall_tree(*top);
+  }
+
+protected:
+  bool scan_wall_tree(inlib::xml::tree& a_tree) {
+
+    const std::string& tag = a_tree.tag_name();
+    if(tag=="walls") {
+    } else if(tag=="wall") {   
+      load_wall(a_tree);
+    }
+  
+    // scan children :
+   {inlib::xml::looper _for(a_tree);
+    while(inlib::xml::tree* _tree = _for.next_tree()) {
+      if(!scan_wall_tree(*_tree)) return false;
+    }}
+  
+    return true;
+  }
+  
+  void load_wall(inlib::xml::tree& a_tree) {
+    std::string host;
+
+    //a_tree.element_value("host",host);
+
+   {inlib::xml::looper _for(a_tree);
+    while(inlib::xml::element* _elem = _for.next_element()) {
+
+      if(_elem->name()=="host") {
+        host = _elem->value();
+      }
+
+    }}  
+
+    if(host.size()) add_wall(host);
+  }
+
+protected:
+  std::vector<wall> m_walls;
+};
+
+}}
+
+#endif
+
+//exlib_build_use inlib expat

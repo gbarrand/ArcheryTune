@@ -1,0 +1,46 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_sg_gv_list
+#define inlib_sg_gv_list
+
+#include "gui_viewer"
+
+namespace inlib {
+namespace sg {
+
+class gv_list : public list {
+  typedef list parent;
+  typedef bcbk::return_action (*cbk_func)(gui_viewer&,parent&);
+public:
+  gv_list(gui_viewer& a_gv):parent(a_gv.ttf()),m_gv(a_gv){m_gv.set_colors(*this);}
+  virtual ~gv_list(){}
+protected:
+  gv_list(const gv_list& a_from):parent(a_from),m_gv(a_from.m_gv){}
+  const gv_list& operator=(const gv_list& a_from){parent::operator=(a_from);return *this;}
+public:
+  void add_item(const std::string& a_label,cbk_func a_func) {
+    add(a_label,new this_cbk(*this,a_func));
+  }
+protected:
+  class this_cbk : public bcbk {
+    INLIB_CBK(this_cbk,inlib::sg::gv_list::this_cbk,bcbk)
+  public:
+    virtual return_action action() {return m_func(m_this.m_gv,m_this);}
+  public:
+    this_cbk(gv_list& a_this,cbk_func a_func):parent(),m_this(a_this),m_func(a_func){}
+    virtual ~this_cbk(){}
+  public:
+    this_cbk(const this_cbk& a_from):parent(a_from),m_this(a_from.m_this),m_func(a_from.m_func){}
+    this_cbk& operator=(const this_cbk& a_from){parent::operator=(a_from);m_func=a_from.m_func;return *this;}
+  protected:
+    gv_list& m_this;
+    cbk_func m_func;
+  };
+protected:
+  gui_viewer& m_gv;
+};
+
+}}
+
+#endif

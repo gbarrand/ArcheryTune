@@ -1,0 +1,25 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_wall_evt_user
+#define inlib_wall_evt_user
+
+namespace inlib {
+namespace wall {
+
+inline int EVT_USER_QUIT()               {return 100;}
+inline int EVT_USER_UPDATE_KEY_MOTION()  {return 101;}
+inline int EVT_USER_FILE()               {return 104;}
+inline int EVT_USER_WINDOW_MASTER_SIZE() {return 107;}
+inline int EVT_USER_STRING()             {return 109;}
+inline int EVT_USER_DOCUMENT()           {return 110;}
+inline int EVT_USER_GET_FILE()           {return 114;}
+inline int EVT_USER_COMMAND()            {return 142;}
+inline int EVT_USER_SYNC_MOVE()          {return 143;}
+inline int EVT_USER_ANIM()               {return 144;}
+inline int EVT_USER_SYNC_ANIM()          {return 145;}
+inline int EVT_USER_SYNC_CLIENT()        {return 146;}
+
+}}
+
+#endif

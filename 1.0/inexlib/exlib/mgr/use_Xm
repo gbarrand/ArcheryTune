@@ -1,0 +1,19 @@
+
+if [ "${use_Xm}" = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    echo "exlib/mgr/use_Xm : cl.exe : Xm not supported."
+    exit
+  fi
+
+  # WARNING : Xmu must be after Xm.
+
+  if [ `uname` = Darwin ] ; then
+    ccflags="${ccflags} -I/opt/local/include"
+    cppflags="${cppflags} -I/opt/local/include"
+    libs="${libs} -L/opt/local/lib -lXm -lXmu -lXt"
+  else
+    ccflags="${ccflags} -I/usr/include"
+    cppflags="${cppflags} -I/usr/include"
+    libs="${libs} -L/usr/X11R6/${lib} -lXm -lXmu -lXt"
+  fi
+fi

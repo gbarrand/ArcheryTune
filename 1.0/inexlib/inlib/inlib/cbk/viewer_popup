@@ -1,0 +1,752 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_cbk_viewer_popup
+#define inlib_cbk_viewer_popup
+
+#include "../sg/infos"
+#include "../sg/rotate_anim"
+#include "../sg/base_anim"
+#include "../sg/base_camera"
+#include "../sg/camera_anim"
+
+#include "../sg/list"
+#include "../sg/colors"
+#include "../sg/numeric"
+
+#include "../curve"
+
+#include "move_manip"
+#include "popup"
+#include "none"
+
+#include "../sg/gui_viewer"
+
+namespace inlib {
+namespace cbk {
+
+class viewer_popup : public sg::ecbk {
+  INLIB_CBK(viewer_popup,inlib::cbk::viewer_popup,sg::ecbk)
+private:
+  typedef sg::event evt_t;
+  typedef sg::up_event up_evt_t;
+  typedef sg::down_event dn_evt_t;
+
+  typedef sg::node node_t;
+  typedef sg::base_camera bc_t;
+  typedef sg::base_anim banim_t;
+
+public:
+  static unsigned int action_show()                {return 0;}
+  static unsigned int action_cancel()              {return 1;}
+protected:
+  static unsigned int action_move()                {return 3;}
+  static unsigned int action_reset()               {return 4;}
+  static unsigned int action_manip_up()            {return 5;}
+  static unsigned int action_manip_top()           {return 6;}
+  static unsigned int action_center()              {return 7;}
+  static unsigned int action_delete()              {return 8;}
+  static unsigned int action_infos()               {return 9;}
+  static unsigned int action_color()               {return 10;}
+  static unsigned int action_ok_color()            {return 11;}
+  static unsigned int action_anim()                {return 12;}
+  static unsigned int action_do_anim()             {return 13;}
+  static unsigned int action_set_cam_curve()       {return 14;}
+  static unsigned int action_edit()                {return 15;}
+  static unsigned int action_edit_field()          {return 16;}
+  static unsigned int action_edit_field_numeric()  {return 17;}
+
+  // contextual :
+  static unsigned int action_image_set_back_color(){return 20;}
+  static unsigned int action_image_show_pixel()    {return 21;}
+
+  static unsigned int anim_stop()     {return 0;}
+  static unsigned int anim_rot_x()    {return 1;}
+  static unsigned int anim_rot_y()    {return 2;}
+  static unsigned int anim_rot_z()    {return 3;}
+  static unsigned int anim_identity() {return 4;}
+  static unsigned int anim_start()    {return 5;}
+public:
+  virtual return_action action() {
+    if(m_action==action_show()) {
+      // trigger by a sg::selection on pick.
+
+      int ex,ey;
+      if(!get_event_xy(ex,ey)) return return_none;
+
+      sg::separator& psep = m_gv.popup_sep();
+      psep.clear();
+      psep.add(new sg::list(m_gv.ttf()));
+
+      sg::list& list = *((sg::list*)psep.children().back());
+      list.clear(); //it reset list.m_first_item.
+
+      //////////////////////////////////////////////////////////
+      /// add items ////////////////////////////////////////////
+      //////////////////////////////////////////////////////////
+      list.add(m_node->s_cls(),new viewer_popup(m_gv,action_cancel()));
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_move());
+      _cbk->m_node = m_node;
+      list.add("move",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_reset());
+      _cbk->m_node = m_node;
+      list.add("reset",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_manip_up());
+      _cbk->m_node = m_node;
+      list.add("up",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_manip_top());
+      _cbk->m_node = m_node;
+      list.add("top",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_center());
+      _cbk->m_node = m_node;
+      _cbk->m_event = m_event->copy();
+      _cbk->m_state = m_event_action->saved_state();
+      _cbk->m_z = m_z;
+      _cbk->m_w = m_w;
+      list.add("center",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_infos());
+      _cbk->m_node = m_node;
+      _cbk->m_event = m_event->copy();
+      list.add("infos",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_color());
+      _cbk->m_node = m_node;
+      _cbk->m_event = m_event->copy();
+      list.add("color",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_anim());
+      _cbk->m_node = m_node;
+      _cbk->m_event = m_event->copy();
+      list.add("anim",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_set_cam_curve());
+      _cbk->m_node = m_node;
+      _cbk->m_event = m_event->copy();
+      list.add("cam curve",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_edit());
+      _cbk->m_node = m_node;
+      _cbk->m_event = m_event->copy();
+      list.add("edit",_cbk);}
+
+      // contextual items :
+      inlib::cbk::popup* pp =
+        inlib::cbk::popup::find(m_gv.popup_cbks().callbacks(),*m_node);
+      if(pp) {
+        pp->set_node(m_node);        
+        pp->add_items(list,ex,ey);        
+      }
+
+      if(!list.has_item(sg::s_delete())){      
+        viewer_popup* _cbk = new viewer_popup(m_gv,action_delete());
+        _cbk->m_node = m_node;
+        list.add(sg::s_delete(),_cbk);
+      }
+           
+      set_size_pos(ex,ey,list);
+
+      m_event_action->set_done(true); //to render.
+
+      return return_none;     
+      //return return_to_render;     
+
+    } else if(m_action==action_cancel()) {
+      m_gv.hide_popup();
+      return return_to_render;     
+
+    } else if(m_action==action_move()) {
+      m_gv.hide_popup();
+
+      inlib::cbk::move_manip::toggle_manip(m_gv,m_gv.out(),m_gv.scene(),
+                                           m_node,m_gv.verbose());
+
+      return return_to_render;     
+
+    } else if(m_action==action_anim()) {
+      m_gv.hide_popup();
+
+      sg::separator& psep = m_gv.popup_sep();
+      psep.clear();
+      psep.add(new sg::list(m_gv.ttf()));
+
+      sg::list& list = *((sg::list*)psep.children().back());
+      list.clear();
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_do_anim());
+      _cbk->m_node = m_node;
+      _cbk->m_what = anim_stop();
+      list.add("stop",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_do_anim());
+      _cbk->m_node = m_node;
+      _cbk->m_what = anim_rot_x();
+      list.add("rot x",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_do_anim());
+      _cbk->m_node = m_node;
+      _cbk->m_what = anim_rot_y();
+      list.add("rot y",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_do_anim());
+      _cbk->m_node = m_node;
+      _cbk->m_what = anim_rot_z();
+      list.add("rot z",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_do_anim());
+      _cbk->m_node = m_node;
+      _cbk->m_what = anim_identity();
+      list.add("identity",_cbk);}
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_do_anim());
+      _cbk->m_node = m_node;
+      _cbk->m_what = anim_start();
+      list.add("start(for diapo)",_cbk);}
+
+      int ex,ey;
+      if(get_event_xy(ex,ey)) set_size_pos(ex,ey,list);
+
+      return return_to_render;     
+
+    } else if(m_action==action_do_anim()) {
+      m_gv.hide_popup();
+
+      if(m_what==anim_start()){
+        if(banim_t* anim = safe_cast<node_t,banim_t>(*m_node)) {
+          anim->start();
+          m_gv.enable_anim();
+          return return_to_render;     
+        }
+      }
+
+      if(m_what==anim_stop()){
+        if(banim_t* anim = safe_cast<node_t,banim_t>(*m_node)) {
+          anim->stop();
+          //return return_to_render;     
+        }
+      }
+
+      sg::matrix* _m;
+
+      sg::group* grp;
+     {sg::search_action sa(m_gv.out());
+      const sg::path_t& _path =
+        find_path(sa,m_gv.scene(),m_node,m_gv.verbose());
+      int gidx;
+      if(!sg::rfind<sg::matrix,sg::group>(_path,m_node,grp,_m,gidx)) {
+        m_gv.warn("matrix node not found");
+        return return_to_render;     
+      }}
+
+      if(m_what==anim_stop()){
+
+        if(sg::rotate_anim* am = safe_cast<sg::matrix,sg::rotate_anim>(*_m)) {
+
+          //NOTE : in principle we should not pass here whilst
+          //       in the viewer anim_work.
+          sg::matrix* m = new sg::matrix;
+          m->mtx = am->mtx;
+          //NOTE : the delete of am will stop the animation.
+          if(!grp->replace(am,m,true)) {
+            delete m;
+            m_gv.warn("replace in group failed");
+            return return_to_render;     
+          }
+        }
+
+      } else if(m_what==anim_identity()){
+
+        _m->set_identity();
+
+      } else {
+
+        inlib::atime _now(0,0);
+        if(!m_gv.get_time_now(_now)) {
+          m_gv.out() << "inlib::cbk::popup::action :"
+                     << " viewer.get_time_now() failed."
+                     << std::endl;
+          m_gv.map_warn("can't get time");
+          return return_to_render;     
+        }
+
+        sg::rotate_anim* am = 0;
+
+        float omega = inlib::ftwo_pi()/10.0f; // one turn on 10 secs.
+
+        if(m_what==anim_rot_x()) {
+          am = new sg::rotate_anim(_now);
+          am->axis.set_value(1,0,0);
+          am->omega = omega;
+        } else if(m_what==anim_rot_y()) {
+          am = new sg::rotate_anim(_now);
+          am->axis.set_value(0,1,0);
+          am->omega = omega;
+        } else { //anim_rot_z()
+          am = new sg::rotate_anim(_now);
+          am->axis.set_value(0,0,1);
+          am->omega = omega;
+        }
+        
+        am->mtx = _m->mtx;
+        if(!grp->replace(_m,am,true)) {
+          delete am;
+          m_gv.warn("replace in group failed");
+          return return_to_render;     
+        }
+        m_gv.enable_anim();
+      }
+
+      return return_to_render;     
+
+    } else if(m_action==action_edit()) {
+      m_gv.hide_popup();
+
+      sg::separator& psep = m_gv.popup_sep();
+      psep.clear();
+      psep.add(new sg::list(m_gv.ttf()));
+
+      sg::list& list = *((sg::list*)psep.children().back());
+      list.clear();
+
+      list.add(m_node->s_cls(),new viewer_popup(m_gv,action_cancel()));
+
+      inlib_vforcit(sg::field_desc,m_node->node_fields(),it) {
+        viewer_popup* _cbk = new viewer_popup(m_gv,action_edit_field());
+        _cbk->m_node = m_node;
+        _cbk->m_event = m_event->copy();
+        _cbk->m_field_desc = *it;
+        list.add((*it).name(),_cbk);
+      }
+
+      int ex,ey;
+      if(get_event_xy(ex,ey)) set_size_pos(ex,ey,list);
+
+      return return_to_render;     
+
+    } else if(m_action==action_edit_field()) {
+
+      sg::field& fd = m_node->field_from_desc(m_field_desc);
+
+      std::string svalue;
+      if(!fd.s_value(svalue)){svalue="none";}
+
+      m_gv.show_console(svalue);
+
+      sg::numeric* node = new sg::numeric(m_gv.ttf());
+      m_gv.set_colors(*node);
+
+      viewer_popup* _cbk = new viewer_popup(m_gv,action_edit_field_numeric());
+      _cbk->m_node = m_node;
+      _cbk->m_event = m_event->copy();
+      _cbk->m_field_desc = m_field_desc;
+      _cbk->m_numeric = node;
+      node->add_callback(_cbk);
+
+      m_gv.push_list(node);
+      m_gv.show_main_menu();
+
+      return return_to_render;     
+
+    } else if(m_action==action_edit_field_numeric()) {
+
+      m_gv.hide_main_menu();
+
+/*
+      double d;
+      if(!inlib::to<double>(m_numeric->value.value(),d)) {
+        m_gv.map_warn_nan();
+        return return_to_render;     
+      }
+      m_gv.show_console<double>(d);
+*/
+
+      sg::field& fd = m_node->field_from_desc(m_field_desc);
+
+      if(sg::sf<float>* _sff = safe_cast<sg::field, sg::sf<float> >(fd)){
+        float v;
+        if(!inlib::to<float>(m_numeric->value.value(),v)) {
+          m_gv.map_warn_nan();
+          return return_to_render;     
+        }
+        _sff->value(v);
+
+      } else if(sg::sf<unsigned int>* _sfui = 
+        safe_cast<sg::field, sg::sf<unsigned int> >(fd)) {
+
+        unsigned int v;
+        if(!inlib::to<unsigned int>(m_numeric->value.value(),v)) {
+          m_gv.map_warn_nan();
+          return return_to_render;     
+        }
+        _sfui->value(v);
+
+      }
+
+      return return_to_render;     
+
+    } else if(m_action==action_reset()) {
+      m_gv.hide_popup();
+
+      inlib::cbk::move_manip::reset_maniped(m_gv,m_gv.out(),m_gv.scene(),
+                                                m_node,m_gv.verbose());
+      return return_to_render;     
+
+    } else if(m_action==action_manip_up()) {
+      m_gv.hide_popup();
+
+      inlib::cbk::move_manip::manip_up(m_gv,m_gv.out(),m_gv.scene(),
+                                       m_node,m_gv.verbose());
+      return return_to_render;     
+
+    } else if(m_action==action_manip_top()) {
+      m_gv.hide_popup();
+
+      inlib::cbk::move_manip::manip_top(m_gv,m_gv.out(),m_gv.scene(),
+                                        m_node,m_gv.verbose());
+      return return_to_render;     
+
+    } else if(m_action==action_center()) {
+      m_gv.hide_popup();
+
+      int ex,ey;
+      if(!get_event_xy(ex,ey)) return return_none;
+
+      //m_state is the state at the moment of the pick of the object.
+
+      float x,y,z;
+      if(!m_state.screen2pwc(ex,ey,x,y,z)) {
+        m_gv.out() << "inlib::cbk::popup::action :"
+                   << " screen2pwc failed."
+                   << std::endl;
+        return return_none;     
+      }
+      //now (x,y,z) is in the camera viewing plane in wc.
+
+      sg::base_camera* cam = m_gv.scene_camera();
+      if(!cam) {
+        m_gv.out() << "inlib::cbk::popup::action :"
+                   << " no camera found."
+                   << std::endl;
+        m_gv.map_warn("no camera found.");
+        return return_to_render;     
+      }
+
+      // set focal :
+     {//inlib::mat4f mtx = m_state.m_proj;
+      //mtx.mul_mtx(m_state.m_model);
+      inlib::mat4f mtx;
+      m_state.camera_proj_only(mtx);
+      //mtx not taking into acccount cam orientation,pos.
+      inlib::mat4f inv;
+      if(!mtx.invert(inv)) {
+        m_gv.out() << "inlib::cbk::popup::action :"
+                   << " can't convert screen to world coordinates."
+                   << std::endl;
+        return return_none;     
+      }
+      float xpick = 0;
+      float ypick = 0;
+      float zpick = m_z;
+      float wpick = m_w;
+      xpick *= wpick;
+      ypick *= wpick;
+      zpick *= wpick;
+      inv.mul_4f(xpick,ypick,zpick,wpick);
+      cam->focal = -zpick;}
+
+      if(m_state.m_camera_ortho) {
+        cam->pane_to(x,y,z); //it panes in the viewing plane only.
+
+      } else {
+        // NOTE : how to get cam pos in object wc from final proj ?
+
+        // NOTE : the below is ok as long as camera is not under a matrix node.
+        inlib::vec3f pos = m_state.m_camera_position;
+
+        inlib::line<float> line;
+        line.set_value(pos.x(),pos.y(),pos.z(),x,y,z);
+
+        if(m_gv.plane_viewer()){ //pane in viewing plane.
+          inlib::vec3f dir;
+          m_state.m_camera_orientation.mult_vec(inlib::vec3f(0,0,-1),dir);
+          inlib::vec3f up;
+          m_state.m_camera_orientation.mult_vec(inlib::vec3f(0,1,0),up);
+          inlib::vec3f side = dir.cross(up);
+
+          inlib::vec3f p1 = pos + dir*cam->focal;
+          inlib::vec3f p2 = p1 + up;
+          inlib::vec3f p3 = p1 + side;
+          inlib::plane<float> pl(p1,p2,p3);
+          inlib::vec3f p;
+          if(!pl.intersect(line,p)) {
+            m_gv.out() << "inlib::cbk::popup::action :"
+                       << " plane/line intersection failed."
+                       << std::endl;      
+            return return_none;     
+          }
+
+          cam->pane_to(p.x(),p.y(),p.z());
+
+        } else {
+          cam->rotate_to_dir(line.direction());
+        }
+      }
+
+      return return_to_render;     
+
+    } else if(m_action==action_infos()) {
+      m_gv.hide_popup();
+
+      sg::infos* _infos;
+
+     {sg::search_action sa(m_gv.out());
+      const sg::path_t& _path =
+        find_path(sa,m_gv.scene(),m_node,m_gv.verbose());
+      sg::group* grp;
+      int gidx;
+      if(!sg::rfind<sg::infos,sg::group>(_path,m_node,grp,_infos,gidx)) {
+        m_gv.warn("infos node not found");
+        return return_to_render;     
+      }}
+
+      //_infos->strings.dump(m_gv.out());
+
+      if(_infos->strings.size()!=2) {
+        m_gv.warn("bad format for infos");
+        return return_to_render;     
+      }
+
+      sg::separator& psep = m_gv.popup_sep();
+      psep.clear();
+      psep.add(new sg::list(m_gv.ttf()));
+  
+      sg::list& list = *((sg::list*)psep.children().back());
+      list.clear();
+
+      list.add("cancel",new viewer_popup(m_gv,action_cancel()));
+
+      if(!m_gv.exec_dumper(_infos->strings[0],_infos->strings[1])) {
+        m_gv.warn("infos not found");
+        return return_to_render;     
+      }
+
+      int ex,ey;
+      if(get_event_xy(ex,ey)) set_size_pos(ex,ey,list);
+
+      return return_to_render;     
+
+    } else if(m_action==action_set_cam_curve()) {
+      m_gv.hide_popup();
+
+      inlib::curve* curve = safe_cast<node_t,inlib::curve>(*m_node);
+      if(!curve) {
+        m_gv.warn("node not a curve");
+        return return_to_render;     
+      }
+
+      sg::get_matrix_action ma(m_gv.out(),0,0);
+      ma.set_node(m_node);
+      m_gv.scene().get_matrix(ma);
+      if(!ma.done()) {
+        m_gv.warn("can't get mmodel");
+        return return_to_render;     
+      }
+
+      m_gv.start_cam_move(sg::move_curve,m_gv.m_params.m_cycle_secs);
+
+      bc_t* cam = m_gv.scene_camera();
+      if(!cam) return return_to_render;
+      sg::base_cam_anim* bcanim = safe_cast<node_t,sg::base_cam_anim>(*cam);
+      if(!bcanim) return return_to_render;
+
+      inlib::curve* _curve;
+      curve->copy(_curve);
+      _curve->set_model_matrix(ma.found_model());
+
+      //m_gv.out() << "debug : ma.found_model() :" << std::endl;
+      //m_gv.out() << ma.found_model();
+
+      bcanim->set_curve(_curve); //give ownership.
+
+      return return_to_render;     
+
+    } else if(m_action==action_color()) {
+      m_gv.hide_popup();
+
+      sg::rgba* _rgba;
+
+     {sg::search_action sa(m_gv.out());
+      const sg::path_t& _path =
+        find_path(sa,m_gv.scene(),m_node,m_gv.verbose());
+      sg::group* grp;
+      int gidx;
+      if(!sg::rfind<sg::rgba,sg::group>(_path,m_node,grp,_rgba,gidx)) {
+        m_gv.warn("rgba node not found");
+        return return_to_render;     
+      }}
+
+      sg::separator& psep = m_gv.popup_sep();
+      psep.clear();
+      psep.add(new sg::colors(m_gv.ttf()));
+      sg::colors& _colors = *((sg::colors*)psep.children().back());
+
+     {viewer_popup* _cbk = new viewer_popup(m_gv,action_ok_color());
+      //_cbk->m_node = m_node;
+      _cbk->m_rgba = _rgba;
+      _cbk->m_colors = &_colors;
+      _colors.add_callback(_cbk);}
+
+      int ex,ey;
+      if(get_event_xy(ex,ey)) set_size_pos(ex,ey,_colors);
+
+      return return_to_render;     
+
+    } else if(m_action==action_ok_color()) {
+      m_gv.hide_popup();
+
+      float r,g,b,a;
+      m_colors->get_color(r,g,b,a);
+
+      m_rgba->color.value().set_value(r,g,b,a);
+
+      return return_to_render;     
+
+    } else if(m_action==action_delete()) {
+      m_gv.hide_popup();
+
+      inlib::cbk::move_manip::delete_maniped(m_gv,m_gv.out(),m_gv.scene(),
+                                             m_node,m_gv.verbose());
+      return return_to_render;
+
+    }
+
+    return return_none;     
+  }
+public:
+  viewer_popup(sg::gui_viewer& a_gv,unsigned int a_action)
+  :parent(a_action)
+  ,m_gv(a_gv)
+  ,m_rgba(0)
+  ,m_colors(0)
+  ,m_what(0)
+  ,m_numeric(0)
+  {}
+  virtual ~viewer_popup(){}
+protected:
+  viewer_popup(const viewer_popup& a_from)
+  :parent(a_from)
+  ,m_gv(a_from.m_gv)
+  ,m_state(a_from.m_state)
+  ,m_rgba(a_from.m_rgba)
+  ,m_colors(a_from.m_colors)
+  ,m_what(a_from.m_what)
+  ,m_field_desc(a_from.m_field_desc)
+  ,m_numeric(a_from.m_numeric)
+  {}
+  viewer_popup& operator=(const viewer_popup& a_from){
+    parent::operator=(a_from);
+    m_state = a_from.m_state;
+    m_rgba = a_from.m_rgba;
+    m_colors = a_from.m_colors;
+    m_what = a_from.m_what;
+    m_field_desc = a_from.m_field_desc;
+    m_numeric = a_from.m_numeric;
+    return *this;
+  }
+protected:
+  bool get_event_xy(int& a_x,int& a_y) const {
+    if(dn_evt_t* devt = safe_cast<evt_t,dn_evt_t>(*m_event)) {
+      a_x = devt->x();
+      a_y = devt->y();
+      return true;
+
+    } else if(up_evt_t* uevt = safe_cast<evt_t,up_evt_t>(*m_event)) {  
+      a_x = uevt->x();
+      a_y = uevt->y();
+      return true;
+  
+    }
+    a_x = 0;
+    a_y = 0;
+    return false;
+  }
+
+  void set_size_pos(int a_ex,int a_ey,sg::list& a_list) const {
+    float one_wcw,one_wch; //wall : for one screen.
+   {float tx,ty;
+    float aspect;
+    m_gv.get_gui_wcw_wch(one_wcw,one_wch,tx,ty,aspect);}
+    float hbutton = one_wch*0.05f;
+
+    m_gv.set_colors(a_list);
+    //list.visible_items = m_gv.m_params.m_list_visible_items;
+    a_list.visible_items = 5;
+    a_list.text_common_height = true;
+    a_list.width = one_wcw*0.5F;
+    a_list.scroll_width = one_wcw*(inlib::device::small_screen()?0.15f:0.1f);
+    a_list.height = a_list.visible_items*hbutton;
+
+    m_gv.place_show_popup(a_ex,a_ey,
+                          a_list.width.value(),a_list.height.value());
+  }
+
+  void set_size_pos(int a_ex,int a_ey,sg::colors& a_colors) const {
+    float one_wcw,one_wch; //wall : for one screen.
+   {float tx,ty;
+    float aspect;
+    m_gv.get_gui_wcw_wch(one_wcw,one_wch,tx,ty,aspect);}
+    float hbutton = one_wch*0.05f;
+
+    m_gv.set_colors(a_colors);
+    a_colors.width = one_wcw*0.5F;
+    a_colors.height = 8*hbutton;
+
+    m_gv.place_show_popup(a_ex,a_ey,
+                          a_colors.width.value(),a_colors.height.value());
+  }
+protected:
+  sg::gui_viewer& m_gv;
+  sg::state m_state;
+  // not owner :
+  sg::rgba* m_rgba;
+  sg::colors* m_colors;
+  unsigned int m_what;
+  sg::field_desc m_field_desc;
+  sg::numeric* m_numeric;
+};
+
+}}
+
+#endif
+
+/*trash :
+      std::string svalue;
+      if(fd.s_cls()==sf<float>::s_class()) {
+        sf<float>* _sf = 
+          safe_cast<field, sf<float> >(fd);
+        svalue = inlib::to<float>(_sf->value());
+      } else if(fd.s_cls()==sf<unsigned int>::s_class()) {
+        sf<unsigned int>* _sf = 
+          safe_cast<field, sf<unsigned int> >(fd);
+        svalue = inlib::to<unsigned int>(_sf->value());
+      } else {
+        svalue = "none";
+      }
+
+
+      m_gv.hide_popup();
+      sg::separator& psep = m_gv.popup_sep();
+      psep.clear();
+      psep.add(new sg::list(m_gv.ttf()));
+      sg::list& list = *((sg::list*)psep.children().back());
+      list.clear();
+      list.add(svalue,new viewer_popup(m_gv,action_cancel()));
+      int ex,ey;
+      if(get_event_xy(ex,ey)) set_size_pos(ex,ey,list);
+*/
+

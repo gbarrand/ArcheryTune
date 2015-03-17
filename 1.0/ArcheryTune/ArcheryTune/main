@@ -1,0 +1,116 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file ArcheryTune.license for terms.
+
+#ifndef ArcheryTune_ArcheryTune_main
+#define ArcheryTune_ArcheryTune_main
+
+#include "version"
+
+#define EXLIB_APP_NAME    "ArcheryTune"
+#define EXLIB_APP_VERSION ARCHERYTUNE_VERSION
+
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+
+#include <exlib/app/main>
+
+#include <exlib/cbk/out>
+//#include <exlib/cbk/utils>
+#include <exlib/cbk/wall>
+
+#include <inlib/cbk/about>
+#include <inlib/cbk/exit>
+
+#include "main_cbk"
+
+namespace ArcheryTune {
+
+class main : public exlib::app::main {
+  typedef exlib::app::main parent;
+protected:
+  virtual inlib::sg::node* create_main_menu() {
+    //m_out << "ArcheryTune::main::create_home_menu : " << std::endl;
+
+    inlib::sg::list* list = new inlib::sg::list(ttf());
+    set_colors(*list);
+
+    list->text_hjust = inlib::sg::center; //if layout_text_under_image
+
+    list_add(*list,"Scope","scope.jpg",new main_cbk(*this,main_cbk::action_main_scope()));
+    list_add(*list,"F.O.C","white.jpg",new main_cbk(*this,main_cbk::action_main_FOC()));
+    list_add(*list,"Sight Charts","white.jpg",new main_cbk(*this,main_cbk::action_main_sight_charts()));
+
+#ifdef WALL_DATA_CLIENT
+    if(m_xml_wall.walls().size()) {
+      list_add(*list,"Wall","connect_to_wall.jpg",exlib::wall::action_main);
+    }
+#endif
+
+    list_add(*list,"Mail...","document_export.jpg",exlib::out::action_mail_png);
+
+  //list_add(*list,"export","document_export.jpg",new exlib::cbk::out(*this));
+  //list_add(*list,"utils","tools.jpg",new exlib::cbk::utils(*this));
+
+   {std::vector<std::string> about;
+    about.push_back("Version : "+std::string(ARCHERYTUNE_VERSION));
+    about.push_back("Archery : Jean-Eric Campagne");
+    about.push_back("Software : Guy Barrand");
+    about.push_back("Animals : Actilia Multimedia");
+    list_add(*list,"About","icon.jpg",new inlib::cbk::about(*this,about));}
+
+    if(!inlib::device::stop_app_button()){
+      list_add(*list,"Exit","application_exit.jpg",new inlib::cbk::exit(*this));
+    }
+
+    return list;
+  }
+
+  virtual void set_entries_layout(inlib::sg::entries& a_node,
+                          float a_wcw,float a_wch,float a_hbutton,
+                          inlib::sg::matrix& a_mtx) const {
+    parent::set_entries_layout(a_node,a_wcw,a_wch,a_hbutton,a_mtx);
+
+    a_node.width = a_wcw*0.95f;
+    a_node.scroll_width = a_wcw*0.1f;
+    a_node.buttons_to_arrows_factor = 0.1f;
+    a_node.entry_label_result_factor = 0.7f;
+
+  }  
+
+public:
+  main(std::ostream& a_out,
+       inlib::sg::gl_manager& a_gl_mgr,
+       const inlib::sg::base_freetype& a_ttf,
+       const std::string& a_data_dir,
+       const std::string& a_res_dir,
+       const std::string& a_out_dir,
+       const std::string& a_tmp_dir,
+       bool a_verbose,
+       unsigned int a_mem_limit)
+  :parent(a_out,a_gl_mgr,a_ttf,a_data_dir,a_res_dir,a_out_dir,a_tmp_dir,a_verbose,a_mem_limit)
+  {
+    params_button_visible = false;
+    camera_button_visible = false;
+  //m_params.m_touch_move = false;
+    m_params.m_console_scale = 2;
+
+    meta_zone_had_been_shown();
+
+    m_params.m_gsto_mode = inlib::sg::s_gsto_gl_vbo();
+    set_use_gsto(true);
+
+    set_param_viewing(false); //to move animals.
+  }
+  virtual ~main() {}
+protected:
+  main(const main& a_from)
+  :parent(a_from)
+  {}
+private:
+  main& operator=(const main&){return *this;}
+};
+
+}
+
+#endif

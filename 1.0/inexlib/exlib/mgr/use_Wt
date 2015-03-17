@@ -1,0 +1,102 @@
+
+#build_use_not_our_Wt=yes
+
+if [ "${use_Wt}" = "yes" ] ; then
+if [ "${build_use_not_our_Wt}" = "yes" ] ; then
+  use_sys_Wt=yes
+  use_our_Wt=no
+else
+  use_sys_Wt=no
+  use_our_Wt=yes
+fi
+fi
+
+if [ "${use_sys_Wt}" = "yes" ] ; then
+  if [ "${build_visual}" = "yes" ] ; then
+    echo "exlib/mgr/use_Wt : cl.exe : not yet supported."
+    exit
+  fi
+
+  if [ `uname` = Darwin ] ; then
+    cppflags="${cppflags} -I/usr/local/wt/3.2.3/include"
+    cppflags="${cppflags} -I/opt/local/include"
+    libs="${libs} -L/usr/local/wt/3.2.3/lib -lwthttp -lwt"
+    libs="${libs} -L/opt/local/lib -lboost_signals-mt"
+    libs="${libs} -lGraphicsMagick"
+  else
+
+    on_lal_lx=no
+    if [ "`uname -n | grep lal.in2p3.fr | grep lx`" != "" ] ; then
+      on_lal_lx=yes
+    fi
+
+    #/////////////////////////////////////////////////    
+    #/////////////////////////////////////////////////    
+    #/////////////////////////////////////////////////    
+    if [ ${on_lal_lx} = "yes" ] ; then
+      Wt_home=/exp/si/barrand/usr/local/wt/3.2.3
+    else
+      Wt_home=/usr/local/wt/3.2.3
+    fi
+
+    cppflags="${cppflags} -I${Wt_home}/include"
+    libs="${libs} -L${Wt_home}/lib -lwthttp -lwt"
+
+    #/////////////////////////////////////////////////    
+    #/////////////////////////////////////////////////    
+    #/////////////////////////////////////////////////    
+    if [ ${on_lal_lx} = "yes" ] ; then
+      gm_home=/exp/si/barrand/usr/local/GraphicsMagick/1.3.17
+    else
+      gm_home=/usr/local/GraphicsMagick/1.3.17
+    fi
+    cppflags="${cppflags} -I${gm_home}/include"
+    libs="${libs} -L${gm_home}/lib -lGraphicsMagick"
+
+  fi
+fi
+
+if [ "${use_our_Wt}" = "yes" ] ; then
+  if [ "${Wt_home}" = "" ] ; then
+    Wt_home=../../ourex/Wt
+  fi
+
+  if [ ! -d ${Wt_home} ] ; then
+    echo "exlib/mgr/use_Wt : directory ${Wt_home} not found."
+    exit
+  fi
+
+  if [ ${build_visual} = "yes" ] ; then aI='/I'; else aI='-I'; fi
+
+  Wt_incs=
+  Wt_incs="${Wt_incs} ${aI}${Wt_home}/src"
+
+  cppflags="${cppflags} ${Wt_incs}"
+
+  #//////////////////////////////////////////
+  #//////////////////////////////////////////
+  #//////////////////////////////////////////
+
+  Wt_build_dir="${Wt_home}/${build_dir}"
+
+  if [ ! -d ${Wt_build_dir} ] ; then
+    Wt_old_dir=`pwd`
+    cd ${Wt_home}
+    ./build ${args_ourex}
+    cd ${Wt_old_dir}
+  fi
+
+  if [ ! -d ${Wt_build_dir} ] ; then
+    echo "exlib/mgr/use_Wt : directory ${Wt_build_dir} not found."
+    exit
+  fi
+
+  if [ "${use_archive}" = "yes" ] ; then
+    libs="${libs} ${Wt_build_dir}/libourex_Wt.a"
+  else
+    libs="${libs} -L${Wt_build_dir} -lourex_Wt"
+  fi
+
+
+fi
+

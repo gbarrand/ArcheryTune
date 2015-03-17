@@ -1,0 +1,151 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_cbk_base_diapo
+#define inlib_cbk_base_diapo
+
+#include "../wall/strings"
+#include "../sg/acbk"
+#include "../sg/separator"
+#include "../sg/matrix"
+#include "../sg/rgba"
+#include "../sg/entries"
+
+#include "../smatch"
+
+#include "../sg/view_evd"
+
+namespace inlib {
+namespace cbk {
+
+class base_diapo : public sg::acbk {
+  typedef sg::acbk parent;
+public:
+  INLIB_SCLASS(inlib::cbk::base_diapo)
+public:
+  virtual void* cast(const std::string& a_class) const {
+    if(void* p = cmp_cast<base_diapo>(this,a_class)) return p;
+    return parent::cast(a_class);
+  }
+public:
+  static unsigned int action_old_stop()   {return 0;} //backcomp. rwc_diapo.
+  static unsigned int action_setup()      {return 1;}
+protected:
+  static unsigned int action_start()      {return 3;}
+protected:
+  static unsigned int entry_what()       {return 0;}
+  static unsigned int entry_time()       {return 1;}
+  static unsigned int entry_back_color() {return 2;}
+
+  static unsigned int entry_clear()      {return 3;}
+  static unsigned int entry_same()       {return 4;}
+  static unsigned int entry_one()        {return 5;}
+
+  //INLIB_CLASS_STRING(full_screen)
+
+public:
+  virtual return_action action() {
+    //action_stop(),actio_start() must be defined in inheriting classes.
+
+    if(m_action==action_setup()) {
+      sg::entries* entries = new sg::entries(m_gv.ttf());
+      m_gv.set_colors(*entries);
+
+     {std::vector<std::string> opts;
+      m_gv.get_data_sub_dirs(wall::s_dir_diaporama(),opts);
+      std::vector<std::string> v;
+      m_gv.get_data_files(v); //should look also res dir.
+      filter(v,"*"+file::s_ext_zvid());       
+      append(opts,v);
+      entries->add_opts("dir/zvid",opts.size()?opts[0]:"",opts);}
+
+      entries->add_uint("millisecs",15000);
+
+      entries->add_color("image back",colorf::grey());
+
+      entries->add_uint("clear at",1);
+      if(m_wall_opts) {
+        entries->add_bool("same on all screens",true);
+        entries->add_bool("if same, one screen ?",true);
+      }
+
+      base_diapo* _cbk = safe_cast<sg::bcbk,base_diapo>(*copy());
+      _cbk->m_action = action_start();
+      _cbk->m_entries = entries;
+      entries->add_callback(_cbk);
+
+      m_gv.push_list(entries);
+      return return_to_render;     
+
+    } else {
+      m_gv.map_warn_unknown_action();
+      return return_to_render;     
+    }
+  }
+
+  // copy() still virtual.
+public:
+  base_diapo(sg::gui_viewer& a_gv,bool a_wall_opts,unsigned int a_action)
+  :parent(a_action)
+  ,m_gv(a_gv)
+  ,m_wall_opts(a_wall_opts)
+  ,m_entries(0)
+  {}
+  virtual ~base_diapo(){}
+protected:
+  base_diapo(const base_diapo& a_from)
+  :parent(a_from)
+  ,m_gv(a_from.m_gv)
+  ,m_wall_opts(a_from.m_wall_opts)
+  ,m_entries(a_from.m_entries)
+  {}
+  base_diapo& operator=(const base_diapo& a_from){
+    parent::operator=(a_from);
+    m_entries = a_from.m_entries;
+    return *this;
+  }
+protected:
+  template <class T>
+  void create__node_diapo(T* a_node, //take ownership
+                          unsigned int a_msecs,
+                          const colorf& a_bg) {
+    sg::view_evd* _evd = cast_view_evd(m_gv);
+    if(!_evd) return;
+
+    if(!_evd->is_evd()) {
+      _evd->create_sg_evd();
+      _evd->replace_camera(m_gv.create_2D_camera(2));    
+      m_gv.set_plane_viewer(true);
+    }
+
+    sg::separator& dsep = _evd->detector_sg();
+    //dsep.clear();
+
+    sg::separator* _sep = new sg::separator;
+    dsep.add(_sep);
+
+    sg::matrix* tsf = new sg::matrix;
+    _sep->add(tsf);
+
+    sg::rgba* mat = new sg::rgba();
+    mat->color = colorf::white();
+    _sep->add(mat);
+
+    a_node->back_color = a_bg;
+    a_node->time_interval = a_msecs;
+    a_node->expand = m_gv.m_params.m_image_expand;
+    _sep->add(a_node);
+    
+    m_gv.enable_anim();
+    m_gv.hide_main_menu();
+  }
+
+protected:
+  sg::gui_viewer& m_gv;
+  bool m_wall_opts;
+  sg::entries* m_entries; //not owner.
+};
+  
+}}
+
+#endif

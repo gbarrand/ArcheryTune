@@ -1,0 +1,148 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file exlib.license for terms.
+
+#ifndef exlib_sg_GL_VIEWER
+#define exlib_sg_GL_VIEWER
+
+#include "render_GL"
+
+#define EXLIB_GL_VIEWER_METHODS \
+public:\
+  virtual void render() {\
+    check_gui_cursor();\
+    if(!m_ww||!m_wh) return;\
+    m_gl_mgr.begin_render(m_ww,m_wh,\
+                          m_clear_color.r(),\
+                          m_clear_color.g(),\
+                          m_clear_color.b(),\
+                          m_clear_color.a());\
+    \
+    exlib::sg::render_GL action(m_mgr_GL,m_out,m_ww,m_wh);\
+    action.state().m_use_gsto = m_use_gsto;\
+    \
+    m_sg.render(action);\
+    if(!action.end()) {\
+      m_out << "EXLIB_GL_VIEWER_METHODS::render() :"\
+            << " bad gl_action end."\
+            << std::endl;\
+    }\
+    \
+    after_render();\
+    \
+    m_gl_mgr.end_render();\
+  }\
+public:\
+  virtual bool set_img_from_file(std::ostream& a_out,\
+                                 const std::string& a_res_dir,\
+                                 const std::string& a_file,\
+                                 inlib::img_byte& a_img) {\
+    if(a_file.empty()) {\
+      a_img.clear();\
+      return true;\
+    }\
+    \
+    std::string path = a_res_dir;\
+    path += inlib::sep();\
+    path += a_file;\
+    \
+    unsigned int w = 0;\
+    unsigned int h = 0;\
+    unsigned int bpp = 0;\
+    unsigned char* buffer = 0;\
+    if(!buffer) {\
+    if(exlib::jpeg::is(path)) {\
+       buffer = exlib::jpeg::read(a_out,path,w,h,bpp);\
+    }}\
+    if(!buffer) {\
+    if(exlib::png::is(path)) {\
+       buffer = exlib::png::read(a_out,path,w,h,bpp);\
+    }}\
+    if(!buffer) {\
+      a_out << "EXLIB_GL_VIEWER_METHODS::set_img_from_file() :"\
+            << " can't read file " << inlib::sout(path) << "."\
+            << std::endl;\
+      a_img.clear();\
+      return false;\
+    }\
+    a_img.set(w,h,bpp,buffer,true);\
+    return true;\
+  }\
+public:/*public for iOS*/\
+  void after_render() {\
+    /*WARNING : it does OpenGL. Under Android it should be executed\
+                in the OpenGL thread.*/\
+    /*WARNING : if having more m_produce_xxx, look exlib/app/iOS/GLView_mm.*/\
+    \
+    if(m_produce_out_jpg) {\
+      m_produce_out_jpg = false;\
+      \
+      std::string file;\
+      if(out_dir().size()) {\
+        if(!inlib::check_dir(m_out,out_dir())) {\
+          map_warn_failed();\
+          return;\
+        }\
+        file = out_dir()+inlib::sep();\
+      }\
+      file += "out.jpg";\
+      \
+      unsigned int bpp = 4;\
+      unsigned char* buffer = exlib::sg::manager_GL::get_rgbas(m_ww,m_wh);\
+      if(!buffer) {\
+        m_out << "EXLIB_GL_VIEWER_METHODS::after_render() :"\
+              << " can't get image."\
+              << std::endl;\
+        map_warn_failed();\
+        return;\
+      }\
+      \
+      /*NOTE : jpeg wants bpp=3.*/\
+      inlib::img_byte rgba(m_ww,m_wh,bpp,buffer,true); /*true=img owns buffer.*/\
+      inlib::img_byte rgb;\
+      if(!rgba.rgba2rgb(rgb)) {\
+        m_out << "EXLIB_GL_VIEWER_METHODS::after_render() :"\
+              << " can't convert rgba image to rgb."\
+              << std::endl;\
+        map_warn_failed();\
+        return;\
+      }\
+      \
+      if(!exlib::jpeg::write(m_out,file,\
+            rgb.buffer(),rgb.width(),rgb.height(),rgb.bpp(),100)) {\
+        map_warn_failed();\
+      }\
+    }\
+    \
+    if(m_produce_out_png) {\
+      m_produce_out_png = false;\
+      \
+      std::string file;\
+      if(out_dir().size()) {\
+        if(!inlib::check_dir(m_out,out_dir())) {\
+          map_warn_failed();\
+          return;\
+        }\
+        file = out_dir()+inlib::sep();\
+      }\
+      file += "out.png";\
+      \
+      unsigned int bpp = 4;\
+      unsigned char* buffer = exlib::sg::manager_GL::get_rgbas(m_ww,m_wh);\
+      if(!buffer) {\
+        m_out << "EXLIB_GL_VIEWER_METHODS::after_render() :"\
+              << " can't get image."\
+              << std::endl;\
+        map_warn_failed();\
+        return;\
+      }\
+      \
+      if(!exlib::png::write(m_out,file,buffer,m_ww,m_wh,bpp)) {\
+        map_warn_failed();\
+      }\
+      delete [] buffer;\
+    }\
+  }
+
+#endif
+
+//exlib_build_use inlib

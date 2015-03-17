@@ -1,0 +1,188 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_sg_base_tex
+#define inlib_sg_base_tex
+
+#include "../platform"
+#include "../colorf"
+#include "../img"
+#include "sf_vec"
+#include "sf_img"
+
+namespace inlib {
+namespace sg {
+
+class base_tex {
+public:
+  sf_img<byte> img;
+  sf_vec<colorf,float> back_color;
+  sf<bool> expand;
+  sf<unsigned int> limit;
+public:
+  base_tex()
+  :img(img_byte())
+  ,back_color(colorf::white())
+  ,expand(false)
+  ,limit(device::tex_mem_limit()) //OpenGL-ES glTex limitation.
+  ,m_img()
+  {}
+  virtual ~base_tex(){}
+public:
+  base_tex(const base_tex& a_from)
+  :img(a_from.img)
+  ,back_color(a_from.back_color)
+  ,expand(a_from.expand)
+  ,limit(a_from.limit)
+  ,m_img()
+  {}
+  base_tex& operator=(const base_tex& a_from){
+    img = a_from.img;
+    back_color = a_from.back_color;
+    expand = a_from.expand;
+    limit = a_from.limit;
+    m_img.make_empty();
+    return *this;
+  }
+protected:
+  void _update_sg_(std::ostream& a_out) {
+    //clean_texs(); //must reset for all gl_manager.
+
+    if(img.value().is_empty()) {
+      m_img.make_empty();
+      return;
+    }
+
+    unsigned int bpp = img.value().bpp();
+    if((bpp!=1)&&(bpp!=3)&&(bpp!=4)) {
+      a_out << "inlib::sg::tex_rect::update_sg :"
+            << " bpp " << bpp << " not handled."
+            << std::endl;
+      m_img.make_empty();
+      return;
+    }
+
+    //a_out << "debug : inlib::sg::tex_rect::update_sg :"
+    //      << " this " << inlib::p2s(this)
+    //      << std::endl;
+
+    // image must be power of two in width and height.
+
+    unsigned char pixel[4];
+    pixel[0] = (unsigned char)(255.0f*back_color.value().r());
+    pixel[1] = (unsigned char)(255.0f*back_color.value().g());
+    pixel[2] = (unsigned char)(255.0f*back_color.value().b());
+    pixel[3] = (unsigned char)(255.0f*back_color.value().a());
+
+    //dump(a_out,"debug : 0000 :",img.value());
+
+    if((back_color.value().a()!=1)&&(bpp!=4)) {
+      //transparent background.
+
+      //NOTE : the node must be rendered after the "behind nodes" so that
+      //       transparency be taken into account for the "behind nodes".
+
+      img_byte img4;
+      if(!img.value().rgb2rgba(img4,255)){
+        a_out << "inlib::sg::tex_rect::update_sg :"
+              << " rgb2rgba failed."
+              << std::endl;
+        m_img.make_empty();
+        return;
+      }
+
+      if(!img4.to_texture(expand.value(),pixel,m_img)){
+        a_out << "inlib::sg::tex_rect::update_sg :"
+              << " problem with inlib::tex_rect::to_texture."
+              << std::endl;
+        m_img.make_empty();
+        return;
+      }
+
+    } else {
+      if(!img.value().to_texture(expand.value(),pixel,m_img)){
+        a_out << "inlib::sg::tex_rect::update_sg :"
+              << " problem with inlib::tex_rect::to_texture."
+              << std::endl;
+        m_img.make_empty();
+        return;
+      }
+    }
+
+    if(limit.value()) {
+      //a_out << "debug : limit " << limit.value() << std::endl;
+      unsigned int tw = m_img.width();
+      unsigned int th = m_img.height();
+      if((tw*th*m_img.bpp())>limit.value()) {
+        //a_out << "debug : trunc " << (tw*th) << std::endl;
+        unsigned int fac = 2;
+        while(true) {
+          unsigned int pw = tw/fac;
+          unsigned int ph = th/fac;
+          if((pw*ph)<limit.value()) {
+            unsigned int sx = (tw-pw)/2;
+            unsigned int sy = (th-ph)/2;
+  
+            img_byte part;
+            if(!m_img.get_part(sx,sy,pw,ph,part)) {
+              m_img.make_empty();
+              return;
+            }
+            m_img = part;
+            break;
+          }
+          fac *= 2;
+        }
+      }
+    }
+  }
+
+  static void dump(std::ostream& a_out,
+                   const std::string& a_cmt,
+                   const img_byte& a_img) {
+    if(a_cmt.size()) a_out << a_cmt << std::endl;
+    a_out << " width " << a_img.width()
+          << " height " << a_img.height()
+          << " bpp " << a_img.bpp()
+          << std::endl;
+  }
+
+  void set_tcs(float a_tcs[8]) {
+    a_tcs[0] = 0;a_tcs[1] = 0;
+    a_tcs[2] = 1;a_tcs[3] = 0;
+    a_tcs[4] = 1;a_tcs[5] = 1;
+    a_tcs[6] = 0;a_tcs[7] = 1;
+
+    float ax = 1;
+    float bx = 0;
+    float ay = 1;
+    float by = 0;
+   {unsigned int iw = img.value().width();
+    unsigned int ih = img.value().height();
+    unsigned int rw = m_img.width();
+    unsigned int rh = m_img.height();
+    if(rw>iw) {
+      float part = float(iw)/float(rw);
+      ax = part;
+      bx = 0.5f*(1-part);
+    }
+    if(rh>ih) {
+      float part = float(ih)/float(rh);
+      ay = part;
+      by = 0.5f*(1-part);
+    }}
+
+   {unsigned int num = 12/3;
+    for(unsigned int index=0;index<num;index++) {
+      a_tcs[2*index]   = ax*a_tcs[2*index]  +bx;
+      a_tcs[2*index+1] = ay*a_tcs[2*index+1]+by;
+    }}
+
+  }
+protected:
+  img_byte m_img;
+};
+
+}}
+
+#endif

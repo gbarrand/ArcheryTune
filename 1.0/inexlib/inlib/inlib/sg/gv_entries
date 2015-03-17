@@ -1,0 +1,45 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_sg_gv_entries
+#define inlib_sg_gv_entries
+
+#include "gui_viewer"
+
+namespace inlib {
+namespace sg {
+
+class gv_entries : public entries {
+  typedef entries parent;
+  typedef bcbk::return_action (*cbk_func)(gui_viewer&,parent&);
+public:
+  gv_entries(gui_viewer& a_gv,cbk_func a_func):parent(a_gv.ttf()),m_gv(a_gv),m_func(a_func){
+    m_gv.set_colors(*this);
+    add_callback(new this_cbk(*this));
+  }
+  virtual ~gv_entries(){}
+protected:
+  gv_entries(const gv_entries& a_from):parent(a_from),m_gv(a_from.m_gv),m_func(a_from.m_func){}
+  const gv_entries& operator=(const gv_entries& a_from){parent::operator=(a_from);m_func = a_from.m_func;return *this;}
+protected:
+  class this_cbk : public bcbk {
+    INLIB_CBK(this_cbk,inlib::sg::gv_entries::this_cbk,bcbk)
+  public:
+    virtual return_action action() {return m_this.m_func?m_this.m_func(m_this.m_gv,m_this):return_none;}
+  public:
+    this_cbk(gv_entries& a_this):parent(),m_this(a_this){}
+    virtual ~this_cbk(){}
+  public:
+    this_cbk(const this_cbk& a_from):parent(a_from),m_this(a_from.m_this){}
+    this_cbk& operator=(const this_cbk& a_from){parent::operator=(a_from);return *this;}
+  protected:
+    gv_entries& m_this;
+  };
+protected:
+  gui_viewer& m_gv;
+  cbk_func m_func;
+};
+
+}}
+
+#endif

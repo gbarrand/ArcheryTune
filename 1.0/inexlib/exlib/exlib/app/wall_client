@@ -1,0 +1,456 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file exlib.license for terms.
+
+#ifndef exlib_app_wall_client
+#define exlib_app_wall_client
+
+#include <inlib/sg/gui_viewer>
+
+#include <inlib/wall/data_client>
+#include <inlib/wall/send_sg>
+
+#include <inlib/cbk/rwc_diapo>
+#include <inlib/wall/send_event>
+#include <inlib/wall/args>
+#include <inlib/sg/screens>
+#include <inlib/sg/event_dispatcher>
+
+#include "../xml/xml_wall"
+#include "../gzip"
+
+namespace exlib {
+namespace app {
+
+class wall_client : public inlib::sg::gui_viewer {
+  INLIB_HEADER(wall_client,exlib::app::wall_client,inlib::sg::gui_viewer)
+protected:
+  virtual bool is_data_client() {return m_data_client.socket().is_connected();}
+public:
+  virtual bool send_sg(inlib::sg::node& a_sg,const inlib::args& a_opts) {
+    return inlib::wall::send_sg(m_data_client,a_sg,m_zip_func,a_opts);
+  }
+
+private:
+  inlib::sg::bcbk* create_gui_cbk(unsigned int a_rwca,unsigned int a_guia) {
+    if(m_rwc_gui) {
+      return rwc_gui_cbk(a_rwca);
+    } else {
+      return new gui_cbk(*this,a_guia);
+    }
+  }
+protected:
+  virtual void create_meta_zone(float a_wcw,float a_wch,float a_hzone) {
+    parent::create_meta_zone(m_params,ttf(),m_gui,m_meta_switch,
+                             a_wcw,a_wch,a_hzone,
+                             create_gui_cbk(rwc_gui::action_meta_zone(),
+                                            gui_cbk::action_meta_zone()));
+  }
+
+  virtual void create_control_items(float a_wcw,float a_wch,
+                                    float a_wb,float a_hb,float a_roffset) {
+    create_main_button(m_out,m_res_dir,m_params,
+                       m_full_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       0,0,"home","home","go_home_large.jpg",
+                       create_gui_cbk(rwc_gui::action_home(),
+                                      gui_cbk::action_home()));
+
+    if(params_button_visible.value()) { 
+      create_main_button(m_out,m_res_dir,m_params,
+                         m_full_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         0,1,"params","params","system_config_boot.jpg", 
+                         create_gui_cbk(rwc_gui::action_params_show(),
+                                        gui_cbk::action_params_show()));
+    }
+  
+    create_main_button(m_out,m_res_dir,m_params,
+                       m_full_sep,a_wcw,a_wch,a_wb,a_hb,a_roffset,
+                       2,0,"back","back","turn_around.jpg",
+                       new gui_cbk(*this,gui_cbk::action_back()));
+
+    if(camera_button_visible.value()) { 
+      create_main_button(m_out,m_res_dir,m_params,
+                         m_full_sep,a_wcw,a_wch,a_wb,a_hb,a_roffset,
+                         2,1,"camera","camera","movie_camera.jpg", 
+                         create_gui_cbk(rwc_gui::action_show_camenu(),
+                                        gui_cbk::action_show_camenu()));
+    }
+  }
+
+  virtual void create_camenu_items(unsigned int a_nb,
+                                   float a_wcw,float a_wch,
+                                   float a_wb,float a_hb) {
+
+    ///////////////////////////////////////////////////////////////////////
+    /// camenu right area /////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+    // create four arrows :
+    create_arrow(m_params,
+                 m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                 a_nb-2,2,inlib::sg::arrow_up,
+                 create_gui_cbk(rwc_gui::action_up(),
+                                gui_cbk::action_up()));
+    create_arrow(m_params,
+                 m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                 a_nb-2,0,inlib::sg::arrow_down,
+                 create_gui_cbk(rwc_gui::action_down(),
+                                gui_cbk::action_down()));
+    create_arrow(m_params,
+                 m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                 a_nb-3,1,inlib::sg::arrow_left,
+                 create_gui_cbk(rwc_gui::action_left(),
+                                gui_cbk::action_left()));
+    create_arrow(m_params,
+                 m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                 a_nb-1,1,inlib::sg::arrow_right,
+                 create_gui_cbk(rwc_gui::action_right(),
+                                gui_cbk::action_right()));
+
+    //inside "shift" button :
+    create_main_button(m_params,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       a_nb-2,1,anim_shift_button_label(),
+                       m_camenu_shift_button,
+                       create_gui_cbk(rwc_gui::action_anim_shift(),
+                                      gui_cbk::action_anim_shift()));
+
+    //outside top-left "single shoot" button :
+    create_main_button(m_out,m_res_dir,m_params,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       a_nb-3,2,
+                       m_camenu_sshoot_image_button,
+                       m_camenu_sshoot_text_button,
+                       single_shoot_button_label(),
+                       single_shoot_image_button_file(),
+                       create_gui_cbk(rwc_gui::action_single_shoot(),
+                                      gui_cbk::action_single_shoot()));
+
+    //outside bottom-right hide button :
+    create_main_button(m_out,m_res_dir,m_params,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       a_nb-1,0,"hide","","close.jpg",
+                       new gui_cbk(*this,gui_cbk::action_hide_camenu()));
+
+    //outside top-right reset camera button :
+    create_main_button(m_out,m_res_dir,m_params,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       a_nb-1,2,"reset","","edit_undo.jpg",
+                       create_gui_cbk(rwc_gui::action_reset_camera(),
+                                      gui_cbk::action_reset_camera()));
+
+    //outside bottom-left "90" button :
+    if(camenu_90_visible.value()) {
+      create_main_button(m_out,m_res_dir,m_params,
+                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         a_nb-3,0,
+                         m_camenu_90_image_button,
+                         m_camenu_90_text_button,
+                         rot_90_button_label(),
+                         rot_90_image_button_file(),
+                         create_gui_cbk(rwc_gui::action_90(),
+                                        gui_cbk::action_90()));
+    }
+
+    if(camenu_edit_visible.value()) {
+      //outside top-left "edit" button :
+      create_main_button(m_out,m_res_dir,m_params,
+                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         a_nb-4,2,"edit","","edit.jpg",
+                         create_gui_cbk(rwc_gui::action_cam_choose_type(),
+                                        gui_cbk::action_cam_choose_type()));
+    }
+
+    if(camenu_focal_visible.value()) {
+      //"aroud focal" button under the edit one :
+      create_main_button(m_params,
+                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         a_nb-4,1,around_focal_button_label(),
+                         m_camenu_focal_button,
+      create_gui_cbk(rwc_gui::action_anim_around_focal(),
+                     gui_cbk::action_anim_around_focal()));
+    }
+  
+    if(camenu_viewing_visible.value()) {
+      // viewing/picking mode button under the focal one :
+      create_main_button(m_params,
+                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         a_nb-4,0,viewing_button_label(),
+                         m_camenu_viewing_button,
+      create_gui_cbk(rwc_gui::action_viewing(),
+                     gui_cbk::action_viewing()));
+    }
+
+    create_main_button(m_out,m_res_dir,m_params,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       a_nb-5,2,"mv","","",
+      create_gui_cbk(rwc_gui::action_cam_choose_anim(),
+                     gui_cbk::action_cam_choose_anim()));
+
+    ///////////////////////////////////////////////////////////////////////
+    /// camenu left area //////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+
+    create_main_button(m_out,m_res_dir,m_params,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       0,0,"clear","","edit_clear.jpg",
+      create_gui_cbk(rwc_gui::action_clear_scene(),
+                     gui_cbk::action_clear_scene()));
+
+    if(m_rwc_gui) {
+    } else {
+      create_main_button(m_out,m_res_dir,m_params,
+                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         0,1,plane_exam_button_label(),"","",
+                         new gui_cbk(*this,gui_cbk::action_plane_exam()));
+
+      create_main_button(m_out,m_res_dir,m_params,
+                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         0,2,"<)","","",
+                         new gui_cbk(*this,gui_cbk::action_adapt_camera()));
+
+      create_main_button(m_out,m_res_dir,m_params,
+                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         1,0,"N","","",
+                         new gui_cbk(*this,gui_cbk::action_count_points()));
+
+      create_main_button(m_out,m_res_dir,m_params,
+                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         1,1,"^","","",
+                         new gui_cbk(*this,gui_cbk::action_toggle_light()));
+
+      create_main_button(m_params,
+                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         1,2,"gsto",
+                         m_camenu_gsto_button,
+                         new gui_cbk(*this,gui_cbk::action_toggle_gsto()));
+      set_use_gsto(m_use_gsto); //update back color.
+
+      if(m_xml_wall.walls().size()) {
+        create_main_button(m_out,m_res_dir,m_params,
+                           m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                           2,0,"d2w","","",
+                           new this_cbk(*this,this_cbk::action_send_detector()));
+      }
+    }
+  }
+
+protected:
+  inlib::sg::bcbk* rwc_gui_cbk(unsigned int a_action) {
+    return new rwc_gui(*this,a_action);
+  }
+
+public:
+  wall_client(std::ostream& a_out,
+              inlib::sg::gl_manager& a_gl_mgr,
+              const inlib::sg::base_freetype& a_ttf,
+              const std::string& a_app_name,
+              const std::string& a_data_dir,
+              bool a_verbose)
+  :parent(a_out,a_gl_mgr,a_ttf,0,0,a_verbose)
+  ,m_data_client(a_out,false,true)
+  ,m_rwc_gui(false)
+  ,m_cursor_tablet(true)
+  ,m_old_uitems()
+  {
+    m_zip_func = gzip_buffer;
+    set_wall_action_prots();
+
+    ////////////////////////////////////////////
+    /// <app>.wall /////////////////////////////
+    ////////////////////////////////////////////
+    //look for a <app>.wall in the data dir :
+   {std::string path = a_data_dir;
+    path += inlib::sep();
+    path += a_app_name;
+    path += ".wall";
+    if(inlib::file::exists(path)) m_xml_wall.load_wall_file(m_out,path);}
+
+  }
+  virtual ~wall_client() {
+    disconnect_from_wall();
+    inlib::clear<inlib::sg::node>(m_old_uitems);
+  }
+protected:
+  wall_client(const wall_client& a_from)
+  :inlib::sg::ui(a_from)
+  ,inlib::sg::alert(a_from)
+  ,parent(a_from)
+  ,m_xml_wall(a_from.m_xml_wall)
+  ,m_data_client(m_out,false,true)
+  ,m_rwc_gui(a_from.m_rwc_gui)
+  ,m_cursor_tablet(a_from.m_cursor_tablet)
+  ,m_old_uitems()
+  {}
+  wall_client& operator=(const wall_client& a_from){
+    m_xml_wall = a_from.m_xml_wall;
+    return *this;
+  }
+
+public:
+  inlib::wall::data_client& data_client() {return m_data_client;}
+  const inlib::wall::data_client& data_client() const {return m_data_client;}
+
+  void disconnect_from_wall() {
+    if(m_data_client.socket().is_connected()) {
+      if(!m_data_client.socket().send_string
+        (inlib::wall::protocol::s_disconnect())) {}
+    }
+    m_data_client.socket().disconnect();
+  }
+
+  void show_wall_menu() {
+    if(!m_data_client.socket().is_connected()) {
+      map_warn_not_connected();
+      return;
+    }
+
+    // get wall params (cols,rows,...) :
+    if(m_wall_params.empty()) {
+      if(!m_data_client.get_wall_params(m_wall_params)){
+        map_warn_net_error();      
+        return;
+      }
+    }
+
+    // hide wall menu to keep guis (wall and app rwc) in sync :
+    if(!m_data_client.socket().send_string
+         (inlib::wall::protocol::s_rwc_hide_menu())) {
+      map_warn_net_error();      
+      return;
+    }
+
+    meta_zone_had_been_shown();
+    save_scene();
+    show_main_menu();
+    hide_camera_menu();
+
+    m_old_params = m_params;
+    m_params.m_scene_screen_color = inlib::colorf::lightblue();
+    m_params.m_gui_screen_color = inlib::colorf::lightblue();
+    // rwc gui :
+    m_rwc_gui = true;
+    m_old_uitems = m_uitems; //m_old_uitems takes ownership of existing items.
+    m_uitems.clear();
+    push_list(create_rwc_menu());
+  }
+
+  inlib::sg::list* create_rwc_menu() {
+    inlib::sg::list* list = new inlib::sg::list(ttf());
+    set_colors(*list);
+
+    list_add(*list,"diaporama","sidebar_photos.jpg",
+      new inlib::cbk::rwc_diapo
+        (*this,m_data_client,inlib::cbk::base_diapo::action_setup()));
+  
+    //backcomp.
+    list_add(*list,"stop diaporama","stop_diaporama.jpg",
+      new inlib::cbk::rwc_diapo
+        (*this,m_data_client,inlib::cbk::base_diapo::action_old_stop()));
+  
+    list_add(*list,"clear","edit_clear.jpg",
+      rwc_gui_cbk(rwc_gui::action_clear_scene()));
+    list_add(*list,"reset","edit_undo.jpg",
+      rwc_gui_cbk(rwc_gui::action_reset_camera()));
+  
+    if(inlib::device::no_cursor()) {
+      list_add(*list,"cursor","cursor.jpg",
+        rwc_gui_cbk(rwc_gui::action_cursor_tablet()));
+    } else {
+      list_add(*list,"cursor mouse","cursor.jpg",
+        rwc_gui_cbk(rwc_gui::action_cursor_mouse()));
+      list_add(*list,"cursor tablet","cursor.jpg",
+        rwc_gui_cbk(rwc_gui::action_cursor_tablet()));
+    }
+
+    list_add(*list,"cancel","application_exit.jpg",
+      rwc_gui_cbk(rwc_gui::action_cancel()));
+  
+    return list;
+  }
+
+public:
+  xml::xml_wall m_xml_wall;
+  inlib::wall::data_client m_data_client;
+protected:
+  inlib::sg::gui_params m_old_params;
+  bool m_rwc_gui;
+  bool m_cursor_tablet;
+  std::vector<inlib::sg::node*> m_old_uitems;
+  std::string m_wall_params; //[<name>=<value>\n]
+
+
+#include "rwc_gui.icc"
+
+
+public:
+  static inlib::sg::bcbk::return_action action_send_detector(wall_client& a_gv) {
+    inlib::sg::view_evd* _evd = inlib::sg::cast_view_evd(a_gv);
+    if(!_evd) return inlib::sg::bcbk::return_none;
+    if(!a_gv.m_data_client.socket().is_connected()) {
+       a_gv.map_warn_not_connected();
+       return inlib::sg::bcbk::return_to_render;
+    }
+    //::printf("debug : scene_radius %g\n",scene_radius);
+    inlib::args opts;
+    opts.add(inlib::wall::s_placement(),inlib::wall::s_detector());
+    opts.add(inlib::wall::s_radius(),inlib::tos(a_gv.scene_camera_radius()));
+
+    if(!inlib::wall::send_sg(a_gv.m_data_client,_evd->detector_sg(),a_gv.ziper(),opts)){
+      a_gv.map_warn_failed();
+      return inlib::sg::bcbk::return_to_render;
+    }
+    return inlib::sg::bcbk::return_none; 
+  }
+
+  static inlib::sg::bcbk::return_action action_disconnect(wall_client& a_gv) {
+    if(a_gv.m_data_client.socket().is_connected()) {
+      if(!a_gv.m_data_client.socket().send_string(inlib::wall::protocol::s_disconnect())) {}
+    }
+    a_gv.m_data_client.socket().disconnect();
+    return inlib::sg::bcbk::return_none;
+  }
+
+  class this_cbk : public inlib::sg::acbk {
+    INLIB_CBK(this_cbk,exlib::app::wall_client::this_cbk,inlib::sg::acbk)
+  public:
+    static unsigned int action_send_detector() {return 0;}
+    static unsigned int action_disconnect()    {return 6;}
+  public:
+    virtual return_action action() {
+      if(m_action==action_send_detector()) {
+        return wall_client::action_send_detector(m_gv);
+      } else if(m_action==action_disconnect()) {
+        return wall_client::action_disconnect(m_gv);
+      }
+      return return_none;     
+    }
+  public:
+    this_cbk(wall_client& a_gv,unsigned int a_action)
+    :parent(a_action)
+    ,m_gv(a_gv)
+    {}
+    virtual ~this_cbk(){}
+  public:
+    this_cbk(const this_cbk& a_from)
+    :parent(a_from)
+    ,m_gv(a_from.m_gv)
+    {}
+    this_cbk& operator=(const this_cbk& a_from){
+      parent::operator=(a_from);
+      return *this;
+    }
+  protected:
+    wall_client& m_gv;    
+  };
+
+
+};
+
+inline wall_client* cast_wall_client(inlib::sg::viewer& a_viewer) {
+  return inlib::safe_cast<inlib::sg::viewer,wall_client>(a_viewer);
+}
+
+}}
+
+#endif
+
+//exlib_build_use inlib glutess freetype expat zlib png jpeg

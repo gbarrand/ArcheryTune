@@ -1,0 +1,300 @@
+# to be sourced in <app>/mgr/build scripts.
+
+#////////////////////////////////////
+#////////////////////////////////////
+#////////////////////////////////////
+
+if [ "${app_src}" = "" ] ; then
+  echo "inlib/mgr/build_app : variable app_src not defined."
+  exit
+fi
+
+if [ "${app_exe}" = "" ] ; then
+  echo "inlib/mgr/build_app : variable app_exe not defined."
+  exit
+fi
+
+if [ ${build_verbose} = yes ] ; then
+  echo "build path is ${build_path}"
+fi
+
+/bin/mkdir -p ${build_path}
+
+if [ ${build_clean} = "yes" ] ; then
+  /bin/rm -R -f ${build_path}
+  exit
+fi
+
+. ${inlib_mgr}/build_compile
+	  
+if [ "${build_app}" = "no" ] ; then
+  if [ ${build_verbose} = yes ] ; then
+    echo "inlib/mgr/build_app : do not build app."
+  fi
+  exit
+fi
+
+suffix=`echo ${app_src} | sed 's:.*\.::'`
+if [ "${suffix}" = "" ] ; then suffix=none;fi
+
+obj="${build_path}/main.o"
+
+link_it=no
+
+if [ "${suffix}" = "c" ] ; then
+
+  if [ ${build_verbose} = yes ] ; then
+    echo "inlib/mgr/build_app : compile ${app_src} ..."
+  fi
+
+  if [ ${build_do_compile} = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    eval ${cc_compiler} /c ${ccflags} /Fo${obj} ${app_src}
+  else
+    eval ${cc_compiler} -c ${ccflags} -o ${obj} ${app_src}
+    use_status=$?;if [ ${use_status} != 0 ] ; then exit ${use_status};fi
+  fi
+  fi
+
+  objs="${obj} ${objs}"
+  link_it=yes
+
+elif [ "${suffix}" = "cpp" ] ; then
+
+  if [ ${build_verbose} = yes ] ; then
+    echo "inlib/mgr/build_app : compile ${app_src} ..."
+  fi
+
+  if [ ${build_do_compile} = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    eval ${cpp_compiler} /c ${cppflags} /Fo${obj} ${app_src}
+  else
+    eval ${cpp_compiler} -c ${cppflags} -o ${obj} ${app_src}
+    use_status=$?;if [ ${use_status} != 0 ] ; then exit ${use_status};fi
+  fi
+  fi
+
+  objs="${obj} ${objs}"
+  link_it=yes
+
+elif [ "${suffix}" = "cc" ] ; then
+
+  if [ ${build_verbose} = yes ] ; then
+    echo "inlib/mgr/build_app : compile ${app_src} ..."
+  fi
+
+  if [ ${build_do_compile} = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    eval ${cpp_compiler} /c ${cppflags} /Fo${obj} ${app_src}
+  else
+    eval ${cpp_compiler} -c ${cppflags} -o ${obj} ${app_src}
+    use_status=$?;if [ ${use_status} != 0 ] ; then exit ${use_status};fi
+  fi
+  fi
+
+  objs="${obj} ${objs}"
+  link_it=yes
+
+elif [ "${suffix}" = "cxx" ] ; then
+
+  if [ ${build_verbose} = yes ] ; then
+    echo "inlib/mgr/build_app : compile ${app_src} ..."
+  fi
+
+  if [ ${build_do_compile} = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    eval ${cpp_compiler} /c ${cppflags} /Fo${obj} ${app_src}
+  else
+    eval ${cpp_compiler} -c ${cppflags} -o ${obj} ${app_src}
+    use_status=$?;if [ ${use_status} != 0 ] ; then exit ${use_status};fi
+  fi
+  fi
+
+  objs="${obj} ${objs}"
+  link_it=yes
+
+elif [ "${suffix}" = "m" ] ; then
+
+  if [ ${build_verbose} = yes ] ; then
+    echo "inlib/mgr/build_app : compile ${app_src} ..."
+  fi
+
+  if [ ${build_do_compile} = "yes" ] ; then
+    eval ${cc_compiler} -x objective-c -c ${ccflags} ${mflags} -o ${obj} ${app_src}
+    use_status=$?;if [ ${use_status} != 0 ] ; then exit ${use_status};fi
+  fi
+
+  objs="${obj} ${objs}"
+  link_it=yes
+
+elif [ "${suffix}" = "mm" ] ; then
+
+  if [ ${build_verbose} = yes ] ; then
+    echo "inlib/mgr/build_app : compile ${app_src} ..."
+  fi
+
+  if [ ${build_do_compile} = "yes" ] ; then
+    eval ${cpp_compiler} -x objective-c++ -c ${cppflags} ${mmflags} -o ${obj} ${app_src}
+    use_status=$?;if [ ${use_status} != 0 ] ; then exit ${use_status};fi
+  fi
+
+  objs="${obj} ${objs}"
+  link_it=yes
+
+elif [ "${suffix}" = "java" ] ; then
+
+  if [ ${build_verbose} = yes ] ; then
+    echo "inlib/mgr/build_app : treat ${app_src} ..."
+  fi
+
+  plugin=lib${app}
+  if [ ${build_plugin} = "yes" ] ; then . ${inlib_mgr}/build_plugin; fi
+
+  if [ ${build_android} = "yes" ] ; then
+    if [ ${build_verbose} = yes ] ; then
+      echo "inlib/mgr/build_app : android ..."
+    fi
+    echo "inlib/mgr/build_app : native android : not yet ready."
+    echo "  java, .so and .apk packing still done by ant."
+    exit
+
+    # cp Main.java from exlib :
+    from=${exlib_mgr}/../exlib/app/Android
+    to=../Android/src/fr/in2p3/lal/${app}
+
+    sed -e "s:EXLIB_APP:${app}:g" ${from}/Main_java > ${to}/Main.java
+    sed -e "s:EXLIB_APP:${app}:g" ${from}/GLSurface_java > ${to}/GLSurface.java
+
+    save_dir=`pwd`
+    cd ../Android
+    echo "sdk.dir=${sdk_home}" > ./local.properties
+    /bin/mv ./ant.properties tmp_props
+    /bin/cp ../mgr/ant.properties .
+
+    if [ ${build_debug} = "yes" ] ; then
+      ant debug
+    else
+      ant release
+    fi
+    /bin/mv tmp_props ./ant.properties
+    cd ${save_dir}
+
+  elif [ ${build_native_android} = "yes" ] ; then
+    if [ ${build_verbose} = yes ] ; then
+      echo "inlib/mgr/build_app : native android ..."
+    fi
+    echo "inlib/mgr/build_app : native android : not yet ready."
+    echo "  java, .so and .apk packing still done by ant."
+    exit
+
+    # cp Main.java from exlib :
+    from=${exlib_mgr}/../exlib/app/Android
+    to=../NativeAndroid/src/fr/in2p3/lal/${app}
+
+    sed -e "s:EXLIB_APP:${app}:g" ${from}/Native_Main_java > ${to}/Main.java
+
+    save_dir=`pwd`
+    cd ../NativeAndroid
+    /bin/mv ./ant.properties tmp_props
+    /bin/cp ../mgr/ant.properties .
+
+    if [ ${build_debug} = "yes" ] ; then
+      ant debug
+    else
+      ant release
+    fi
+    /bin/mv tmp_props ./ant.properties
+    cd ${save_dir}
+
+  fi
+
+  link_it=no
+
+elif [ "${suffix}" = "ecpp" ] ; then
+
+  if [ ${build_visual} = "yes" ] ; then
+    echo "inlib/mgr/build_app : tntnet not yet tested with visual."
+    exit
+  fi
+
+  if [ ${build_verbose} = yes ] ; then
+    echo "inlib/mgr/build_app : compile ${app_src} ..."
+  fi
+
+  if [ "${ecpp_compiler}" = "" ] ; then
+    echo "inlib/mgr/build_app : ecpp compiler not found."
+    exit
+  fi
+
+  if [ ! -f tntnet.xml ] ; then
+    echo "inlib/mgr/build_app : tntnet.xml not found."
+    exit
+  fi
+
+  if [ ${build_do_compile} = "yes" ] ; then
+    obj="${build_path}/${app_name}.o"
+
+    eval ${ecpp_compiler} -o ${build_path}/${app_name}.cpp ${app_src}
+    eval ${cpp_compiler} -c ${cppflags} -o ${obj} ${build_path}/${app_name}.cpp
+    use_status=$?;if [ ${use_status} != 0 ] ; then exit ${use_status};fi
+    #/bin/rm -f ${build_path}/${app_name}.cpp
+  fi
+
+  objs="${obj} ${objs}"
+
+  /bin/cp tntnet.xml ${build_path}/.
+
+  file_plugin="${build_path}/${app_name}.so"
+
+  plugin_flags=
+  if [ `uname` = "Darwin" ] ; then
+    plugin_flags="${plugin_flags} -bundle -twolevel_namespace"
+    #plugin_flags="${plugin_flags} -dynamiclib"
+  elif [ `uname` = "Linux" ] ; then
+    plugin_flags="${plugin_flags} -fPIC -shared "
+  fi
+
+  /bin/rm -f ${file_plugin}
+
+  ${cpp_linker} ${plugin_flags} -o ${file_plugin} ${objs} ${libs}
+
+else
+  echo "inlib/mgr/build_app : suffix ${suffix} not treated"        
+  exit
+fi
+
+if [ "${link_it}" = "yes" ] ; then
+if [ ${build_sdk_android} = "yes" ] ; then
+  echo "inlib/mgr/build_app : sdk_android : can't build a non java app."
+else
+
+  file_exe=${build_path}/${app_exe}
+  if [ ${build_verbose} = yes ] ; then
+    echo "inlib/mgr/build_app : link ${file_exe} ..."
+  fi
+  if [ ${build_visual} = "yes" ] ; then
+    file_exe="${file_exe}.exe"
+    eval ${cpp_linker} /out:${file_exe} ${objs} ${libs}
+    file_exe_manifest="${file_exe}.manifest"
+  else
+    eval ${cpp_linker} -o ${file_exe} ${objs} ${libs}
+  fi
+    
+  #/bin/rm -f ${objs}
+    
+  if [ `uname` = Darwin ] ; then
+    if [ ${build_debug} = "yes" ] ; then
+      if [ ! -f ${file_exe} ] ; then
+        echo "inlib/mgr/build_app : exe not built : can't build .dSYM"
+      else
+        if [ ${build_verbose} = yes ] ; then
+          echo "inlib/mgr/build_app : build ${file_exe}.dSYM ..."
+        fi
+        /bin/rm -R -f ${file_exe}.dSYM
+        dsymutil --out=${file_exe}.dSYM ${file_exe}
+      fi
+    fi
+  fi 
+    
+fi # sdk_android    
+fi # link_it

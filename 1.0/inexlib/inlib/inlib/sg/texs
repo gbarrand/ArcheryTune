@@ -1,0 +1,81 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_sg_texs
+#define inlib_sg_texs
+
+#include "gl_manager"
+#include <vector>
+#include <ostream>
+
+namespace inlib {
+namespace sg {
+
+class texs {
+protected:
+  texs() {}
+  virtual ~texs() {clean_texs();}
+protected:
+  texs(const texs&) {}
+  texs& operator=(const texs& a_from) {
+    if(&a_from==this) return *this;
+    clean_texs();
+    return *this;
+  }
+protected:
+  unsigned int get_tex_id(std::ostream& a_out,gl_manager& a_mgr,
+                          const inlib::img_byte& a_img) {
+    unsigned int _id = find_tex(&a_mgr);
+    if(!a_mgr.is_texture_id_valid(_id)){
+      clean_texs(&a_mgr);
+      _id = 0;
+    }
+    if(!_id) {
+      _id = a_mgr.create_texture(a_img);
+      if(!_id) {
+        a_out << "inlib::sg::texs::get_tex_id :"
+              << " gl_manager.create_texture() failed."
+              << std::endl;
+      } else {
+        save_tex(_id,&a_mgr);
+      }
+    }
+    return _id;
+  }  
+protected:
+  void save_tex(unsigned int a_id,gl_manager* a_mgr) {
+    m_texs.push_back(std::pair<unsigned int,gl_manager*>(a_id,a_mgr));    
+  }
+  void clean_texs() {
+    std::vector< std::pair<unsigned int,gl_manager*> >::iterator it;
+    for(it=m_texs.begin();it!=m_texs.end();){
+      (*it).second->delete_texture((*it).first);
+      it = m_texs.erase(it);      
+    }
+  }
+  void clean_texs(gl_manager* a_mgr) {
+    std::vector< std::pair<unsigned int,gl_manager*> >::iterator it;
+    for(it=m_texs.begin();it!=m_texs.end();){
+      if((*it).second==a_mgr) {
+        (*it).second->delete_texture((*it).first);
+        it = m_texs.erase(it);      
+      } else {
+        it++;
+      }
+    }
+  }
+  unsigned int find_tex(gl_manager* a_mgr) {
+    std::vector< std::pair<unsigned int,gl_manager*> >::iterator it;
+    for(it=m_texs.begin();it!=m_texs.end();++it){
+      if((*it).second==a_mgr) return (*it).first;
+    }
+    return 0;
+  }
+
+protected:
+  std::vector< std::pair<unsigned int,gl_manager*> > m_texs;
+};
+
+}}
+
+#endif

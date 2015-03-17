@@ -1,0 +1,49 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_sg_gv_grid
+#define inlib_sg_gv_grid
+
+#include "gui_viewer"
+
+namespace inlib {
+namespace sg {
+
+template <class BUTTON>
+class gv_grid : public button_grid<BUTTON> {
+  typedef button_grid<BUTTON> parent;
+public: //public for exlib/cbk/wall.
+  typedef bcbk::return_action (*cbk_func)(gui_viewer&,parent&);
+public:
+  gv_grid(gui_viewer& a_gv,cbk_func a_func):parent(),m_gv(a_gv),m_func(a_func){
+    m_gv.set_colors(*this);
+    parent::add_callback(new this_cbk(*this));
+  }
+  virtual ~gv_grid(){}
+protected:
+  gv_grid(const gv_grid& a_from):parent(a_from),m_gv(a_from.m_gv),m_func(a_from.m_func){}
+  const gv_grid& operator=(const gv_grid& a_from){parent::operator=(a_from);m_func = a_from.m_func;return *this;}
+protected:
+  class this_cbk : public bcbk {
+    //INLIB_CBK(this_cbk,inlib::sg::gv_grid::this_cbk,bcbk)
+    typedef bcbk parent;
+  public:
+    virtual bcbk* copy() const {return new this_cbk(*this);}
+    virtual return_action action() {return m_this.m_func?m_this.m_func(m_this.m_gv,m_this):return_none;}
+  public:
+    this_cbk(gv_grid& a_this):parent(),m_this(a_this){}
+    virtual ~this_cbk(){}
+  public:
+    this_cbk(const this_cbk& a_from):parent(a_from),m_this(a_from.m_this){}
+    this_cbk& operator=(const this_cbk& a_from){parent::operator=(a_from);return *this;}
+  protected:
+    gv_grid& m_this;
+  };
+protected:
+  gui_viewer& m_gv;
+  cbk_func m_func;
+};
+
+}}
+
+#endif
