@@ -1,0 +1,35 @@
+
+# to be sourced in <app>/mgr/build scripts.
+
+#//////////////////////////////////////////////////////
+#/// related to exlib and graphics ////////////////////
+#//////////////////////////////////////////////////////
+
+if [ "${exlib_mgr}" = "" ] ; then
+  echo "exlib/mgr/build_app_header : exlib_mgr variable not set."
+  exit
+fi
+
+. ${exlib_mgr}/build_header
+
+#//////////////////////////////////////////////////////
+#/// common uses : ////////////////////////////////////
+#//////////////////////////////////////////////////////
+use_archive=yes
+
+use_inlib=yes
+use_exlib=yes
+
+use_GL=yes
+if [ ${build_batch}     = "yes" ] ; then use_GL=no;fi
+if [ ${build_WebGL}     = "yes" ] ; then use_GL=no;fi
+if [ ${build_tntnet}    = "yes" ] ; then use_GL=no;fi
+if [ ${build_x11_no_gl} = "yes" ] ; then use_GL=no;fi
+
+use_gl2ps=yes
+use_glutess=yes
+use_expat=yes
+use_freetype=yes
+use_png=yes
+use_jpeg=yes
+use_zlib=yes

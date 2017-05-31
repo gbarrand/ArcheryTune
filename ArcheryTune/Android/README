@@ -1,0 +1,8 @@
+
+  Execute :
+    csh> source ../../inexlib/exlib/mgr/setup_Android.csh
+
+ to setup the Android SDK and NDK development environment. And then :
+    csh> ../../inexlib/exlib/mgr/app_Android_build
+ 
+ to build the application.

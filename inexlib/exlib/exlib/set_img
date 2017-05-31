@@ -1,0 +1,55 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file exlib.license for terms.
+
+#ifndef exlib_set_img
+#define exlib_set_img
+
+#include <inlib/img>
+#include <inlib/sep>
+
+#include "png"
+#include "jpeg"
+
+namespace exlib {
+
+inline bool set_img_from_file(std::ostream& a_out,
+                              const std::string& a_res_dir,
+                              const std::string& a_file,
+                              inlib::img_byte& a_img) {
+  if(a_file.empty()) {
+    a_img.clear();
+    return true;
+  }
+    
+  std::string path = a_res_dir;
+  path += inlib::sep();
+  path += a_file;
+    
+  unsigned int w = 0;
+  unsigned int h = 0;
+  unsigned int bpp = 0;
+  unsigned char* buffer = 0;
+  if(!buffer) {
+  if(exlib::jpeg::is(path)) {
+     buffer = exlib::jpeg::read(a_out,path,w,h,bpp);
+  }}
+  if(!buffer) {
+  if(exlib::png::is(path)) {
+     buffer = exlib::png::read(a_out,path,w,h,bpp);
+  }}
+  if(!buffer) {
+    a_out << "exlib::set_img_from_file() :"
+          << " can't read file " << inlib::sout(path) << "."
+          << std::endl;
+    a_img.clear();
+    return false;
+  }
+  a_img.set(w,h,bpp,buffer,true);
+  return true;
+}
+
+}
+
+#endif
+
+//exlib_build_use inlib png jpeg zlib

@@ -1,0 +1,49 @@
+
+if [ "${use_gmp}" = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    echo "exlib/mgr/use_gmp : cl.exe : gmp not yet supported."
+    exit
+  fi
+
+  if [ `uname` = Darwin ] ; then
+    ccflags="${ccflags} -I/opt/local/include"
+    cppflags="${cppflags} -I/opt/local/include"
+
+    if [ "${use_archive}" = "yes" ] ; then
+      libs="${libs} /opt/local/lib/libmpfr.a"
+      libs="${libs} /opt/local/lib/libgmpxx.a"
+      libs="${libs} /opt/local/lib/libgmp.a"
+    else
+      libs="${libs} -L/opt/local/lib -lmpfr -lgmpxx -lgmp"
+    fi
+
+    if [ ${build_gnu} = "yes" ] ; then
+      echo "exlib/mgr/use_gmp : /opt/local/lib/libmpfr,gmp,gmpxx not built with gnu."
+      exit
+    fi
+
+  else
+
+    gmp_home=/usr
+    if [ ! -f ${gmp_home}/include/gmpxx.h ] ; then
+      echo "exlib/mgr/use_gmp : ${gmp_home}/include/gmpxx.h not found."
+      exit
+    fi
+    if [ ! -f ${gmp_home}/include/mpfr.h ] ; then
+      echo "exlib/mgr/use_gmp : ${gmp_home}/include/mpfr.h not found."
+      exit
+    fi
+
+    ccflags="${ccflags} -I${gmp_home}/include"
+    cppflags="${cppflags} -I${gmp_home}/include"
+
+    if [ "${use_archive}" = "yes" ] ; then
+      libs="${libs} ${gmp_home}/${lib}/libmpfr.a"
+      libs="${libs} ${gmp_home}/${lib}/libgmpxx.a"
+      libs="${libs} ${gmp_home}/${lib}/libgmp.a"
+    else
+      libs="${libs} -L${gmp_home}/${lib} -lmpfr -lgmpxx -lgmp"
+    fi
+  fi
+
+fi

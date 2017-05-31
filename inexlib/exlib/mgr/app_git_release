@@ -1,0 +1,38 @@
+#!/bin/sh -f
+
+exlib_mgr=../../inexlib/exlib/mgr
+app="`${exlib_mgr}/app_name`"
+
+APP="`echo ${app} | tr '[:lower:]' '[:upper:]'`"
+maj_vers="`grep ${APP}_MAJOR_VERSION ../${app}/version | awk '{print $3}'`"
+min_vers="`grep ${APP}_MINOR_VERSION ../${app}/version | awk '{print $3}'`"
+pat_vers="`grep ${APP}_PATCH_VERSION ../${app}/version | awk '{print $3}'`"
+
+tag="${app}_${maj_vers}_${min_vers}_${pat_vers}"
+#echo ${tag}
+#exit
+
+save_dir=`pwd`
+
+tos="${save_dir}"
+tos="${tos} ${save_dir}/../../inexlib/inlib"
+tos="${tos} ${save_dir}/../../inexlib/exlib"
+tos="${tos} ${save_dir}/../../inexlib/ourex"
+tos="${tos} ${save_dir}/../../inexlib"
+
+if [ -d "${HOME}/Documents/${app}/.git" ] ; then
+  tos="${tos} /Users/barrand/Documents/${app}"
+fi
+
+for dir in ${tos} ; do
+  old_dir=`pwd`
+  if [ -d ${dir} ] ; then
+    echo "${dir} : create branch ${tag}"
+    cd ${dir}
+#    git branch -D ${tag}
+    git branch ${tag}
+  fi
+  cd ${old_dir}
+done
+
+cd ${save_dir}

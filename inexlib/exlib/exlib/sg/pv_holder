@@ -1,0 +1,43 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file exlib.license for terms.
+
+#ifndef exlib_sg_pv_holder
+#define exlib_sg_pv_holder
+
+#include "text_freetype"
+#include "manager_GL"
+
+namespace exlib {
+namespace sg {
+
+class pv_holder {
+public:
+  pv_holder(std::ostream& a_out)
+  :m_ttf()
+  ,m_mgr_GL(a_out)
+  {}
+  virtual ~pv_holder(){}
+protected:
+  pv_holder(const pv_holder& a_from)
+  :m_ttf(a_from.m_ttf)
+  ,m_mgr_GL(a_from.m_mgr_GL)
+  {}
+  pv_holder& operator=(const pv_holder& a_from) {
+    m_ttf = a_from.m_ttf;
+    m_mgr_GL = a_from.m_mgr_GL;
+    return *this;
+  }
+public:
+  inlib::sg::gl_manager& gra_mgr() {return m_mgr_GL;}
+  inlib::sg::base_freetype& ttf() {return m_ttf;}
+protected:
+  text_freetype m_ttf;
+  manager_GL m_mgr_GL;
+};
+
+
+}}
+
+#endif
+
+//exlib_build_use inlib freetype glutess GL

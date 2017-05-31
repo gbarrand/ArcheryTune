@@ -1,0 +1,13 @@
+#!/bin/sh -f
+
+lines=`find ../inlib -name '*' -print | grep -v CVS | grep -v '/stl' | grep -v '\.c' | grep -v '\.icc' | grep -v '\.help' | grep -v README`
+
+for line in ${lines} ; do
+  name=`basename ${line}`  
+  s=`grep ${name} ../inlib/all`
+  if [ "${s}" = "" ] ; then
+    echo ${line}
+  #else
+  #  echo ${line} found.
+  fi
+done

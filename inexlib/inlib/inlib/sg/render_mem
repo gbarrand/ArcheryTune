@@ -1,0 +1,385 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_sg_render_mem
+#define inlib_sg_render_mem
+
+#include "gl_manager"
+#include "render_action"
+#include "primitive_visitor"
+
+#include "atb_vertices"
+
+#ifdef WIN32
+// disable the warning about the usage of "this" in the constructor.
+#pragma warning(disable:4355)
+#endif
+
+namespace inlib {
+namespace sg {
+
+class manager_mem : public virtual gl_manager {
+public:
+  virtual void begin_render(unsigned int,unsigned int,
+                            float,float,float,float) {}
+  virtual void end_render() {}
+
+  virtual unsigned int create_texture(const inlib::img_byte&) {return 0;}
+  virtual unsigned int create_gsto_from_data(unsigned int,const float*){return 0;}
+
+  virtual bool is_gsto_id_valid(unsigned int) const {return false;}
+  virtual void delete_gsto(unsigned int) {}
+
+  //
+  virtual gsto_mode get_gsto_mode() const {
+    return gsto_memory;
+  }
+  virtual void set_gsto_mode(gsto_mode) {}
+  virtual void available_gsto_modes(std::vector<std::string>& a_v) {
+    a_v.clear();
+  }
+  virtual void available_not_memory_gsto_mode(std::string& a_s) const {
+    a_s.clear();
+  }
+  virtual unsigned int used_texture_memory() const {return 0;}
+  virtual unsigned int gstos_size() const {return 0;}
+public:
+  manager_mem(){}
+  virtual ~manager_mem(){}
+public:
+  manager_mem(const manager_mem& a_from):gl_manager(a_from){}
+  manager_mem& operator=(const manager_mem& a_from){
+    if(&a_from==this) return *this;
+    return *this;
+  }
+};
+
+class render_mem : public render_action {
+  typedef render_action parent;
+public:
+  virtual void draw_vertex_array(inlib::gl::mode_t a_mode,
+                                 unsigned int a_floatn,
+                                 const float* a_xyzs){
+    m_pv.add_primitive(a_mode,a_floatn,a_xyzs);
+  }
+
+  virtual void draw_vertex_array_xy(inlib::gl::mode_t a_mode,
+                                    unsigned int a_floatn,
+                                    const float* a_xys){
+    m_pv.add_primitive_xy(a_mode,a_floatn,a_xys);
+  }
+
+  virtual void draw_vertex_color_array(inlib::gl::mode_t a_mode,
+                                       unsigned int a_floatn,
+                                       const float* a_xyzs,
+                                       const float* a_rgbas){
+    m_pv.add_primitive(a_mode,a_floatn,a_xyzs,a_rgbas);
+  }
+
+  virtual void draw_vertex_normal_array(inlib::gl::mode_t a_mode,
+                                        unsigned int a_floatn,
+                                        const float* a_xyzs,
+                                        const float* /*a_nms*/){
+    m_pv.add_primitive(a_mode,a_floatn,a_xyzs);
+  }
+
+  virtual void draw_vertex_color_normal_array(inlib::gl::mode_t a_mode,
+                                              unsigned int a_floatn,
+                                              const float* a_xyzs,
+                                              const float* a_rgbas,
+                                              const float* /*a_nms*/){
+    // We expect a_nms of size : 3*(a_floatn/3)
+    // (then one normal per 3D point).
+    m_pv.add_primitive(a_mode,a_floatn,a_xyzs,a_rgbas);
+  }
+
+  virtual void clear_color(float,float,float,float){}
+  virtual void color4f(float a_r,float a_g,float a_b,float a_a){
+    m_color.set_value(a_r,a_g,a_b,a_a);
+  }
+  virtual void line_width(float){}
+  virtual void point_size(float) {}
+  virtual void set_polygon_offset(bool) {}
+  virtual void normal(float,float,float) {}
+
+  virtual void set_winding(winding_type a_v) {
+    m_ccw = (a_v==winding_ccw?true:false);
+  }
+
+  virtual void set_depth_test(bool) {}
+  virtual void set_cull_face(bool) {}
+  virtual void set_point_smooth(bool) {}
+  virtual void set_line_smooth(bool) {}
+
+  virtual void load_proj_matrix(const inlib::mat4f& a_mtx) {m_proj = a_mtx;}
+  virtual void load_model_matrix(const inlib::mat4f& a_mtx) {m_model = a_mtx;}
+
+  virtual unsigned int max_lights() {return 1000;}
+
+  virtual void enable_light(unsigned int,
+                            float,float,float,
+                            float,float,float,float){}
+
+  virtual void set_lighting(bool) {}
+
+  virtual void restore_state(unsigned int /*a_ret_num_light*/) {
+    m_ccw = (m_state.m_winding==winding_ccw?true:false);
+    m_proj = m_state.m_proj;
+    m_model = m_state.m_model;
+    m_color = m_state.m_color;
+  }
+
+  /////////////////////////////////////////////////////////////////
+  /// texture /////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////
+  virtual void draw_vertex_array_texture(inlib::gl::mode_t,
+                                         unsigned int,
+                                         const float*,
+                                         unsigned int,
+                                         const float*) {
+    m_out << "render_mem::draw_vertex_array_texture :"
+          << " dummy."
+          << std::endl;
+  }
+
+  virtual void draw_vertex_normal_array_texture(inlib::gl::mode_t a_mode,
+                                         unsigned int a_xyzn,
+                                         const float* a_xyzs,
+                                         const float* /*a_nms*/,
+                                         unsigned int a_id,
+                                         const float* a_tcs) {
+    draw_vertex_array_texture(a_mode,a_xyzn,a_xyzs,a_id,a_tcs);
+  }
+
+  /////////////////////////////////////////////////////////////////
+  /// VBO /////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////
+  virtual void begin_gsto(unsigned int) {}
+  virtual void draw_gsto_v(inlib::gl::mode_t,unsigned int,bufpos){}
+  virtual void draw_gsto_vc(inlib::gl::mode_t,unsigned int,bufpos,bufpos) {}
+  virtual void draw_gsto_vn(inlib::gl::mode_t,unsigned int,bufpos,bufpos) {}
+  virtual void draw_gsto_vcn(inlib::gl::mode_t,unsigned int,bufpos,bufpos,bufpos) {}
+  virtual void end_gsto() {}
+  /////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////
+  virtual sg::gl_manager& gl_manager() {return m_mgr;}
+public:
+  render_mem(std::ostream& a_out,
+             atb_vertices& a_points,
+             atb_vertices& a_lines,
+             atb_vertices& a_triangles)
+  :parent(a_out,0,0)
+
+  ,m_points(a_points)
+  ,m_lines(a_lines)
+  ,m_triangles(a_triangles)
+
+  ,m_pv(*this)
+
+  ,m_ccw(true)
+  {
+    m_points.clear();
+    m_points.mode = inlib::gl::points();
+    m_lines.clear();
+    m_lines.mode = inlib::gl::lines();
+    m_triangles.clear();
+    m_triangles.mode = inlib::gl::triangles();
+  }
+  virtual ~render_mem(){}
+protected:
+  render_mem(const render_mem& a_from)
+  :parent(a_from)
+  ,m_mgr(a_from.m_mgr)
+
+  ,m_points(a_from.m_points)
+  ,m_lines(a_from.m_lines)
+  ,m_triangles(a_from.m_triangles)
+
+  ,m_pv(a_from.m_pv)
+
+  ,m_proj(a_from.m_proj)
+  ,m_model(a_from.m_model)
+  ,m_color(a_from.m_color)
+  ,m_ccw(a_from.m_ccw)
+  {}
+  render_mem& operator=(const render_mem& a_from){
+    parent::operator=(a_from);
+    if(&a_from==this) return *this;
+
+    m_mgr = a_from.m_mgr;
+
+    m_points = a_from.m_points;
+    m_lines = a_from.m_lines;
+    m_triangles = a_from.m_triangles;
+
+    m_pv = a_from.m_pv;
+
+    m_proj = a_from.m_proj;
+    m_model = a_from.m_model;
+    m_color = a_from.m_color;
+    m_ccw = a_from.m_ccw;
+
+    return *this;
+  }
+protected:
+  bool project_point(float& a_x,float& a_y,float& a_z,float& a_w) {
+    a_w = 1;
+    m_model.mul_4f(a_x,a_y,a_z,a_w);
+    if(a_w==0) return false;
+    a_x /= a_w;
+    a_y /= a_w;
+    a_z /= a_w;
+    return true;
+  }
+
+  class primvis : public primitive_visitor {
+  protected:
+    virtual bool project(float& a_x,float& a_y,float& a_z,float& a_w) {
+      return m_this.project_point(a_x,a_y,a_z,a_w);
+    }
+    virtual bool add_point(float a_x,float a_y,float a_z,float) {
+      float r = m_this.m_color[0];
+      float g = m_this.m_color[1];
+      float b = m_this.m_color[2];
+      float a = m_this.m_color[3];
+
+      m_this.m_points.add_rgba(r,g,b,a);
+      m_this.m_points.add(a_x,a_y,a_z);
+
+      return true;
+    }
+  
+    virtual bool add_point(float a_x,float a_y,float a_z,float,
+                           float a_r,float a_g,float a_b,float a_a) {
+      m_this.m_points.add_rgba(a_r,a_g,a_b,a_a);
+      m_this.m_points.add(a_x,a_y,a_z);
+      return true;
+    }
+  
+    virtual bool add_line(float a_bx,float a_by,float a_bz,float,
+                          float a_ex,float a_ey,float a_ez,float) {
+      float r = m_this.m_color[0];
+      float g = m_this.m_color[1];
+      float b = m_this.m_color[2];
+      float a = m_this.m_color[3];
+
+      m_this.m_lines.add_rgba(r,g,b,a);
+      m_this.m_lines.add(a_bx,a_by,a_bz);
+
+      m_this.m_lines.add_rgba(r,g,b,a);
+      m_this.m_lines.add(a_ex,a_ey,a_ez);
+
+      return true;
+    }
+  
+    virtual bool add_line(float a_bx,float a_by,float a_bz,float,
+                          float a_br,float a_bg,float a_bb,float a_ba,
+                          float a_ex,float a_ey,float a_ez,float,
+                          float a_er,float a_eg,float a_eb,float a_ea){
+
+      m_this.m_lines.add_rgba(a_br,a_bg,a_bb,a_ba);
+      m_this.m_lines.add(a_bx,a_by,a_bz);
+
+      m_this.m_lines.add_rgba(a_er,a_eg,a_eb,a_ea);
+      m_this.m_lines.add(a_ex,a_ey,a_ez);
+      return true;
+    }
+  
+    virtual bool add_triangle(float a_p1x,float a_p1y,float a_p1z,float,
+                              float a_p2x,float a_p2y,float a_p2z,float,
+                              float a_p3x,float a_p3y,float a_p3z,float){
+      float r = m_this.m_color[0];
+      float g = m_this.m_color[1];
+      float b = m_this.m_color[2];
+      float a = m_this.m_color[3];
+
+      if(m_this.m_ccw) {
+        m_this.m_triangles.add_rgba(r,g,b,a);
+        m_this.m_triangles.add(a_p1x,a_p1y,a_p1z);
+
+        m_this.m_triangles.add_rgba(r,g,b,a);
+        m_this.m_triangles.add(a_p2x,a_p2y,a_p2z);
+
+        m_this.m_triangles.add_rgba(r,g,b,a);
+        m_this.m_triangles.add(a_p3x,a_p3y,a_p3z);
+      } else {
+        m_this.m_triangles.add_rgba(r,g,b,a);
+        m_this.m_triangles.add(a_p1x,a_p1y,a_p1z);
+
+        m_this.m_triangles.add_rgba(r,g,b,a);
+        m_this.m_triangles.add(a_p3x,a_p3y,a_p3z);
+
+        m_this.m_triangles.add_rgba(r,g,b,a);
+        m_this.m_triangles.add(a_p2x,a_p2y,a_p2z);
+      }
+
+      return true;
+    }
+
+    virtual bool add_triangle(
+      float a_p1x,float a_p1y,float a_p1z,float,
+        float a_r1,float a_g1,float a_b1,float a_a1,
+      float a_p2x,float a_p2y,float a_p2z,float,
+        float a_r2,float a_g2,float a_b2,float a_a2,
+      float a_p3x,float a_p3y,float a_p3z,float,
+        float a_r3,float a_g3,float a_b3,float a_a3){
+
+      if(m_this.m_ccw) {
+        m_this.m_triangles.add_rgba(a_r1,a_g1,a_b1,a_a1);
+        m_this.m_triangles.add(a_p1x,a_p1y,a_p1z);
+
+        m_this.m_triangles.add_rgba(a_r2,a_g2,a_b2,a_a2);
+        m_this.m_triangles.add(a_p2x,a_p2y,a_p2z);
+
+        m_this.m_triangles.add_rgba(a_r3,a_g3,a_b3,a_a3);
+        m_this.m_triangles.add(a_p3x,a_p3y,a_p3z);
+      } else {
+        m_this.m_triangles.add_rgba(a_r1,a_g1,a_b1,a_a1);
+        m_this.m_triangles.add(a_p1x,a_p1y,a_p1z);
+
+        m_this.m_triangles.add_rgba(a_r3,a_g3,a_b3,a_a3);
+        m_this.m_triangles.add(a_p3x,a_p3y,a_p3z);
+
+        m_this.m_triangles.add_rgba(a_r2,a_g2,a_b2,a_a2);
+        m_this.m_triangles.add(a_p2x,a_p2y,a_p2z);
+      }
+
+      return true;
+    }
+
+  public:
+    primvis(render_mem& a_this):m_this(a_this){}
+    virtual ~primvis(){}
+  public:
+    primvis(const primvis& a_from)
+    :primitive_visitor(a_from)
+    ,m_this(a_from.m_this)
+    {}
+    primvis& operator=(const primvis& a_from){
+      primitive_visitor::operator=(a_from);
+      return *this;
+    }
+  protected:
+    render_mem& m_this;
+  };
+
+protected:
+  manager_mem m_mgr;
+
+  atb_vertices& m_points;
+  atb_vertices& m_lines;
+  atb_vertices& m_triangles;
+  primvis m_pv;
+
+  // to be restored in restore_state() :
+  inlib::mat4f m_proj;
+  inlib::mat4f m_model;
+  inlib::colorf m_color;  
+
+  bool m_ccw;
+};
+
+}}
+
+#endif

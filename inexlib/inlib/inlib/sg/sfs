@@ -1,0 +1,17 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_sg_sfs
+#define inlib_sg_sfs
+
+#include "sf_vec"
+#include "sf_enum"
+#include "sf_string"
+#include "sf_rotf"
+#include "sf_img"
+#include "sf_vec2f"
+#include "sf_vec3f"
+#include "sf_vec4f"
+#include "sf_mat4f"
+
+#endif
