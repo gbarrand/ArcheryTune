@@ -12,7 +12,7 @@
 #include <inlib/sg/ring>
 #include <inlib/sg/axis>
 #include <inlib/sg/event_dispatcher>
-#include <inlib/sg/render_mem>
+#include <inlib/sg/mem_action>
 #include <exlib/jpeg>
 
 namespace ArcheryTune {
@@ -94,7 +94,7 @@ inline void rep_rings(inlib::sg::group& a_parent,
     inlib::sg::separator* _sep = new inlib::sg::separator;
     a_parent.add(_sep);
     inlib::sg::rgba* mat = new inlib::sg::rgba();
-    mat->color = inlib::colorf::white();
+    mat->color = inlib::colorf_white();
     _sep->add(mat);
     inlib::sg::matrix* m = new inlib::sg::matrix;
     m->set_translate(0,0,z_back());
@@ -126,6 +126,7 @@ inline void rep_rings(inlib::sg::group& a_parent,
     _sep->add(m);
 
     inlib::sg::ring* node = new inlib::sg::ring();
+    node->set_pickable(false);
     node->rmin = rmn_mxs[i].first;
     node->rmax = rmn_mxs[i].second;
     node->steps = steps();
@@ -138,7 +139,7 @@ inline void rep_rings(inlib::sg::group& a_parent,
  {inlib::sg::separator* _sep = new inlib::sg::separator;
   a_parent.add(_sep);
   inlib::sg::rgba* mat = new inlib::sg::rgba();
-  mat->color = inlib::colorf::black();
+  mat->color = inlib::colorf_black();
   _sep->add(mat);
   inlib::sg::draw_style* ds = new inlib::sg::draw_style;
   ds->style = inlib::sg::draw_style::lines;
@@ -159,11 +160,11 @@ inline void rep_rings(inlib::sg::group& a_parent,
     inlib::sg::separator* _sep = new inlib::sg::separator;
     a_parent.add(_sep);
     inlib::sg::rgba* mat = new inlib::sg::rgba();
-    if((a_cols[i]==inlib::colorf::black()) &&
-       (a_cols[i+1]==inlib::colorf::black()) ){
-      mat->color = inlib::colorf::white();
+    if((a_cols[i]==inlib::colorf_black()) &&
+       (a_cols[i+1]==inlib::colorf_black()) ){
+      mat->color = inlib::colorf_white();
     } else {
-      mat->color = inlib::colorf::black();
+      mat->color = inlib::colorf_black();
     }
     _sep->add(mat);
     inlib::sg::draw_style* ds = new inlib::sg::draw_style;
@@ -186,7 +187,7 @@ inline void rep_rings(inlib::sg::group& a_parent,
     inlib::sg::separator* _sep = new inlib::sg::separator;
     a_parent.add(_sep);
     inlib::sg::rgba* mat = new inlib::sg::rgba();
-    mat->color = inlib::colorf::lightgrey();
+    mat->color = inlib::colorf_lightgrey();
     _sep->add(mat);
     inlib::sg::matrix* m = new inlib::sg::matrix;
     float xnum = (rmn_mxs[i].first+rmn_mxs[i].second)*0.5f;
@@ -206,7 +207,7 @@ inline void rep_rings(inlib::sg::group& a_parent,
 
  {inlib::sg::group* _sep = &a_parent; //trailing sg.
   inlib::sg::rgba* mat = new inlib::sg::rgba();
-  mat->color = inlib::colorf::black();
+  mat->color = inlib::colorf_black();
   _sep->add(mat);
   inlib::sg::draw_style* ds = new inlib::sg::draw_style;
   ds->style = inlib::sg::draw_style::lines;
@@ -235,17 +236,15 @@ inline void rep_nature(std::ostream& a_out,
   unsigned int w,h,bpp;
   unsigned char* buffer = exlib::jpeg::read(a_out,path,w,h,bpp);
   if(!buffer) {
-    a_out << "rep_nature :"
-          << " can't read file."
-          << std::endl;
+    a_out << "rep_nature : can't read file." << std::endl;
     return;
   }
   if(bpp!=3) {
-    a_out << "rep_natue :"
-          << " bpp not 3."
-          << std::endl;
+    a_out << "rep_natue : bpp not 3." << std::endl;
     return;
   }
+
+  //a_out << "rep_natue : jpg : " << inlib::sout(path) << ", w = " << w << ", h " << h << ", bpp " << bpp << std::endl;
 
   inlib::sg::separator* _sep = new inlib::sg::separator;
   a_parent.add(_sep);
@@ -254,7 +253,7 @@ inline void rep_nature(std::ostream& a_out,
   //_sep->add(mtx);
 
   inlib::sg::rgba* mat = new inlib::sg::rgba();
-  mat->color = inlib::colorf::white();
+  mat->color = inlib::colorf_white();
   _sep->add(mat);
 
   _sep->add(new inlib::sg::normal);
@@ -264,24 +263,22 @@ inline void rep_nature(std::ostream& a_out,
   node->img.value().set(w,h,bpp,buffer,true);
   node->height = a_h;
   node->expand = true;
+  node->nearest = false; //to have antialiasing on texture.
 
   _sep->add(node);
 }
 
-inline inlib::sg::bcbk::return_action action_slider(inlib::sg::gui_viewer& a_gv,const inlib::sg::bcbk&,
-                                                    inlib::sg::slider&,void* a_tag) {
-  unsigned int m_action = *((unsigned int*)a_tag);
-
+inline inlib::sg::return_action action_slider(inlib::sg::gui_viewer& a_gv,const unsigned int& a_action) {
   dac* _dac = cast_dac(a_gv);
-  if(!_dac) return inlib::sg::bcbk::return_none;
+  if(!_dac) return inlib::sg::return_none;
 
-         if(m_action==0) { //begin : pass infos_text in outline.
+         if(a_action==0) { //begin : pass infos_text in outline.
     _dac->m_infos_text.modeling = inlib::sg::font_outline;
 
-  } else if(m_action==2) { //end : pass infos_text in outline.
+  } else if(a_action==2) { //end : pass infos_text in outline.
     _dac->m_infos_text.modeling = inlib::sg::font_filled;
 
-  } else if(m_action==1) { //distance cible
+  } else if(a_action==1) { //distance cible
     inlib::sg::slider& _slider = a_gv.slider_3();
 
     params& _params = _dac->m_parameters;
@@ -296,7 +293,7 @@ inline inlib::sg::bcbk::return_action action_slider(inlib::sg::gui_viewer& a_gv,
                    _params.m_dCible,
                    _params.m_dioptrie,scope_proj_diam)||
       (scope_proj_diam<=0)){
-      return inlib::sg::bcbk::return_to_render;
+      return inlib::sg::return_to_render;
     }
     scope_proj_diam *= 100; //now in cm.
 
@@ -306,7 +303,7 @@ inline inlib::sg::bcbk::return_action action_slider(inlib::sg::gui_viewer& a_gv,
                    _params.m_dCible,
                    _params.m_dioptrie,pastille_proj_diam)||
       (pastille_proj_diam<=0)){
-      return inlib::sg::bcbk::return_to_render;
+      return inlib::sg::return_to_render;
     }
     pastille_proj_diam *= 100; //now in cm.
 
@@ -337,15 +334,15 @@ inline inlib::sg::bcbk::return_action action_slider(inlib::sg::gui_viewer& a_gv,
 
   }
 
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_adjust_scope(inlib::sg::gui_viewer& a_gv,const inlib::sg::ecbk& a_cbk,
-                                                          inlib::sg::event_dispatcher&,void*) {
+inline inlib::sg::return_action action_adjust_scope(inlib::sg::gui_viewer& a_gv,const inlib::sg::ecbk& a_cbk,
+                                                    inlib::sg::event_dispatcher&,const inlib::sg::pos_data&) {
   dac* _dac = cast_dac(a_gv);
-  if(!_dac) return inlib::sg::bcbk::return_none;
+  if(!_dac) return inlib::sg::return_none;
 
-  if(const inlib::sg::size_event* sz_evt = inlib::safe_cast<inlib::sg::event,inlib::sg::size_event>(a_cbk.event_ref())){
+  if(const inlib::sg::size_event* sz_evt = inlib::sg::event_cast<inlib::sg::event,inlib::sg::size_event>(a_cbk.event_ref())){
     unsigned int ww = sz_evt->width();
     unsigned int wh = sz_evt->height();
     float hcam = 2;
@@ -359,7 +356,7 @@ inline inlib::sg::bcbk::return_action action_adjust_scope(inlib::sg::gui_viewer&
     a_cbk.event_action_ref().set_done(true);
 
 #ifdef CURSOR_BUTTON
-  } else if(const inlib::sg::up_event* up_evt = inlib::safe_cast<inlib::sg::event,inlib::sg::up_event>(a_cbk.event_ref())){
+  } else if(const inlib::sg::up_event* up_evt = inlib::sg::event_cast<inlib::sg::event,inlib::sg::up_event>(a_cbk.event_ref())){
     if(_dac->m_cursor_switch.which.value()==inlib::sg::gui_viewer::SHOWN()) {
       _dac->m_cursor_switch.which = inlib::sg::gui_viewer::HIDDEN();
       _dac->m_scope_ghost.set_active(true);
@@ -370,12 +367,12 @@ inline inlib::sg::bcbk::return_action action_adjust_scope(inlib::sg::gui_viewer&
 #endif
   }
 
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline void* action_begin()  {static unsigned int s_v = 0;return &s_v;}
-inline void* action_drag()   {static unsigned int s_v = 1;return &s_v;}
-inline void* action_end()    {static unsigned int s_v = 2;return &s_v;}
+inline unsigned int action_begin()  {return 0;}
+inline unsigned int action_drag()  {return 1;}
+inline unsigned int action_end()  {return 2;}
 
 #ifdef CURSOR_BUTTON
 inline void create_cursor_sg(inlib::sg::gui_viewer& a_gv,inlib::sg::separator& a_parent) {
@@ -408,7 +405,7 @@ inline void create_cursor_sg(inlib::sg::gui_viewer& a_gv,inlib::sg::separator& a
   sep->add(_ghost);
 
   inlib::sg::rgba* mat = new inlib::sg::rgba();
-  mat->color = inlib::colorf::grey();
+  mat->color = inlib::colorf_grey();
   sep->add(mat);
 
   inlib::sg::draw_style* ds = new inlib::sg::draw_style;
@@ -447,7 +444,7 @@ inline void create_infos_sg(inlib::sg::gui_viewer& a_gv,inlib::sg::separator& a_
   _sep->add(new inlib::sg::noderef(_dac->m_infos_matrix));
 
   inlib::sg::rgba* mat = new inlib::sg::rgba();
-  mat->color = inlib::colorf::black();
+  mat->color = inlib::colorf_black();
   _sep->add(mat);
 
   _dac->m_infos_text = exlib::sg::text_freetype(); //to reset fields.
@@ -518,7 +515,9 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
 
   //for Android device rotation.
   _dac->m_dpt = inlib::sg::event_dispatcher(); //to reset fields.
-  _dac->m_dpt.add_callback(new inlib::sg::funtag_ecbk<inlib::sg::event_dispatcher>(a_gv,_dac->m_dpt,action_adjust_scope,0));
+  _dac->m_dpt.add_callback
+   (new inlib::sg::fundata_cbk<inlib::sg::gui_viewer,inlib::sg::event_dispatcher,inlib::sg::pos_data,inlib::sg::ecbk>
+      (a_gv,_dac->m_dpt,action_adjust_scope,inlib::sg::pos_data(false,0,0)));
   sep.add(new inlib::sg::noderef(_dac->m_dpt));
 
   //NOTE : the logic is arranged to keep camera height to 2
@@ -548,8 +547,8 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
  {inlib::sg::separator* _sep = new inlib::sg::separator;
   sep.add(_sep);
   _sep->add(new inlib::sg::noderef(_dac->m_back_to_menu_matrix));
-  _dac->m_back_to_menu_button = inlib::sg::image_button(); //to reset fields.
-  if(!a_gv.set_img_from_file(a_gv.out(),a_gv.res_dir(),"beos_menu.jpg",_dac->m_back_to_menu_button.img.value())) {}
+  _dac->m_back_to_menu_button = inlib::sg::image_button(); //= to reset node fields.
+  if(!a_gv.set_img_from_res_file("beos_menu.jpg",_dac->m_back_to_menu_button.img.value())) {}
   _dac->m_back_to_menu_button.img.touch();
   adjust_back_to_menu(_dac->m_back_to_menu_button,_dac->m_back_to_menu_matrix,wcam,hcam);
   _sep->add(new inlib::sg::noderef(_dac->m_back_to_menu_button));}
@@ -562,7 +561,7 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
   sep.add(_sep);
   _sep->add(new inlib::sg::noderef(_dac->m_cursor_button_matrix));
   _dac->m_cursor_button = inlib::sg::image_button(); //to reset fields.
-  if(!a_gv.set_img_from_file(a_gv.out(),a_gv.res_dir(),"beos_menu.jpg",_dac->m_cursor_button.img.value())) {}
+  if(!a_gv.set_img_from_res_file("beos_menu.jpg",_dac->m_cursor_button.img.value())) {}
   _dac->m_cursor_button.img.touch();
   adjust_cursor_button(_dac->m_cursor_button,_dac->m_cursor_button_matrix,wcam,hcam);
   _sep->add(new inlib::sg::noderef(_dac->m_cursor_button));}
@@ -584,7 +583,7 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
   _dac->m_scope_ghost_matrix = inlib::sg::matrix();
   target_sep->add(new inlib::sg::noderef(_dac->m_scope_ghost_matrix));
 
-  bool do_render_mem = true; //OPTIMIZATION
+  bool do_mem_action = true; //OPTIMIZATION
 
   inlib::sg::matrix* ghost_matrix = 0;
 
@@ -605,26 +604,26 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
   inlib::sg::group* target_grp = new inlib::sg::group;
 
  {std::vector<inlib::colorf> cols;
-  cols.push_back(inlib::colorf::yellow());
-  cols.push_back(inlib::colorf::yellow());
-  cols.push_back(inlib::colorf::red());
-  cols.push_back(inlib::colorf::red());
-  cols.push_back(inlib::colorf::cornflowerblue());
-  cols.push_back(inlib::colorf::cornflowerblue());
-  cols.push_back(inlib::colorf::black());
-  cols.push_back(inlib::colorf::black());
-  cols.push_back(inlib::colorf::white());
-  cols.push_back(inlib::colorf::white());
-  cols.push_back(inlib::colorf::white()); //10+1
+  cols.push_back(inlib::colorf_yellow());
+  cols.push_back(inlib::colorf_yellow());
+  cols.push_back(inlib::colorf_red());
+  cols.push_back(inlib::colorf_red());
+  cols.push_back(inlib::colorf_cornflowerblue());
+  cols.push_back(inlib::colorf_cornflowerblue());
+  cols.push_back(inlib::colorf_black());
+  cols.push_back(inlib::colorf_black());
+  cols.push_back(inlib::colorf_white());
+  cols.push_back(inlib::colorf_white());
+  cols.push_back(inlib::colorf_white()); //10+1
 
   std::vector<inlib::colorf> camps;
-  camps.push_back(inlib::colorf::yellow());
-  camps.push_back(inlib::colorf::yellow());
-  camps.push_back(inlib::colorf::black());
-  camps.push_back(inlib::colorf::black());
-  camps.push_back(inlib::colorf::black());
-  camps.push_back(inlib::colorf::black());
-  camps.push_back(inlib::colorf::black()); //6+1
+  camps.push_back(inlib::colorf_yellow());
+  camps.push_back(inlib::colorf_yellow());
+  camps.push_back(inlib::colorf_black());
+  camps.push_back(inlib::colorf_black());
+  camps.push_back(inlib::colorf_black());
+  camps.push_back(inlib::colorf_black());
+  camps.push_back(inlib::colorf_black()); //6+1
   
   /////////////////////////////////////////////////////////////////////////
   /// indoor : ////////////////////////////////////////////////////////////
@@ -781,7 +780,7 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
              (a_blason_id==blason_nature_lapin()) ||
              (a_blason_id==blason_nature_paon()) ||
              (a_blason_id==blason_nature_pandaroux()) ){
-     do_render_mem = false;
+     do_mem_action = false;
  
     std::string image;
    {std::map<unsigned int,std::string>::const_iterator it = nature_images().find(a_blason_id);
@@ -809,11 +808,12 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
  
   }} // blason kind
 
-  if(do_render_mem) {
+  if(do_mem_action) {
     inlib::sg::atb_vertices* pts = new inlib::sg::atb_vertices;
     inlib::sg::atb_vertices* lns = new inlib::sg::atb_vertices;
     inlib::sg::atb_vertices* trs = new inlib::sg::atb_vertices;
-    inlib::sg::render_mem action(a_gv.out(),*pts,*lns,*trs);
+    inlib::sg::mem_manager mem_mgr; //must be deleted after target_grp.
+    inlib::sg::mem_action action(mem_mgr,a_gv.out(),*pts,*lns,*trs);
     target_grp->render(action);
 /*
     std::string s;
@@ -842,7 +842,7 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
  {inlib::sg::separator* _sep = new inlib::sg::separator;
   sep.add(_sep);
   inlib::sg::rgba* mat = new inlib::sg::rgba();
-  mat->color = inlib::colorf::grey();
+  mat->color = inlib::colorf_grey();
   _sep->add(mat);
   inlib::sg::matrix* m = new inlib::sg::matrix;
   m->set_translate(0,0,z_scope_cache_pastille());
@@ -874,7 +874,7 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
  {inlib::sg::separator* _sep = new inlib::sg::separator;
   sep.add(_sep);
   inlib::sg::rgba* mat = new inlib::sg::rgba();
-  mat->color = inlib::colorf::grey();
+  mat->color = inlib::colorf_grey();
   _sep->add(mat);
   inlib::sg::matrix* m = new inlib::sg::matrix;
   m->set_translate(0,0,z_scope_cache_pastille());
@@ -913,9 +913,9 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
  {inlib::sg::slider& sld = a_gv.slider_3();
   sld.value = (a_dCible-a_slider_dist_min)/(a_slider_dist_max-a_slider_dist_min);
   sld.clear_cbks();
-  sld.add_begin_callback(new inlib::sg::funtag_cbk<inlib::sg::slider>(a_gv,sld,action_slider,action_begin()));
-  sld.add_drag_callback(new inlib::sg::funtag_cbk<inlib::sg::slider>(a_gv,sld,action_slider,action_drag()));
-  sld.add_end_callback(new inlib::sg::funtag_cbk<inlib::sg::slider>(a_gv,sld,action_slider,action_end()));
+  sld.add_begin_callback(new inlib::sg::fundata_cbk<inlib::sg::gui_viewer,inlib::sg::slider,unsigned int>(a_gv,sld,action_slider,action_begin()));
+  sld.add_drag_callback(new inlib::sg::fundata_cbk<inlib::sg::gui_viewer,inlib::sg::slider,unsigned int>(a_gv,sld,action_slider,action_drag()));
+  sld.add_end_callback(new inlib::sg::fundata_cbk<inlib::sg::gui_viewer,inlib::sg::slider,unsigned int>(a_gv,sld,action_slider,action_end()));
   }
 
   a_gv.show_sliders();}
@@ -934,12 +934,12 @@ inline void adjust_sight_chart_matrix(inlib::sg::matrix& a_mtx,float a_wcam,floa
   //a_mtx.mul_translate(a_wcam*0.06F,0,0);
 }
 
-inline inlib::sg::bcbk::return_action action_adjust_sight_chart(inlib::sg::gui_viewer& a_gv,const inlib::sg::ecbk& a_cbk,
-                                                                inlib::sg::event_dispatcher&,void*) {
+inline inlib::sg::return_action action_adjust_sight_chart(inlib::sg::gui_viewer& a_gv,const inlib::sg::ecbk& a_cbk,
+                                                                inlib::sg::event_dispatcher&,const inlib::sg::pos_data&) {
   dac* _dac = cast_dac(a_gv);
-  if(!_dac) return inlib::sg::bcbk::return_none;
+  if(!_dac) return inlib::sg::return_none;
 
-  if(const inlib::sg::size_event* sz_evt = inlib::safe_cast<inlib::sg::event,inlib::sg::size_event>(a_cbk.event_ref())){
+  if(const inlib::sg::size_event* sz_evt = inlib::sg::event_cast<inlib::sg::event,inlib::sg::size_event>(a_cbk.event_ref())){
     unsigned int ww = sz_evt->width();
     unsigned int wh = sz_evt->height();
     // the two below lines must be consistent with the ones in create_ruler_sg() :
@@ -960,7 +960,7 @@ inline inlib::sg::bcbk::return_action action_adjust_sight_chart(inlib::sg::gui_v
     a_cbk.event_action_ref().set_done(true);
   }
 
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
 inline void create_ruler_sg(inlib::sg::gui_viewer& a_gv,const std::vector< std::pair<double,double> >& a_ticks,
@@ -981,7 +981,8 @@ inline void create_ruler_sg(inlib::sg::gui_viewer& a_gv,const std::vector< std::
   //for Android device rotation.
   _dac->m_sight_chart_dpt = inlib::sg::event_dispatcher(); //to reset fields.
   _dac->m_sight_chart_dpt.add_callback
-     (new inlib::sg::funtag_ecbk<inlib::sg::event_dispatcher>(a_gv,_dac->m_sight_chart_dpt,action_adjust_sight_chart,0));
+   (new inlib::sg::fundata_cbk<inlib::sg::gui_viewer,inlib::sg::event_dispatcher,inlib::sg::pos_data,inlib::sg::ecbk>
+       (a_gv,_dac->m_sight_chart_dpt,action_adjust_sight_chart,inlib::sg::pos_data(false,0,0)));
   sep.add(new inlib::sg::noderef(_dac->m_sight_chart_dpt));
 
   // we assume window is higher than larger.
@@ -1011,7 +1012,7 @@ inline void create_ruler_sg(inlib::sg::gui_viewer& a_gv,const std::vector< std::
   sep.add(_sep);
   _sep->add(new inlib::sg::noderef(_dac->m_back_to_menu_matrix));
   _dac->m_back_to_menu_button = inlib::sg::image_button(); //to reset fields.
-  if(!a_gv.set_img_from_file(a_gv.out(),a_gv.res_dir(),"beos_menu.jpg",_dac->m_back_to_menu_button.img.value())) {}
+  if(!a_gv.set_img_from_res_file("beos_menu.jpg",_dac->m_back_to_menu_button.img.value())) {}
   _dac->m_back_to_menu_button.img.touch();
   adjust_back_to_menu(_dac->m_back_to_menu_button,_dac->m_back_to_menu_matrix,wcam,hcam);
   _sep->add(new inlib::sg::noderef(_dac->m_back_to_menu_button));}
