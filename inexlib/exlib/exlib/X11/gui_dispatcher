@@ -4,7 +4,7 @@
 #ifndef exlib_X11_gui_dispatcher
 #define exlib_X11_gui_dispatcher
 
-#include "session"
+#include "base_session"
 
 #include <X11/keysym.h>
 #include <X11/Xutil.h>
@@ -115,11 +115,13 @@ public:
         if(to_render) m_viewer.win_render();
         return true;
       } else {
+        /* deprecated (moreover it slows down interactivity) :
         // notify the viewer. Needed in case of wall cursor remote control.
         bool to_render = m_viewer.mouse_motion(a_event.xmotion.x,m_viewer.height()-a_event.xmotion.y);
         if(m_viewer.do_works()) to_render = true;
         if(to_render) m_viewer.win_render();
         return true;
+	*/
       }
     }
     return false;
@@ -127,7 +129,7 @@ public:
   virtual Window window() const {return m_win;}
   virtual dispatcher* copy() const {return new gui_dispatcher(*this);}
 public:
-  gui_dispatcher(session& a_x11,Window a_win,inlib::sg::gui_viewer& a_viewer)
+  gui_dispatcher(base_session& a_x11,Window a_win,inlib::sg::gui_viewer& a_viewer)
   :parent()
   ,m_x11(a_x11)
   ,m_win(a_win)
@@ -147,7 +149,7 @@ public:
     return *this;
   }
 protected:
-  session& m_x11;
+  base_session& m_x11;
   Window m_win;
   inlib::sg::gui_viewer& m_viewer;
 };

@@ -462,30 +462,20 @@ inline bool concatenate(std::ostream& a_out,
 class reader : public virtual inlib::image::ireader {
 public:
   virtual inlib::image::ireader* copy() const {return new reader(*this);}
-  virtual bool is(const std::string& a_file) const {
-    return exlib::png::is(a_file);
-  }
+  virtual bool is(const std::string& a_file) const {return exlib::png::is(a_file);}
   virtual bool infos(std::ostream& a_out,const std::string& a_file,
-             unsigned int& a_width,unsigned int& a_height,
-             unsigned int& a_bpp) const {
+                     unsigned int& a_width,unsigned int& a_height,unsigned int& a_bpp) const {
     return exlib::png::infos(a_out,a_file,a_width,a_height,a_bpp);
   }
   virtual unsigned char* read(std::ostream& a_out,const std::string& a_file,
-                      unsigned int& a_width,unsigned int& a_height,
-                      unsigned int& a_bpp) const {
+                              unsigned int& a_width,unsigned int& a_height,unsigned int& a_bpp) const {
     return exlib::png::read(a_out,a_file,a_width,a_height,a_bpp);
   }
-  virtual unsigned char* read_part(std::ostream& a_out,
-                                  const std::string& a_file,
-                           unsigned int a_sx,unsigned int a_sy,
-                           unsigned int a_sw,unsigned int a_sh,
-                           unsigned int& a_rw,unsigned int& a_rh,
-                           unsigned int& a_rbpp) const {
-    return exlib::png::read_part(a_out,a_file,
-                                 a_sx,a_sy,
-                                 a_sw,a_sh,
-                                 a_rw,a_rh,
-                                 a_rbpp);
+  virtual unsigned char* read_part(std::ostream& a_out,const std::string& a_file,
+                                   unsigned int a_sx,unsigned int a_sy,
+                                   unsigned int a_sw,unsigned int a_sh,
+                                   unsigned int& a_rw,unsigned int& a_rh,unsigned int& a_rbpp) const {
+    return exlib::png::read_part(a_out,a_file,a_sx,a_sy,a_sw,a_sh,a_rw,a_rh,a_rbpp);
   }
 public:
   reader(){}
@@ -497,6 +487,6 @@ public:
 
 }}
 
-#endif
-
 //exlib_build_use inlib png zlib
+
+#endif

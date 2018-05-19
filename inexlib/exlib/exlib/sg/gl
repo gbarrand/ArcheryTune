@@ -22,7 +22,7 @@ inline void clear_errors() {
   }
 }
 
-inline bool dump_errors(std::ostream& a_out,const std::string& a_head) {   
+inline bool dump_if_errors(std::ostream& a_out,const std::string& a_head) {   
   bool retval = false;
   GLenum glerror = ::glGetError();
   if(glerror!=GL_NO_ERROR) {
@@ -40,7 +40,9 @@ inline bool dump_errors(std::ostream& a_out,const std::string& a_head) {
     //#define GL_STACK_UNDERFLOW                0x0504
     //#define GL_OUT_OF_MEMORY                  0x0505
 
-    a_out << std::hex << glerror << std::endl;
+    //#define GL_INVALID_FRAMEBUFFER_OPERATION  0x0506
+
+    a_out << "0x" << std::hex << glerror << std::endl;
 
     glerror = ::glGetError();
   }
@@ -79,23 +81,15 @@ inline void dump_infos(std::ostream& a_out) {
     //a_out << " GL_BUFFER_SIZE " << gl_buffer_size << std::endl;
 }
 
-inline bool tex_img(const inlib::img_byte& a_img) {
-/*
-    // MacBookPro : it returns 8192.
-    // Android : it returns 2048.
-    // iPad1 : it returns 2048.
-    // iPod : it returns ?
-    //GL_PROXY_TEXTURE_2D
-   {int sz;
-    ::glGetIntegerv(GL_MAX_TEXTURE_SIZE,&sz);
-    ::printf("debug : GL_MAX_TEXTURE_SIZE : %d\n",sz);}
-*/
-
+inline bool tex_img(std::ostream& a_out,const inlib::img_byte& a_img) {
     if(a_img.bpp()==1) { 
       //to pass eiffel-tower.png
-#if ANDROID || TARGET_OS_IPHONE
+#if defined(ANDROID) || TARGET_OS_IPHONE
       inlib::img_byte res;
-      if(!a_img.bw2x(3,res)) return false; //should warn.
+      if(!a_img.bw2x(3,res)) {
+        a_out << "exlib::sg::gl::tex_img : inlib::img.bw2x() failed." << std::endl;
+        return false;
+      }
       ::glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,
                      res.width(),res.height(),
                      0,GL_RGB,GL_UNSIGNED_BYTE,res.buffer());      
@@ -109,20 +103,11 @@ inline bool tex_img(const inlib::img_byte& a_img) {
                      a_img.width(),a_img.height(),
                      0,GL_RGB,GL_UNSIGNED_BYTE,a_img.buffer());
     } else if(a_img.bpp()==4) {
-#if ANDROID || TARGET_OS_IPHONE
-      //to pass windusrf.png.
-      inlib::img_byte res;
-      if(!a_img.rgba2rgb(res)) return false; //should warn.
-      ::glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,
-                     res.width(),res.height(),
-                     0,GL_RGB,GL_UNSIGNED_BYTE,res.buffer());      
-#else
       ::glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,
                      a_img.width(),a_img.height(),
                      0,GL_RGBA,GL_UNSIGNED_BYTE,a_img.buffer());
-#endif
     } else {
-      //should not happen.
+      a_out << "exlib::sg::gl::tex_img : img.bpp() " << a_img.bpp() << " not treated." << std::endl;
       return false;
     }
     return true;

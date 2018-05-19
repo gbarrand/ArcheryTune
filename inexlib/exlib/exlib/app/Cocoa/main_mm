@@ -1,74 +1,9 @@
 // Copyright (C) 2010, Guy Barrand. All rights reserved.
 // See the file exlib.license for terms.
 
-#import "GLView.h"
+#import "main"
 
 #include "NSLog_streambuf"
-
-#include "../../sg/pv_holder"
-#include "../../sg/GL_VIEWER"
-
-namespace app_Cocoa {
-
-//IMPORTANT : pv_holder must come first.
-
-template <class APP_MAIN>
-class main : protected exlib::sg::pv_holder, public APP_MAIN {
-  typedef APP_MAIN parent;
-public:
-  EXLIB_GL_VIEWER_METHODS
-public:
-  virtual void win_render() {
-    //NSLog(@"debug : win_render");
-    [[m_GLView openGLContext] makeCurrentContext];
-    render();
-    [[m_GLView openGLContext] flushBuffer];
-  }
-  virtual bool has_open_panel() {return true;}
-  virtual bool open_panel(std::string& a_path) {
-    NSOpenPanel *panel = [NSOpenPanel openPanel]; //We are not owner.
-    [panel retain];
-
-    [panel setCanChooseFiles:YES];
-    [panel setCanChooseDirectories:NO];
-    [panel setAllowsMultipleSelection:NO];
-    //[panel setAllowedFileTypes:[NSArray arrayWithObject:@"txt"]];
-
-    bool get_path = false;
-    if([panel runModal] == NSOKButton) {
-      NSURL* ns_url = [[panel URLs]objectAtIndex:0];
-      if([ns_url isFileURL]) {
-        a_path = [[ns_url path] UTF8String];
-        get_path = true;
-      }
-    }
-    if(!get_path) a_path.clear();
-    [panel release];
-    [[NSApp mainWindow] makeKeyWindow];
-    return get_path;
-  }
-public:
-  main(std::ostream& a_out,
-       const std::string& a_data_dir,
-       const std::string& a_res_dir,
-       const std::string& a_out_dir,
-       const std::string& a_tmp_dir,
-       GLView* a_GLView)
-  :exlib::sg::pv_holder(a_out)
-  ,APP_MAIN(a_out,
-            exlib::sg::pv_holder::m_mgr_GL,exlib::sg::pv_holder::m_ttf,
-            a_data_dir,a_res_dir,a_out_dir,a_tmp_dir,false,0)
-  ,m_GLView(a_GLView)
-  {
-    this->push_home();
-  }
-  inline virtual ~main(){}
-private:
-  GLView* m_GLView;
-};
-
-}
-
 
 // for a full screen window to receive keyboard events.
 @interface FSWindow : NSWindow {}
@@ -85,12 +20,12 @@ private:
 @interface ForTimer : NSObject {
   app_main_t* m_main;
 }
-- (id)initWithMain:(app_main_t*)a_main;
+- (id)init_with_main:(app_main_t*)a_main;
 - (void)dealloc;
 - (void)work_timer_proc:(id)sender;
 @end
 @implementation ForTimer
-- (id)initWithMain:(app_main_t*)a_main{
+- (id)init_with_main:(app_main_t*)a_main{
   if(self = [super init]) {
     m_main = a_main;
   }
@@ -115,13 +50,13 @@ private:
   app_main_t* m_main;
   NSTimer* m_timer;
 }
-- (id)initWithMain:(app_main_t*)a_main timer:(NSTimer*)a_timer;
+- (id)init_with_main:(app_main_t*)a_main timer:(NSTimer*)a_timer;
 - (void)dealloc;
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)a_app;
 - (BOOL)application:(NSApplication*)a_app openFile:(NSString*)a_file;
 @end
 @implementation app_delegate
-- (id)initWithMain:(app_main_t*)a_main timer:(NSTimer*)a_timer {
+- (id)init_with_main:(app_main_t*)a_main timer:(NSTimer*)a_timer {
   if(self = [super init]) {
     m_main = a_main;
     m_timer = a_timer;
@@ -181,13 +116,13 @@ private:
 #endif
   app_main_t* m_main;
 }
-- (id)initWithMain:(app_main_t*)a_main;
+- (id)init_with_main:(app_main_t*)a_main;
 - (void)dealloc;
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)a_app;
 - (BOOL)application:(NSApplication*)a_app openFile:(NSString*)a_file;
 @end
 @implementation app_delegate
-- (id)initWithMain:(app_main_t*)a_main {
+- (id)init_with_main:(app_main_t*)a_main {
   if(self = [super init]) {
     m_main = a_main;
   }
@@ -223,12 +158,12 @@ private:
 #endif
   app_main_t* m_main;
 }
-- (id)initWithMain:(app_main_t*)a_main;
+- (id)init_with_main:(app_main_t*)a_main;
 - (void)dealloc;
 - (void)windowWillClose:(NSNotification*)a_not;
 @end
 @implementation win_delegate
-- (id)initWithMain:(app_main_t*)a_main {
+- (id)init_with_main:(app_main_t*)a_main {
   if(self = [super init]) {
     m_main = a_main;
   }
@@ -246,16 +181,37 @@ private:
 
 #endif
 
+#ifdef INLIB_MEM
+#include <inlib/mem>
+#ifdef INLIB_MEM_ATEXIT
+inline void at_exit() {
+  NSLog(@"exlib_main : atexit...");
+  NSLog_streambuf nsbuf;
+  std::ostream nsout(&nsbuf);
+  inlib::mem::balance(nsout);
+}
+#endif
+#endif
+
+  
 #include <inlib/app>
+#include <inlib/saui>
 
 template <class APP_CONTEXT,class APP_MAIN>
 int exlib_main(const std::string& a_app_name,int argc, char** argv,bool a_land = true) {
   bool verbose = false;
 
   //NSLog(@"debug : exlib_main : 006");
-
+  
   NSLog_streambuf nsbuf;
   std::ostream nsout(&nsbuf);
+
+#ifdef INLIB_MEM
+  #ifdef INLIB_MEM_ATEXIT
+  ::atexit(at_exit);
+  #endif  
+  inlib::mem::set_check_by_class(true);{
+#endif
 
   ////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////
@@ -362,7 +318,7 @@ int exlib_main(const std::string& a_app_name,int argc, char** argv,bool a_land =
   ////////////////////////////////////////////////////////////////
   //NSDictionary* environ = [[NSProcessInfo processInfo] environment];
   //BOOL is_sandboxed = (nil != [environ objectForKey:@"APP_SANDBOX_CONTAINER_ID"]);
-  bool is_sandboxed = inlib::isenv("APP_SANDBOX_CONTAINER_ID");
+  bool is_sandboxed = inlib::is_env("APP_SANDBOX_CONTAINER_ID");
 
   // Get the .app directory :
   NSString* ns_bundle_dir = [[NSBundle mainBundle] bundlePath];
@@ -374,8 +330,7 @@ int exlib_main(const std::string& a_app_name,int argc, char** argv,bool a_land =
   std::string tmp_dir = [ns_tmp_dir UTF8String];
 
   // Get the Documents directory :
-  NSArray* paths = NSSearchPathForDirectoriesInDomains
-                     (NSDocumentDirectory,NSUserDomainMask,YES);
+  NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask,YES);
   NSString* ns_doc_dir = [paths objectAtIndex:0];
 
   std::string doc_dir = [ns_doc_dir UTF8String];
@@ -385,7 +340,7 @@ int exlib_main(const std::string& a_app_name,int argc, char** argv,bool a_land =
 
   APP_CONTEXT context(res_dir);
 
-  app_Cocoa::main<APP_MAIN> _main(nsout,data_dir,res_dir,out_dir,tmp_dir,view);
+  app_Cocoa::main<APP_MAIN> _main(nsout,data_dir,res_dir,out_dir,tmp_dir,view,verbose);
 
  {std::string DOCUMENT;
   args.files_at_end(); //take care of the upper -land.
@@ -397,8 +352,7 @@ int exlib_main(const std::string& a_app_name,int argc, char** argv,bool a_land =
   if(DOCUMENT.size()&&(DOCUMENT!="YES")) {
     _main.create_gui();
     bool done;
-    _main.opener().open(DOCUMENT,inlib::file::s_format_guessed(),
-                        inlib::args(),done);
+    _main.opener().open(DOCUMENT,inlib::file::s_format_guessed(),inlib::args(),done);
   }}
 
   [view set_main:&_main];
@@ -415,7 +369,7 @@ int exlib_main(const std::string& a_app_name,int argc, char** argv,bool a_land =
   [window setDelegate:win_del];
 
   double seconds = 1./60.; // 0.016666
-  ForTimer* for_timer = [[ForTimer alloc] initWithMain:&_main];
+  ForTimer* for_timer = [[ForTimer alloc] init_with_main:&_main];
   NSTimer* work_timer = 
     [NSTimer scheduledTimerWithTimeInterval:seconds
                     target:for_timer selector:@selector(work_timer_proc:)
@@ -423,7 +377,7 @@ int exlib_main(const std::string& a_app_name,int argc, char** argv,bool a_land =
 
   // With [app run], a delegate is needed to stop the work
   // timer when exiting.
-  app_delegate* app_del = [[app_delegate alloc] initWithMain:&_main timer:work_timer];
+  app_delegate* app_del = [[app_delegate alloc] init_with_main:&_main timer:work_timer];
   [NSApp setDelegate:app_del];
 
   [app run];
@@ -434,17 +388,17 @@ int exlib_main(const std::string& a_app_name,int argc, char** argv,bool a_land =
 
 #else //try to handle a main loop of our own.
 
-  win_delegate* win_del = [[win_delegate alloc] initWithMain:&_main];
+  win_delegate* win_del = [[win_delegate alloc] init_with_main:&_main];
   [window setDelegate:win_del];
 
-  app_delegate* app_del = [[app_delegate alloc] initWithMain:&_main];
+  app_delegate* app_del = [[app_delegate alloc] init_with_main:&_main];
   [app setDelegate:app_del];
 
   [app finishLaunching];
 
   [pool release];
 
-//#ifdef WALL_DATA_CLIENT
+//#ifdef APP_USE_WALL
 //   FIXME : handle data client events.
 //#endif
 
@@ -481,11 +435,16 @@ int exlib_main(const std::string& a_app_name,int argc, char** argv,bool a_land =
   }
 
 #endif
-  //////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////
-
-  //NSLog(@"debug : exiting...");
-
+  
+#ifdef INLIB_MEM
+  }
+  #ifndef INLIB_MEM_ATEXIT
+  inlib::mem::balance(nsout);
+  #endif
+  NSLog(@"%s_Cocoa : exit(mem) ...",a_app_name.c_str());
+#else  
+  if(verbose) NSLog(@"%s_Cocoa : exit ...",a_app_name.c_str());
+#endif
+  
   return EXIT_SUCCESS;
 }

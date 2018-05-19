@@ -159,8 +159,7 @@ inline unsigned char* read_file(FILE* a_file,unsigned int& a_width,unsigned int&
   a_height = cinfo.output_height;
   a_bpp = cinfo.output_components;
 
-  unsigned char* image_buffer =
-    new unsigned char[row_stride * cinfo.output_height];
+  unsigned char* image_buffer = new unsigned char[row_stride * cinfo.output_height];
   if(!image_buffer) {
 #ifdef EXLIB_JPEG_OUT_ERR
     ::printf("exlib::jpeg::read_file : alloc of %d bytes failed\n",
@@ -700,6 +699,6 @@ public:
 //
 //}}
 
-#endif
-
 //exlib_build_use inlib jpeg
+
+#endif

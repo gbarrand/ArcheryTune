@@ -15,7 +15,7 @@
 // Note that setting the view non-opaque will only work
 // if the EAGL surface has an alpha channel.
 
-@class glview_controller;
+@class view_controller_delegate;
 @class app_delegate;
 
 //
@@ -26,7 +26,7 @@
 
 @interface GLView : UIView {    
 @private
-  glview_controller* m_vc;
+  view_controller_delegate* m_view_controller_delegate;
 
   EAGLContext* m_context;
   GLuint m_frame_buffer;
@@ -56,6 +56,6 @@
 - (void)set_disable_GL:(bool)value;
 - (void)window_render;
 - (void)stop_timer;
-- (glview_controller*)get_vc;
+- (view_controller_delegate*)get_view_controller_delegate;
 
 @end

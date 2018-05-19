@@ -45,7 +45,7 @@ public:
 public:
   glarea(HWND a_parent)
   :m_parent(a_parent)
-  ,m_window(0)
+  ,m_hwnd(0)
   ,m_context(0)
   ,m_HDC(0)
   {
@@ -53,7 +53,7 @@ public:
     // The WS_BORDER is needed. Else probleme of size at startup.
     RECT rect;
     ::GetClientRect(m_parent,&rect);
-    m_window = ::CreateWindow(s_class().c_str(),
+    m_hwnd = ::CreateWindow(s_class().c_str(),
                              NULL,
                              WS_CHILD | WS_VISIBLE,
                              0,0,
@@ -62,31 +62,32 @@ public:
                              m_parent,NULL,
                              GetWindowInstance(m_parent),
                              NULL);
-    if(!m_window) return;
-    ::SetWindowLongPtr(m_window,GWLP_USERDATA,LONG_PTR(this));
+    if(!m_hwnd) return;
+    ::SetWindowLongPtr(m_hwnd,GWLP_USERDATA,LONG_PTR(this));
   
     // initialize OpenGL rendering :
-    m_HDC = ::GetDC(m_window);
+    m_HDC = ::GetDC(m_hwnd);
     if(m_HDC && SetWindowPixelFormat(m_HDC) ) {
       m_context = ::wglCreateContext(m_HDC);
     }
   }
   virtual ~glarea(){
-    if(wglGetCurrentContext()!=NULL) wglMakeCurrent(NULL,NULL);
+    if(::wglGetCurrentContext()!=NULL) ::wglMakeCurrent(NULL,NULL);
     if(m_context)        {
-      wglDeleteContext(m_context);
+      ::wglDeleteContext(m_context);
       m_context = 0;
     }
-    if(m_window) {
-      ::SetWindowLongPtr(m_window,GWLP_USERDATA,LONG_PTR(NULL));
-      ::DestroyWindow(m_window);
-      m_window = 0;
+    if(m_HDC && m_hwnd) ::ReleaseDC(m_hwnd,m_HDC);
+    if(m_hwnd) {
+      ::SetWindowLongPtr(m_hwnd,GWLP_USERDATA,LONG_PTR(NULL));
+      ::DestroyWindow(m_hwnd);
+      m_hwnd = 0;
     }
   }
 public:
   glarea(const glarea& a_from)
   :m_parent(a_from.m_parent)
-  ,m_window(0)
+  ,m_hwnd(0)
   ,m_context(0)
   ,m_HDC(0)
   {
@@ -94,7 +95,7 @@ public:
     register_class();
     RECT rect;
     ::GetClientRect(m_parent,&rect);
-    m_window = ::CreateWindow(s_class().c_str(),
+    m_hwnd = ::CreateWindow(s_class().c_str(),
                              NULL,
                              WS_CHILD | WS_VISIBLE,
                              0,0,
@@ -103,11 +104,11 @@ public:
                              m_parent,NULL,
                              GetWindowInstance(m_parent),
                              NULL);
-    if(!m_window) return;
-    ::SetWindowLongPtr(m_window,GWLP_USERDATA,LONG_PTR(this));
+    if(!m_hwnd) return;
+    ::SetWindowLongPtr(m_hwnd,GWLP_USERDATA,LONG_PTR(this));
   
     // initialize OpenGL rendering :
-    m_HDC = ::GetDC(m_window);
+    m_HDC = ::GetDC(m_hwnd);
     if(m_HDC && SetWindowPixelFormat(m_HDC) ) {
       m_context = ::wglCreateContext(m_HDC);
     }
@@ -115,83 +116,86 @@ public:
 protected:
   glarea& operator=(const glarea&){return *this;}
 public:
-  HWND hwnd() const {return m_window;}
-  void send_paint() const {
-    ::PostMessage(m_window,WM_PAINT,(WPARAM)0,(LPARAM)0);
+  HWND hwnd() const {return m_hwnd;}
+  void post_WM_PAINT() const {
+    ::PostMessage(m_hwnd,WM_PAINT,(WPARAM)0,(LPARAM)0);
+  }
+  void send_WM_PAINT() const {
+    ::SendMessage(m_hwnd,WM_PAINT,(WPARAM)0,(LPARAM)0);
   }
   void wm_paint() {
     PAINTSTRUCT ps;
-    HDC hDC = BeginPaint(m_window,&ps);
+    //HDC hDC =
+    BeginPaint(m_hwnd,&ps);
     if(m_HDC && m_context) {
       ::wglMakeCurrent(m_HDC,m_context);
 
       RECT rect;
-      ::GetClientRect(m_window,&rect);
+      ::GetClientRect(m_hwnd,&rect);
       unsigned int w = rect.right-rect.left;
       unsigned int h = rect.bottom-rect.top;
   
       paint(w,h);
   
       ::SwapBuffers(m_HDC);
+      ::wglMakeCurrent(m_HDC,0);
     }
-    EndPaint(m_window,&ps);
+    EndPaint(m_hwnd,&ps);
   }
 protected:
-  static LRESULT CALLBACK proc(HWND a_window,
-                                      UINT a_msg,
-                                      WPARAM a_wparam,LPARAM a_lparam) {
+  static LRESULT CALLBACK proc(HWND a_hwnd,UINT a_msg,WPARAM a_wparam,LPARAM a_lparam) {
     switch (a_msg) { 
     case WM_SIZE:{
       int width = LOWORD(a_lparam);
       int height = HIWORD(a_lparam);
-      glarea* th_is = (glarea*)::GetWindowLongPtr(a_window,GWLP_USERDATA);
-      if(th_is) {
-        th_is->resize(width,height);
+      glarea* _this = (glarea*)::GetWindowLongPtr(a_hwnd,GWLP_USERDATA);
+      if(_this) {
+        _this->resize(width,height);
       } else {
         // CreateWindow send a WM_SIZE but GWLP_USERDATA not yet set.
       }
     }return 0;
     case WM_PAINT:{
-      glarea* th_is = (glarea*)::GetWindowLongPtr(a_window,GWLP_USERDATA);
-      if(th_is) {
-        th_is->wm_paint();
+      glarea* _this = (glarea*)::GetWindowLongPtr(a_hwnd,GWLP_USERDATA);
+      if(_this) {
+        _this->wm_paint();
       }	
     }return 0;
     case WM_LBUTTONDOWN:{
-      glarea* th_is = (glarea*)::GetWindowLongPtr(a_window,GWLP_USERDATA);
-      if(th_is) {
+      glarea* _this = (glarea*)::GetWindowLongPtr(a_hwnd,GWLP_USERDATA);
+      if(_this) {
         RECT rect;
         //::GetWindowRect(hwnd,&rect); ???
-        ::GetClientRect(a_window,&rect);
+        ::GetClientRect(a_hwnd,&rect);
         unsigned int h = rect.bottom-rect.top;
-        th_is->left_button_down(LOWORD(a_lparam),h-HIWORD(a_lparam));
+        _this->left_button_down(LOWORD(a_lparam),h-HIWORD(a_lparam));
       }
     }return 0;
     case WM_LBUTTONUP:{
-      glarea* th_is = (glarea*)::GetWindowLongPtr(a_window,GWLP_USERDATA);
-      if(th_is) {
+      glarea* _this = (glarea*)::GetWindowLongPtr(a_hwnd,GWLP_USERDATA);
+      if(_this) {
         RECT rect;
-        ::GetClientRect(a_window,&rect);
+        ::GetClientRect(a_hwnd,&rect);
         unsigned int h = rect.bottom-rect.top;
-        th_is->left_button_up(LOWORD(a_lparam),h-HIWORD(a_lparam));
+        _this->left_button_up(LOWORD(a_lparam),h-HIWORD(a_lparam));
       }
     } return 0;
     case WM_MOUSEMOVE:{
-      unsigned int state = a_wparam;
+      WPARAM state = a_wparam;
       bool ldown = ((state & MK_LBUTTON)==MK_LBUTTON)?true:false;
 
-      glarea* th_is = (glarea*)::GetWindowLongPtr(a_window,GWLP_USERDATA);
-      if(th_is) {
+      glarea* _this = (glarea*)::GetWindowLongPtr(a_hwnd,GWLP_USERDATA);
+      if(_this) {
         RECT rect;
-        ::GetClientRect(a_window,&rect);
+        ::GetClientRect(a_hwnd,&rect);
         unsigned int h = rect.bottom-rect.top;
-        th_is->mouse_move(LOWORD(a_lparam),h-HIWORD(a_lparam),ldown);
+        _this->mouse_move(LOWORD(a_lparam),h-HIWORD(a_lparam),ldown);
       }
 
     }return 0;
-    case WM_DESTROY:wm__destroy(a_window);return 0;
+    case WM_DESTROY:wm__destroy(a_hwnd);return 0;
     }
-    return (DefWindowProc(a_window,a_msg,a_wparam,a_lparam));
+    return (DefWindowProc(a_hwnd,a_msg,a_wparam,a_lparam));
   }
   static bool SetWindowPixelFormat(HDC a_HDC){
     PIXELFORMATDESCRIPTOR pfd;
@@ -242,23 +246,25 @@ protected:
   
     return true;
   }
-  static void wm__destroy(HWND a_window) { 
-    glarea* th_is = (glarea*)::GetWindowLongPtr(a_window,GWLP_USERDATA);
-    if(th_is) { //How to be sure that we have a glarea* ???
-      if(th_is->m_window!=a_window) {
+  static void wm__destroy(HWND a_hwnd) { 
+    glarea* _this = (glarea*)::GetWindowLongPtr(a_hwnd,GWLP_USERDATA);
+    if(_this) { //How to be sure that we have a glarea* ???
+      if(_this->m_hwnd!=a_hwnd) {
         //::printf("WinTk::Component::wm_destroy : HWND mismatch !\n");
       }
-      th_is->m_window = 0;
+      _this->m_hwnd = 0;
     }
-    ::SetWindowLongPtr(a_window,GWLP_USERDATA,LONG_PTR(NULL));
+    ::SetWindowLongPtr(a_hwnd,GWLP_USERDATA,LONG_PTR(NULL));
   }
 protected:
   HWND m_parent;
-  HWND m_window;
+  HWND m_hwnd;
   HGLRC m_context;
   HDC m_HDC;
 };
 
 }}
+
+//exlib_build_use Windows
 
 #endif

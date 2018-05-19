@@ -8,11 +8,11 @@
 
 #include <inlib/sys/file> //tmpname
 #include <inlib/sbeg>
+#include <inlib/saui>
 #include <inlib/sg/gui_viewer>
 
 #include <inlib/WebGL/render>
 
-#include "../set_img"
 #include "../sg/text_freetype"
 
 namespace exlib {
@@ -20,16 +20,18 @@ namespace WebGL {
 
 class pv_holder {
 public:
-  pv_holder(std::ostream&):m_ttf(){}
+  pv_holder(std::ostream&):m_ttf(),m_selection(){}
   virtual ~pv_holder(){}
 protected:
-  pv_holder(const pv_holder& a_from):m_ttf(a_from.m_ttf){}
+  pv_holder(const pv_holder& a_from):m_ttf(a_from.m_ttf),m_selection(a_from.m_selection){}
   pv_holder& operator=(const pv_holder& a_from) {
     m_ttf = a_from.m_ttf;
+    m_selection = a_from.m_selection;
     return *this;
   }
 protected:
   exlib::sg::text_freetype m_ttf;
+  inlib::sg::selection m_selection;
 };
 
 template <class APP_MAIN>
@@ -43,7 +45,7 @@ public:
 
     const inlib::colorf& bk = parent::m_clear_color;
 
-    m_mgr.begin_render(parent::m_ww,parent::m_wh,bk.r(),bk.g(),bk.b(),bk.a());
+    m_mgr.begin_render(0,0,parent::m_ww,parent::m_wh,bk.r(),bk.g(),bk.b(),bk.a());
 
     inlib::WebGL::render _action(m_mgr,parent::m_out,parent::m_ww,parent::m_wh);
     _action.state().m_use_gsto = parent::m_use_gsto;
@@ -52,13 +54,6 @@ public:
     //after_render();
 
     m_mgr.end_render();
-  }
-public:\
-  virtual bool set_img_from_file(std::ostream& a_out,
-                                 const std::string& a_res_dir,
-                                 const std::string& a_file,
-                                 inlib::img_byte& a_img) {
-    return exlib::set_img_from_file(a_out,a_res_dir,a_file,a_img);
   }
 public:
   virtual bool set_cursor_shape(inlib::sg::cursor_shape a_shape) {
@@ -101,7 +96,8 @@ public:
     if(!list) return _node;
 
     if(m_can_upload) {
-      inlib::sg::add_image_item_before(*this,*list,inlib::sg::s_files(),"upload file","files.jpg",action_upload_file);
+      inlib::sg::add_image_item_before
+        (*this,*list,inlib::sg::s_files(),"upload file","files.jpg",action_upload_file,inlib::sg::pos_data(false,0,0));
     }
 
     //list->remove_item(inlib::sg::s_files()); //authorize opening res files.
@@ -128,7 +124,7 @@ public:
        inlib::WebGL::manager& a_mgr)
   :pv_holder(a_out)
   ,parent(a_out,
-          a_mgr,pv_holder::m_ttf,
+          a_mgr,pv_holder::m_ttf,pv_holder::m_selection,
           a_data_dir,a_res_dir,a_out_dir,a_tmp_dir,a_verbose,0)
   ,m_mgr(a_mgr)
   ,m_mouse_down(false)
@@ -300,8 +296,8 @@ public:
       a_reply_out << sreply;
     } else*/ {
       if(parent::m_verbose) {
-        unsigned int sz = m_mgr.vbos_js().str().size()+m_mgr.texs_js().str().size()+m_mgr.js().str().size();
-        ::printf("reply_render : uc %u\n",sz);
+        size_t sz = m_mgr.vbos_js().str().size()+m_mgr.texs_js().str().size()+m_mgr.js().str().size();
+        ::printf("reply_render : uc %u\n",(unsigned int)sz);
       }
       a_content_type = "text/javascript";
       a_reply_out << m_mgr.vbos_js().str()
@@ -351,11 +347,10 @@ public:
   }
 
 protected:
-  static inlib::sg::bcbk::return_action action_upload_file
-    (inlib::sg::gui_viewer& a_gv,const inlib::sg::bcbk&,inlib::sg::list&,void*) {
+  static inlib::sg::return_action action_upload_file(inlib::sg::gui_viewer& a_gv) {
     main* _main = inlib::safe_cast<inlib::sg::gui_viewer,main>(a_gv);
     _main->m_have_to_upload_file = true;
-    return inlib::sg::bcbk::return_none;
+    return inlib::sg::return_none;
   }
 
 protected:
@@ -409,6 +404,15 @@ public:
 #endif
     //::printf("exlib::WebGL::session::session() : %lu\n",(unsigned long)this);
 
+    std::string exe_path;
+   {std::string arg0;
+    if(!m_args.prog_name(arg0)) {
+      m_out << "exlib::WebGL::session::session() : can't get exe path." << std::endl;
+    }
+    if(!inlib::program_path(arg0,exe_path)) {
+      m_out << "exlib::WebGL::session::session() : can't get exe directory." << std::endl;
+    }}
+
     if(!a_args.find(s_arg_app_name(),m_app_name)) {
       m_out << "exlib::WebGL::session::session() : -app_name not found in args." << std::endl;
     }
@@ -435,16 +439,7 @@ public:
       m_tmp_dir = "/tmp";
     }
 
-    std::string app_exe;
-    if(!m_args.prog_name(app_exe)) {
-      m_out << "exlib::WebGL::session::session() : no app exe." << std::endl;
-    } else {
-      if(!inlib::app_res_dir(app_exe,m_res_dir)) {
-        m_out << "exlib::WebGL::session::session() : can't get res_dir." << std::endl;
-      }
-    }
-    std::string exe_path; //for res_dir
-    if(!inlib::program_path(app_exe,exe_path)) {}
+    inlib::app_res_dir(exe_path,m_res_dir);
 
     if(m_verbose) {
       m_out << "exe_path : " << inlib::sout(exe_path) << std::endl;
@@ -812,4 +807,5 @@ protected:
 
 #endif
 
-//exlib_build_use inlib glutess freetype png jpeg zlib expat
+//exlib_build_use inlib inlib_glutess freetype png jpeg zlib expat kernel
+

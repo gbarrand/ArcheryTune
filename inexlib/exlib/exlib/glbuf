@@ -10,7 +10,7 @@
 
 #ifdef EXLIB_HAS_GL_VBO
 
-#ifdef EXLIB_NO_GL
+#ifdef EXLIB_INLIB_GL
 #else
 
 #if defined(__APPLE__)
@@ -18,8 +18,8 @@
 #endif
 
 #if TARGET_OS_IPHONE
-#elif ANDROID
-#elif WIN32
+#elif defined(ANDROID)
+#elif _WIN32
 #include <GL/glext.h>
 #elif __APPLE__	
 #include <OpenGL/glext.h> //Cocoa
@@ -27,7 +27,7 @@
 #include <GL/glext.h>
 #endif
 
-#endif //EXLIB_NO_GL
+#endif //EXLIB_INLIB_GL
 
 #endif //EXLIB_HAS_GL_VBO
 

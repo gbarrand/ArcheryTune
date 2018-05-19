@@ -9,31 +9,12 @@
 #include <GL/glu.h>
 typedef GLenum GLUenum;
 #else
-#include <glutess/ourex_glutess.h>
-
-/*
-#ifdef INLIB_MEM
-#include <inlib/mem>
-// it coworks with cpp INLIB_MEM in ourex/glutess/src/memalloc.c
-extern "C" {
-void* osc__gl_memAlloc(size_t a_size){
-  inlib::mem::increment(inlib::s_malloc().c_str());
-  return ::malloc(a_size);
-}
-void* osc__gl_memRealloc(void* a_ptr,size_t a_size){
-  if(a_ptr==NULL) inlib::mem::increment(inlib::s_malloc().c_str());
-  return ::realloc(a_ptr,a_size);
-}
-void osc__gl_memFree(void* a_ptr){
-  if(a_ptr!=NULL) inlib::mem::decrement(inlib::s_malloc().c_str());
-  ::free(a_ptr);
-}
-}
-#endif
-*/
+//#include <glutess/ourex_glutess.h>
+#include <inlib/glutess/glutess>
 
 #endif
 
-#endif
+//exlib_build_use inlib_glutess
+//exlib_build_use inlib
 
-//exlib_build_use glutess
+#endif

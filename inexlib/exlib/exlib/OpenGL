@@ -4,9 +4,11 @@
 #ifndef exlib_OpenGL
 #define exlib_OpenGL
 
-#ifdef EXLIB_NO_GL
-#include <inlib/gldum/gl.h> //NOTE : not yet tried from inlib.
-#else
+#ifdef EXLIB_INLIB_GL
+
+#include "inlib_OpenGL"
+
+#else //!EXLIB_INLIB_GL
 
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
@@ -14,9 +16,9 @@
 
 #if TARGET_OS_IPHONE
 #include <OpenGLES/ES1/gl.h>
-#elif ANDROID
+#elif defined(ANDROID)
 #include <GLES/gl.h>
-#elif WIN32
+#elif _WIN32
 #include <windows.h>
 #include <GL/gl.h>
 #elif __APPLE__	
@@ -25,8 +27,11 @@
 #include <GL/gl.h>
 #endif
 
-#endif //EXLIB_NO_GL
+#endif //EXLIB_INLIB_GL
 
 //exlib_build_use GL
+#ifdef EXLIB_INLIB_GL
+//exlib_build_use inlib
+#endif
 
 #endif

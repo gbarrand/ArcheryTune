@@ -13,65 +13,67 @@
 #include "../xml/xml_style"
 #include "../xml/xml_ftp"
 #include "../xml/xml_srv"
+#include "../xml/LOAD"
 
-#ifdef WALL_DATA_CLIENT
-#include "wall_client"
-#endif
-
-#include <inlib/help/help_description>
-#include <inlib/help/help_usage>
-#include <inlib/help/help_top_menu>
-#include <inlib/help/help_files>
-#include <inlib/help/help_exas>
-#include <inlib/help/help_camera_panel>
-#include <inlib/help/help_styles>
-#include <inlib/help/help_fits>
-#include <inlib/help/help_web>
+#include <inlib/help/wrap_description_help>
+#include <inlib/help/wrap_usage_help>
+#include <inlib/help/wrap_top_menu_help>
+#include <inlib/help/wrap_files_help>
+#include <inlib/help/wrap_exas_help>
+#include <inlib/help/wrap_camera_panel_help>
+#include <inlib/help/wrap_styles_help>
+#include <inlib/help/wrap_fits_help>
+#include <inlib/help/wrap_web_help>
 
 #include <inlib/touplow>
-#include <inlib/web>
+//#include <inlib/web>
 
+#include <inlib/cbk/background_popup>
 #include <inlib/cbk/image_popup>
 #include <inlib/cbk/help>
+
+#include "../sg/view_wall"
+#include "../sg/gl2ps_manager"
 
 namespace exlib {
 namespace app {
 
-class main 
-#ifdef WALL_DATA_CLIENT
-:public wall_client
-#else
+class main
 :public inlib::sg::gui_viewer 
-#endif
+,public exlib::sg::view_wall
 {
-#ifdef WALL_DATA_CLIENT
-  typedef wall_client parent;
-#else
   typedef inlib::sg::gui_viewer parent;
-#endif
-
+  typedef exlib::sg::view_wall parent_wall;
+public:
+  virtual void* cast(const std::string& a_class) const {
+    if(void* p = inlib::cmp_cast<parent_wall>(this,a_class)) return p;
+    return parent::cast(a_class);
+  }
 protected:
   INLIB_CLASS_STRING(scene)
   INLIB_CLASS_STRING(gui_Apple_black_on_white)  
 public:
   virtual void render() = 0;
+public: //gui_viewer  
+  virtual inlib::sg::render_manager* find_render_manager(const std::string& a_cls) {
+    if(a_cls==sg::gl2ps_manager::s_class()) return &m_gl2ps_mgr;
+    return 0;
+  }
 public:
   main(const std::string& a_app_name,const std::string& a_svers,
        std::ostream& a_out,
-       inlib::sg::gl_manager& a_gl_mgr,
+       inlib::sg::render_manager& a_gl_mgr,
        const inlib::sg::base_freetype& a_ttf,
+       const inlib::sg::selection& a_selection,
        const std::string& a_data_dir,
        const std::string& a_res_dir,
        const std::string& a_out_dir,
        const std::string& a_tmp_dir,
        bool a_verbose,
        unsigned int /*a_mem_limit*/)
-#ifdef WALL_DATA_CLIENT
-  :parent(a_out,a_gl_mgr,a_ttf,a_app_name,a_data_dir,a_verbose)
-#else
-  :parent(a_out,a_gl_mgr,a_ttf,0,0,a_verbose)
-#endif
-  ,m_web_cache(a_out,false) //false = no verbose
+  :parent(a_out,a_gl_mgr,a_ttf,a_selection,0,0,a_verbose)
+  ,parent_wall(a_out,a_app_name,a_data_dir)
+  //,m_web_cache(a_out,false) //false = no verbose
   {
     m_res_dir = a_res_dir;
     m_out_dir = a_out_dir;
@@ -102,7 +104,7 @@ public:
 
     m_app_version = a_svers;
 
-    m_web_cache.set_tmp_dir(a_tmp_dir);
+    //m_web_cache.set_tmp_dir(a_tmp_dir);
 
     ////////////////////////////////////////////
     /// help ///////////////////////////////////
@@ -127,51 +129,10 @@ public:
     ////////////////////////////////////////////
     /// <app>.style ////////////////////////////
     ////////////////////////////////////////////
-    //look for a <app>.style in the res dir :
-   {std::string path = a_res_dir;
-    path += inlib::sep();
-    path += m_app_name;
-    path += ".style";
-    if(inlib::file::exists(path)) {
-      xml::load_style_file(m_styles,path);
-    } else { //Android res file names are lowercase.
-      std::string _path = a_res_dir;
-      _path += inlib::sep();
-      std::string _app_name = m_app_name;
-      inlib::tolowercase(_app_name);
-      _path += _app_name;
-      _path += ".style";
-      if(inlib::file::exists(_path)) {
-        xml::load_style_file(m_styles,_path);
-      }
-    }}
+    EXLIB_XML_LOAD(style)
 
-    //look for a <app>.style in the data dir :
-    // any found style with same name will override existing one.
-   {std::string path = a_data_dir;
-    path += inlib::sep();
-    path += m_app_name;
-    path += ".style";
-    if(inlib::file::exists(path)) {
-      xml::load_style_file(m_styles,path);
-    } else { //Android res file names are lowercase.
-      std::string _path = a_data_dir;
-      _path += inlib::sep();
-      std::string _app_name = m_app_name;
-      inlib::tolowercase(_app_name);
-      _path += _app_name;
-      _path += ".style";
-      if(inlib::file::exists(_path)) {
-        xml::load_style_file(m_styles,_path);
-      }
-    }}
-
-    //look for a styles file in the data dir :
-   {std::string path = a_data_dir;
-    path += inlib::sep();
-    path += "styles";
-    if(inlib::file::exists(path)) xml::load_style_file(m_styles,path);}
-
+    ////////////////////////////////////////////
+    ////////////////////////////////////////////
     m_styles.res_color(s_scene(),"screen_color",m_params.m_scene_screen_color);
     set_gui_style(s_gui());
 
@@ -180,7 +141,7 @@ public:
    {std::string alias;
     if(m_styles.is_alias(s_gui(),alias)){
       if(alias==s_gui_Apple_black_on_white()) {
-        if(m_params.m_gui_label_back_color==inlib::colorf::orange()){
+        if(m_params.m_gui_label_back_color==inlib::colorf_orange()){
           m_params.m_gui_label_back_color = inlib::colorf(0.97f,.97f,0.97f);
         }
       }
@@ -191,83 +152,70 @@ public:
     ////////////////////////////////////////////
     /// <app>.ftp //////////////////////////////
     ////////////////////////////////////////////
-    //look for a <app>.ftp in the res dir :
-   {std::string path = a_res_dir;
-    path += inlib::sep();
-    path += m_app_name;
-    path += ".ftp";
-    if(inlib::file::exists(path)) m_xml_ftp.load_ftp_file(m_out,path);}
-
-    //look for a <app>.ftp in the data dir :
-   {std::string path = a_data_dir;
-    path += inlib::sep();
-    path += m_app_name;
-    path += ".ftp";
-    if(inlib::file::exists(path)) m_xml_ftp.load_ftp_file(m_out,path);}
-
-    //look for a ftps file in the data dir :
-   {std::string path = a_data_dir;
-    path += inlib::sep();
-    path += "ftps";
-    if(inlib::file::exists(path)) m_xml_ftp.load_ftp_file(m_out,path);}
+    EXLIB_XML_LOAD(ftp)
 
     ////////////////////////////////////////////
     /// <app>.srv //////////////////////////////
     ////////////////////////////////////////////
-    //look for a <app>.srv in the res dir :
-   {std::string path = a_res_dir;
-    path += inlib::sep();
-    path += m_app_name;
-    path += ".srv";
-    if(inlib::file::exists(path)) m_xml_srv.load_srv_file(m_out,path);}
-
-    //look for a <app>.srv in the data dir :
-   {std::string path = a_data_dir;
-    path += inlib::sep();
-    path += m_app_name;
-    path += ".srv";
-    if(inlib::file::exists(path)) m_xml_srv.load_srv_file(m_out,path);}
-
-    //look for a srvs file in the data dir :
-   {std::string path = a_data_dir;
-    path += inlib::sep();
-    path += "srvs";
-    if(inlib::file::exists(path)) m_xml_srv.load_srv_file(m_out,path);}
+    EXLIB_XML_LOAD(srv)
 
     ////////////////////////////////////////////
     ////////////////////////////////////////////
     ////////////////////////////////////////////
+    m_popup_cbks.add(new inlib::cbk::background_popup(*this));
     m_popup_cbks.add(new inlib::cbk::image_popup(*this,inlib::sg::base_tex::s_class()));
     ////////////////////////////////////////////
     ////////////////////////////////////////////
     ////////////////////////////////////////////
   }
-  virtual ~main() {m_web_cache.clear();}
+  virtual ~main() {
+    //m_web_cache.clear();
+  }
 protected:
   main(const main& a_from)
   :inlib::sg::ui(a_from)
   ,inlib::sg::alert(a_from)
   ,parent(a_from)
-  ,m_xml_ftp(a_from.m_xml_ftp)
-  ,m_xml_srv(a_from.m_xml_srv)
-  ,m_web_cache(m_out,false)
+  ,parent_wall(a_from)
+  ,m_ftps(a_from.m_ftps)
+  ,m_srvs(a_from.m_srvs)
+  //,m_web_cache(m_out,false)
+  ,m_tmp_dirs(a_from.m_tmp_dirs)
   {}
   main& operator=(const main& a_from){
     parent::operator=(a_from);
+    m_tmp_dirs = a_from.m_tmp_dirs;
     return *this;
   }
 
 public:
-  void clear_tmp() {}
+  void clear_tmp() {
+    inlib_vforcit(std::string,m_tmp_dirs,it){
+      if(!inlib::dir::rmdir(*it)){
+        viewer::m_out << "exlib::app::main::clear_tmp :"
+                      << " can't remove directory "
+                      << inlib::sout(*it)
+                      << std::endl;
+      } /*else {
+        viewer::m_out << "exlib::app_main::clear_tmp :"
+                      << " remove directory "
+                      << inlib::sout(*it)
+                      << std::endl;
+      }*/
+    }
+    m_tmp_dirs.clear();
+  }
 protected:
-  xml::xml_ftp m_xml_ftp;
-  xml::xml_srv m_xml_srv;
-  inlib::web::cache m_web_cache;
+  inlib::ftp::ftps m_ftps;
+  inlib::xml::srvs m_srvs;
+  //inlib::web::cache m_web_cache;
   inlib::cbk::help::help_t m_help;
+  std::vector<std::string> m_tmp_dirs;
+  sg::gl2ps_manager m_gl2ps_mgr;
 };
 
 }}
 
-#endif
+//exlib_build_use inlib inlib_glutess freetype expat png zlib jpeg kernel gl2ps
 
-//exlib_build_use inlib glutess freetype expat png zlib jpeg
+#endif

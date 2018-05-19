@@ -5,129 +5,24 @@
 #define exlib_xml_srv
 
 #include "loader"
-#include <inlib/forit>
-#include <inlib/num2s>
+
+#include <inlib/xml/srvs>
 
 namespace exlib {
 namespace xml {
 
-class srv {
-public:
-  srv(){}
-  srv(const std::string& a_host,unsigned int a_port)
-  :m_host(a_host)
-  ,m_port(a_port)
-  {}
-  virtual ~srv(){}
-public:
-  srv(const srv& a_from)
-  :m_host(a_from.m_host)
-  ,m_port(a_from.m_port)
-  {}
-  srv& operator=(const srv& a_from){
-    m_host = a_from.m_host;
-    m_port = a_from.m_port;
-    return *this;
-  }
-public:
-  const std::string& host() const {return m_host;}
-  unsigned int port() const {return m_port;}
-protected:
-  std::string m_host;
-  unsigned int m_port;
-};
-
-class xml_srv {
-public:
-  xml_srv(){}
-  virtual ~xml_srv(){}
-public:
-  xml_srv(const xml_srv& a_from)
-  :m_srvs(a_from.m_srvs)
-  {}
-  xml_srv& operator=(const xml_srv& a_from){
-    m_srvs = a_from.m_srvs;
-    return *this;
-  }
-public:
-  std::vector<srv> srvs() {return m_srvs;}
-  const std::vector<srv>& srvs() const {return m_srvs;}  
-  void add_srv(const std::string& a_host,unsigned int a_port) {
-    //look if already in the list :
-    inlib_vforcit(srv,m_srvs,it) {
-      if( ((*it).host()==a_host)  &&
-          ((*it).port()==a_port)  
-        ) return;
-    }
-    m_srvs.push_back(srv(a_host,a_port));
-  }
-  bool save_srvs(const std::string& a_path) {
-    std::vector<std::string> lines;
-    lines.push_back("<srvs>");
-    std::string stmp;
-    inlib_vforcit(srv,m_srvs,it) {
-      lines.push_back("  <srv>");
-      lines.push_back("    <host>"+(*it).host()+"</host>");
-      if(!inlib::num2s((*it).port(),stmp)) {}
-      lines.push_back("    <port>"+stmp+"</port>");
-      lines.push_back("  </srv>");
-    }    
-    lines.push_back("</srvs>");
-    return inlib::file::write(a_path,lines);
-  }
-
-  bool load_srv_file(std::ostream& a_out,const std::string& a_file) {
-    inlib::xml::default_factory factory;
-    exlib::xml::loader ml(factory,a_out,false);
-    std::vector<std::string> tags;
-    tags.push_back("srvs");
-    tags.push_back("srv");
-    ml.set_tags(tags);
-    if(!ml.load_file(a_file,false)) return false;
-    inlib::xml::tree* top = ml.top_item();
-    if(!top) return true; //File could be empty.
-    return scan_srv_tree(*top);
-  }
-
-protected:
-  bool scan_srv_tree(inlib::xml::tree& a_tree) {
-
-    const std::string& tag = a_tree.tag_name();
-    if(tag=="srvs") {
-    } else if(tag=="srv") {   
-      load_srv(a_tree);
-    }
-  
-    // scan children :
-   {inlib::xml::looper _for(a_tree);
-    while(inlib::xml::tree* _tree = _for.next_tree()) {
-      if(!scan_srv_tree(*_tree)) return false;
-    }}
-  
-    return true;
-  }
-  
-  void load_srv(inlib::xml::tree& a_tree) {
-    std::string host;
-    unsigned int port = 0;
-
-   {inlib::xml::looper _for(a_tree);
-    while(inlib::xml::element* _elem = _for.next_element()) {
-
-      if(_elem->name()=="host") {
-        host = _elem->value();
-      } else if(_elem->name()=="port") {
-        inlib::to<unsigned int>(_elem->value(),port,0);
-      }
-
-    }}  
-
-    if(host.size() && port) add_srv(host,port);
-  }
-
-protected:
-  std::vector<srv> m_srvs;
-};
+inline bool load_srv_file(std::ostream& a_out,const std::string& a_file,inlib::xml::srvs& a_srvs) {
+  inlib::xml::default_factory factory;
+  loader ml(factory,a_out,false);
+  std::vector<std::string> tags;
+  tags.push_back("srvs");
+  tags.push_back("srv");
+  ml.set_tags(tags);
+  if(!ml.load_file(a_file,false)) return false;
+  inlib::xml::tree* top = ml.top_item();
+  if(!top) return true; //File could be empty.
+  return a_srvs.scan_tree(*top);
+}
 
 }}
 
