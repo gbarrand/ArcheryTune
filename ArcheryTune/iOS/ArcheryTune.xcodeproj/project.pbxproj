@@ -116,6 +116,7 @@
 		177C4434124B78BB007CB466 /* ftsystem.c in Sources */ = {isa = PBXBuildFile; fileRef = 177C442C124B78BB007CB466 /* ftsystem.c */; };
 		177C444C124B7929007CB466 /* ftgzip.c in Sources */ = {isa = PBXBuildFile; fileRef = 177C443C124B7929007CB466 /* ftgzip.c */; };
 		1783610012340D06001FB767 /* GLView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 178360FF12340D06001FB767 /* GLView.mm */; };
+		17926A131F729653007D5583 /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17926A121F729653007D5583 /* CoreMotion.framework */; };
 		179C8C7F1498DA290057F86F /* gl2ps.c in Sources */ = {isa = PBXBuildFile; fileRef = 179C8C7C1498DA290057F86F /* gl2ps.c */; };
 		179C8C801498DA290057F86F /* rename_gl.ic in Resources */ = {isa = PBXBuildFile; fileRef = 179C8C7D1498DA290057F86F /* rename_gl.ic */; };
 		179C8C811498DA290057F86F /* renamed_gl.ic in Resources */ = {isa = PBXBuildFile; fileRef = 179C8C7E1498DA290057F86F /* renamed_gl.ic */; };
@@ -182,21 +183,15 @@
 		17A38685193B5FFF00577FC6 /* ArcheryTune.wall in Resources */ = {isa = PBXBuildFile; fileRef = 17A38682193B5FFF00577FC6 /* ArcheryTune.wall */; };
 		17A38686193B5FFF00577FC6 /* icon.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 17A38683193B5FFF00577FC6 /* icon.jpg */; };
 		17A38687193B5FFF00577FC6 /* white.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 17A38684193B5FFF00577FC6 /* white.jpg */; };
+		17AB745F1F7290E900671406 /* courbd.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 17AB745B1F7290E900671406 /* courbd.ttf */; };
+		17AB74601F7290E900671406 /* favicon.ico in Resources */ = {isa = PBXBuildFile; fileRef = 17AB745C1F7290E900671406 /* favicon.ico */; };
+		17AB74611F7290E900671406 /* helveticabd.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 17AB745D1F7290E900671406 /* helveticabd.ttf */; };
+		17AB74621F7290E900671406 /* lucidagrandebd.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 17AB745E1F7290E900671406 /* lucidagrandebd.ttf */; };
 		17B7FB3A12342D9A00D01BC5 /* MainWindow-iPad.xib in Resources */ = {isa = PBXBuildFile; fileRef = 17B7FB3912342D9A00D01BC5 /* MainWindow-iPad.xib */; };
 		17BB516E12B3D1C8007DB042 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 17BB516D12B3D1C8007DB042 /* Icon.png */; };
 		17BE36BC16FCCFF20089531E /* MessageUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 17BE36BB16FCCFF20089531E /* MessageUI.framework */; };
 		17CDC7BA12B8266500A5D497 /* Icon-72.png in Resources */ = {isa = PBXBuildFile; fileRef = 17CDC7B912B8266500A5D497 /* Icon-72.png */; };
 		17CDC7BC12B8267200A5D497 /* Icon-114.png in Resources */ = {isa = PBXBuildFile; fileRef = 17CDC7BB12B8267200A5D497 /* Icon-114.png */; };
-		17CF75FF124E121000F6122B /* dict.c in Sources */ = {isa = PBXBuildFile; fileRef = 17CF75E5124E121000F6122B /* dict.c */; };
-		17CF7600124E121000F6122B /* geom.c in Sources */ = {isa = PBXBuildFile; fileRef = 17CF75E7124E121000F6122B /* geom.c */; };
-		17CF7601124E121000F6122B /* memalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 17CF75EA124E121000F6122B /* memalloc.c */; };
-		17CF7602124E121000F6122B /* mesh.c in Sources */ = {isa = PBXBuildFile; fileRef = 17CF75EC124E121000F6122B /* mesh.c */; };
-		17CF7603124E121000F6122B /* normal.c in Sources */ = {isa = PBXBuildFile; fileRef = 17CF75EE124E121000F6122B /* normal.c */; };
-		17CF7605124E121000F6122B /* priorityq.c in Sources */ = {isa = PBXBuildFile; fileRef = 17CF75F3124E121000F6122B /* priorityq.c */; };
-		17CF7607124E121000F6122B /* render.c in Sources */ = {isa = PBXBuildFile; fileRef = 17CF75F6124E121000F6122B /* render.c */; };
-		17CF7608124E121000F6122B /* sweep.c in Sources */ = {isa = PBXBuildFile; fileRef = 17CF75F8124E121000F6122B /* sweep.c */; };
-		17CF7609124E121000F6122B /* tess.c in Sources */ = {isa = PBXBuildFile; fileRef = 17CF75FA124E121000F6122B /* tess.c */; };
-		17CF760A124E121000F6122B /* tessmono.c in Sources */ = {isa = PBXBuildFile; fileRef = 17CF75FC124E121000F6122B /* tessmono.c */; };
 		1D60589B0D05DD56006BFB54 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; };
 		1D60589F0D05DD5A006BFB54 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D30AB110D05D00D00671497 /* Foundation.framework */; };
 		1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DF5F4DF0D08C38300B7A737 /* UIKit.framework */; };
@@ -318,6 +313,7 @@
 		177C442C124B78BB007CB466 /* ftsystem.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ftsystem.c; sourceTree = "<group>"; };
 		177C443C124B7929007CB466 /* ftgzip.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ftgzip.c; sourceTree = "<group>"; };
 		178360FF12340D06001FB767 /* GLView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = GLView.mm; sourceTree = "<group>"; };
+		17926A121F729653007D5583 /* CoreMotion.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMotion.framework; path = System/Library/Frameworks/CoreMotion.framework; sourceTree = SDKROOT; };
 		179C8C7C1498DA290057F86F /* gl2ps.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = gl2ps.c; sourceTree = "<group>"; };
 		179C8C7D1498DA290057F86F /* rename_gl.ic */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = rename_gl.ic; sourceTree = "<group>"; };
 		179C8C7E1498DA290057F86F /* renamed_gl.ic */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = renamed_gl.ic; sourceTree = "<group>"; };
@@ -384,21 +380,15 @@
 		17A38682193B5FFF00577FC6 /* ArcheryTune.wall */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ArcheryTune.wall; sourceTree = "<group>"; };
 		17A38683193B5FFF00577FC6 /* icon.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = icon.jpg; sourceTree = "<group>"; };
 		17A38684193B5FFF00577FC6 /* white.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = white.jpg; sourceTree = "<group>"; };
+		17AB745B1F7290E900671406 /* courbd.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = courbd.ttf; sourceTree = "<group>"; };
+		17AB745C1F7290E900671406 /* favicon.ico */ = {isa = PBXFileReference; lastKnownFileType = image.ico; path = favicon.ico; sourceTree = "<group>"; };
+		17AB745D1F7290E900671406 /* helveticabd.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = helveticabd.ttf; sourceTree = "<group>"; };
+		17AB745E1F7290E900671406 /* lucidagrandebd.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = lucidagrandebd.ttf; sourceTree = "<group>"; };
 		17B7FB3912342D9A00D01BC5 /* MainWindow-iPad.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = "MainWindow-iPad.xib"; path = "Resources-iPad/MainWindow-iPad.xib"; sourceTree = "<group>"; };
 		17BB516D12B3D1C8007DB042 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
 		17BE36BB16FCCFF20089531E /* MessageUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MessageUI.framework; path = System/Library/Frameworks/MessageUI.framework; sourceTree = SDKROOT; };
 		17CDC7B912B8266500A5D497 /* Icon-72.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-72.png"; sourceTree = "<group>"; };
 		17CDC7BB12B8267200A5D497 /* Icon-114.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-114.png"; sourceTree = "<group>"; };
-		17CF75E5124E121000F6122B /* dict.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dict.c; sourceTree = "<group>"; };
-		17CF75E7124E121000F6122B /* geom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = geom.c; sourceTree = "<group>"; };
-		17CF75EA124E121000F6122B /* memalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = memalloc.c; sourceTree = "<group>"; };
-		17CF75EC124E121000F6122B /* mesh.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mesh.c; sourceTree = "<group>"; };
-		17CF75EE124E121000F6122B /* normal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = normal.c; sourceTree = "<group>"; };
-		17CF75F3124E121000F6122B /* priorityq.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = priorityq.c; sourceTree = "<group>"; };
-		17CF75F6124E121000F6122B /* render.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = render.c; sourceTree = "<group>"; };
-		17CF75F8124E121000F6122B /* sweep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sweep.c; sourceTree = "<group>"; };
-		17CF75FA124E121000F6122B /* tess.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tess.c; sourceTree = "<group>"; };
-		17CF75FC124E121000F6122B /* tessmono.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tessmono.c; sourceTree = "<group>"; };
 		1D30AB110D05D00D00671497 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		1DF5F4DF0D08C38300B7A737 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		2514C27910084DCA00A42282 /* Shader.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = Shader.fsh; path = Shaders/Shader.fsh; sourceTree = "<group>"; };
@@ -416,6 +406,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				17926A131F729653007D5583 /* CoreMotion.framework in Frameworks */,
 				17BE36BC16FCCFF20089531E /* MessageUI.framework in Frameworks */,
 				1D60589F0D05DD5A006BFB54 /* Foundation.framework in Frameworks */,
 				1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */,
@@ -437,7 +428,6 @@
 				178360FF12340D06001FB767 /* GLView.mm */,
 				177C4458124B7999007CB466 /* expat */,
 				177C445B124B79B1007CB466 /* freetype */,
-				17CF75E1124E11F300F6122B /* glutess */,
 				17A24DE11255EE5300BE9AA3 /* jpeg */,
 			);
 			path = Classes;
@@ -476,6 +466,10 @@
 		17616E4917FD55D900CF91EA /* comres */ = {
 			isa = PBXGroup;
 			children = (
+				17AB745B1F7290E900671406 /* courbd.ttf */,
+				17AB745C1F7290E900671406 /* favicon.ico */,
+				17AB745D1F7290E900671406 /* helveticabd.ttf */,
+				17AB745E1F7290E900671406 /* lucidagrandebd.ttf */,
 				17A38682193B5FFF00577FC6 /* ArcheryTune.wall */,
 				17A38683193B5FFF00577FC6 /* icon.jpg */,
 				17A38684193B5FFF00577FC6 /* white.jpg */,
@@ -898,33 +892,6 @@
 			name = "Resources-iPad";
 			sourceTree = "<group>";
 		};
-		17CF75E1124E11F300F6122B /* glutess */ = {
-			isa = PBXGroup;
-			children = (
-				17CF75E2124E121000F6122B /* src */,
-			);
-			name = glutess;
-			path = ..;
-			sourceTree = "<group>";
-		};
-		17CF75E2124E121000F6122B /* src */ = {
-			isa = PBXGroup;
-			children = (
-				17CF75E5124E121000F6122B /* dict.c */,
-				17CF75E7124E121000F6122B /* geom.c */,
-				17CF75EA124E121000F6122B /* memalloc.c */,
-				17CF75EC124E121000F6122B /* mesh.c */,
-				17CF75EE124E121000F6122B /* normal.c */,
-				17CF75F3124E121000F6122B /* priorityq.c */,
-				17CF75F6124E121000F6122B /* render.c */,
-				17CF75F8124E121000F6122B /* sweep.c */,
-				17CF75FA124E121000F6122B /* tess.c */,
-				17CF75FC124E121000F6122B /* tessmono.c */,
-			);
-			name = src;
-			path = ../../inexlib/ourex/glutess/src;
-			sourceTree = SOURCE_ROOT;
-		};
 		17D87DE4144F27880003C5D4 /* gl2ps */ = {
 			isa = PBXGroup;
 			children = (
@@ -997,6 +964,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				17926A121F729653007D5583 /* CoreMotion.framework */,
 				28FD15070DC6FC5B0079059D /* QuartzCore.framework */,
 				28FD14FF0DC6FC520079059D /* OpenGLES.framework */,
 				1DF5F4DF0D08C38300B7A737 /* UIKit.framework */,
@@ -1034,6 +1002,7 @@
 				TargetAttributes = {
 					1D6058900D05DD3D006BFB54 = {
 						DevelopmentTeam = QLUV8W3U6W;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -1067,6 +1036,7 @@
 				28AD733F0D9D9553002E5188 /* MainWindow.xib in Resources */,
 				17B7FB3A12342D9A00D01BC5 /* MainWindow-iPad.xib in Resources */,
 				177222E9193B61B40089F084 /* Default.png in Resources */,
+				17AB74621F7290E900671406 /* lucidagrandebd.ttf in Resources */,
 				17BB516E12B3D1C8007DB042 /* Icon.png in Resources */,
 				17CDC7BA12B8266500A5D497 /* Icon-72.png in Resources */,
 				177222EF193B61B40089F084 /* Icon-152.png in Resources */,
@@ -1081,8 +1051,11 @@
 				17616E7317FD55D900CF91EA /* ams_pa0092_petita_lapin.jpg in Resources */,
 				17A38686193B5FFF00577FC6 /* icon.jpg in Resources */,
 				17616E7417FD55D900CF91EA /* ams_pg0065_petit_paon.jpg in Resources */,
+				17AB74611F7290E900671406 /* helveticabd.ttf in Resources */,
 				17616E7517FD55D900CF91EA /* ams_pg0068_petit_pandaroux.jpg in Resources */,
+				17AB745F1F7290E900671406 /* courbd.ttf in Resources */,
 				17616E7617FD55D900CF91EA /* application_exit.jpg in Resources */,
+				17AB74601F7290E900671406 /* favicon.ico in Resources */,
 				17616E7717FD55D900CF91EA /* ArcheryTune.style in Resources */,
 				17616E7817FD55D900CF91EA /* arialbd.ttf in Resources */,
 				17616E7917FD55D900CF91EA /* beos_menu.jpg in Resources */,
@@ -1160,16 +1133,6 @@
 				177C440E124B7285007CB466 /* winfnt.c in Sources */,
 				177C4434124B78BB007CB466 /* ftsystem.c in Sources */,
 				177C444C124B7929007CB466 /* ftgzip.c in Sources */,
-				17CF75FF124E121000F6122B /* dict.c in Sources */,
-				17CF7600124E121000F6122B /* geom.c in Sources */,
-				17CF7601124E121000F6122B /* memalloc.c in Sources */,
-				17CF7602124E121000F6122B /* mesh.c in Sources */,
-				17CF7603124E121000F6122B /* normal.c in Sources */,
-				17CF7605124E121000F6122B /* priorityq.c in Sources */,
-				17CF7607124E121000F6122B /* render.c in Sources */,
-				17CF7608124E121000F6122B /* sweep.c in Sources */,
-				17CF7609124E121000F6122B /* tess.c in Sources */,
-				17CF760A124E121000F6122B /* tessmono.c in Sources */,
 				17A24E241255EE7200BE9AA3 /* cdjpeg.c in Sources */,
 				17A24E251255EE7200BE9AA3 /* jcapimin.c in Sources */,
 				17A24E261255EE7200BE9AA3 /* jcapistd.c in Sources */,
@@ -1273,12 +1236,14 @@
 		1730CB3214C5FD4800C3545E /* Distribution */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD)";
 				"ARCHS[sdk=*]" = (
 					armv6,
 					armv7,
 				);
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				DEVELOPMENT_TEAM = QLUV8W3U6W;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_THUMB_SUPPORT = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -1291,14 +1256,12 @@
 					../freetype/include,
 					../freetype/include/freetype,
 					../freetype/src/builds,
-					../glutess,
 					../jpeg/jpeg,
 					../cfitsio/include,
 				);
 				OTHER_CFLAGS = (
 					"-DNS_BLOCK_ASSERTIONS=1",
 					"-DEXLIB_HAS_GL_VBO",
-					"-DWALL_DATA_CLIENT",
 				);
 				PREBINDING = NO;
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
@@ -1313,13 +1276,11 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD)";
-				"ARCHS[sdk=*]" = (
-					armv6,
-					armv7,
-				);
+				"ARCHS[sdk=*]" = "$(ARCHS_STANDARD)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
+				DEVELOPMENT_TEAM = "";
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = s;
@@ -1337,17 +1298,17 @@
 					../../inexlib/ourex/freetype/include,
 					../../inexlib/ourex/freetype/include/freetype,
 					../../inexlib/ourex/freetype/src/builds,
-					../../inexlib/ourex/glutess,
 					../../inexlib/ourex/jpeg/jpeg,
 					../../inexlib/ourex/cfitsio/include,
 					../../inexlib/ourex/gl2ps,
 				);
 				INFOPLIST_FILE = "ArcheryTune-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = ArcheryTune;
 				PROVISIONING_PROFILE = "";
-				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "778E6EC5-B7D7-454A-B2EE-DFA785446184";
+				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
@@ -1358,14 +1319,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
-				"ARCHS[sdk=*]" = (
-					armv6,
-					armv7,
-				);
+				ARCHS = "$(ARCHS_STANDARD)";
+				"ARCHS[sdk=*]" = "$(ARCHS_STANDARD)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				DEVELOPMENT_TEAM = "";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
@@ -1384,17 +1343,17 @@
 					../../inexlib/ourex/freetype/include,
 					../../inexlib/ourex/freetype/include/freetype,
 					../../inexlib/ourex/freetype/src/builds,
-					../../inexlib/ourex/glutess,
 					../../inexlib/ourex/jpeg/jpeg,
 					../../inexlib/ourex/cfitsio/include,
 					../../inexlib/ourex/gl2ps,
 				);
 				INFOPLIST_FILE = "ArcheryTune-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				LIBRARY_SEARCH_PATHS = "";
 				PRODUCT_NAME = ArcheryTune;
 				PROVISIONING_PROFILE = "";
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1405,13 +1364,11 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD)";
-				"ARCHS[sdk=*]" = (
-					armv6,
-					armv7,
-				);
+				"ARCHS[sdk=*]" = "$(ARCHS_STANDARD)";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
+				DEVELOPMENT_TEAM = "";
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = s;
@@ -1429,18 +1386,17 @@
 					../../inexlib/ourex/freetype/include,
 					../../inexlib/ourex/freetype/include/freetype,
 					../../inexlib/ourex/freetype/src/builds,
-					../../inexlib/ourex/glutess,
 					../../inexlib/ourex/jpeg/jpeg,
 					../../inexlib/ourex/cfitsio/include,
 					../../inexlib/ourex/gl2ps,
 				);
 				INFOPLIST_FILE = "ArcheryTune-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
-				"IPHONEOS_DEPLOYMENT_TARGET[sdk=*]" = 5.1.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = ArcheryTune;
 				PROVISIONING_PROFILE = "";
-				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "EB6E00D2-8E6F-47C1-B5DC-91F324CC952D";
+				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
@@ -1450,12 +1406,14 @@
 		C01FCF4F08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD)";
 				"ARCHS[sdk=*]" = (
 					armv6,
 					armv7,
 				);
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = QLUV8W3U6W;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_PREPROCESSOR_DEFINITIONS = DEBUG;
 				GCC_THUMB_SUPPORT = NO;
@@ -1469,15 +1427,11 @@
 					../freetype/include,
 					../freetype/include/freetype,
 					../freetype/src/builds,
-					../glutess,
 					../jpeg/jpeg,
 					../cfitsio/include,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 3.2;
-				OTHER_CFLAGS = (
-					"-DEXLIB_HAS_GL_VBO",
-					"-DWALL_DATA_CLIENT",
-				);
+				OTHER_CFLAGS = "-DEXLIB_HAS_GL_VBO";
 				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
 				PREBINDING = NO;
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
@@ -1490,12 +1444,14 @@
 		C01FCF5008A954540054247B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD)";
 				"ARCHS[sdk=*]" = (
 					armv6,
 					armv7,
 				);
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEVELOPMENT_TEAM = QLUV8W3U6W;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_THUMB_SUPPORT = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -1508,14 +1464,12 @@
 					../freetype/include,
 					../freetype/include/freetype,
 					../freetype/src/builds,
-					../glutess,
 					../jpeg/jpeg,
 					../cfitsio/include,
 				);
 				OTHER_CFLAGS = (
 					"-DNS_BLOCK_ASSERTIONS=1",
 					"-DEXLIB_HAS_GL_VBO",
-					"-DWALL_DATA_CLIENT",
 				);
 				PREBINDING = NO;
 				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "";
