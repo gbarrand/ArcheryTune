@@ -98,16 +98,6 @@
 		1775C89512A7C176004D8E0F /* type1.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C7E512A7C176004D8E0F /* type1.c */; };
 		1775C89912A7C176004D8E0F /* type42.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C7EF12A7C176004D8E0F /* type42.c */; };
 		1775C89A12A7C176004D8E0F /* winfnt.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C7F212A7C176004D8E0F /* winfnt.c */; };
-		1775C8BC12A7C199004D8E0F /* dict.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8A212A7C199004D8E0F /* dict.c */; };
-		1775C8BD12A7C199004D8E0F /* geom.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8A412A7C199004D8E0F /* geom.c */; };
-		1775C8BE12A7C199004D8E0F /* memalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8A712A7C199004D8E0F /* memalloc.c */; };
-		1775C8BF12A7C199004D8E0F /* mesh.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8A912A7C199004D8E0F /* mesh.c */; };
-		1775C8C012A7C199004D8E0F /* normal.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8AB12A7C199004D8E0F /* normal.c */; };
-		1775C8C212A7C199004D8E0F /* priorityq.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8B012A7C199004D8E0F /* priorityq.c */; };
-		1775C8C412A7C199004D8E0F /* render.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8B312A7C199004D8E0F /* render.c */; };
-		1775C8C512A7C199004D8E0F /* sweep.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8B512A7C199004D8E0F /* sweep.c */; };
-		1775C8C612A7C199004D8E0F /* tess.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8B712A7C199004D8E0F /* tess.c */; };
-		1775C8C712A7C199004D8E0F /* tessmono.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8B912A7C199004D8E0F /* tessmono.c */; };
 		1775C93112A7C1AC004D8E0F /* cdjpeg.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8E712A7C1AC004D8E0F /* cdjpeg.c */; };
 		1775C93212A7C1AC004D8E0F /* jcapimin.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8E812A7C1AC004D8E0F /* jcapimin.c */; };
 		1775C93312A7C1AC004D8E0F /* jcapistd.c in Sources */ = {isa = PBXBuildFile; fileRef = 1775C8E912A7C1AC004D8E0F /* jcapistd.c */; };
@@ -290,16 +280,6 @@
 		1775C7E512A7C176004D8E0F /* type1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = type1.c; sourceTree = "<group>"; };
 		1775C7EF12A7C176004D8E0F /* type42.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = type42.c; sourceTree = "<group>"; };
 		1775C7F212A7C176004D8E0F /* winfnt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = winfnt.c; sourceTree = "<group>"; };
-		1775C8A212A7C199004D8E0F /* dict.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dict.c; sourceTree = "<group>"; };
-		1775C8A412A7C199004D8E0F /* geom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = geom.c; sourceTree = "<group>"; };
-		1775C8A712A7C199004D8E0F /* memalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = memalloc.c; sourceTree = "<group>"; };
-		1775C8A912A7C199004D8E0F /* mesh.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mesh.c; sourceTree = "<group>"; };
-		1775C8AB12A7C199004D8E0F /* normal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = normal.c; sourceTree = "<group>"; };
-		1775C8B012A7C199004D8E0F /* priorityq.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = priorityq.c; sourceTree = "<group>"; };
-		1775C8B312A7C199004D8E0F /* render.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = render.c; sourceTree = "<group>"; };
-		1775C8B512A7C199004D8E0F /* sweep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sweep.c; sourceTree = "<group>"; };
-		1775C8B712A7C199004D8E0F /* tess.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tess.c; sourceTree = "<group>"; };
-		1775C8B912A7C199004D8E0F /* tessmono.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tessmono.c; sourceTree = "<group>"; };
 		1775C8E712A7C1AC004D8E0F /* cdjpeg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cdjpeg.c; sourceTree = "<group>"; };
 		1775C8E812A7C1AC004D8E0F /* jcapimin.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = jcapimin.c; sourceTree = "<group>"; };
 		1775C8E912A7C1AC004D8E0F /* jcapistd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = jcapistd.c; sourceTree = "<group>"; };
@@ -407,7 +387,6 @@
 				1796644A151BD1AA008361D0 /* png */,
 				175928591486AA7100943BC7 /* gl2ps */,
 				1775C8C812A7C1AB004D8E0F /* jpeg */,
-				1775C89B12A7C199004D8E0F /* glutess */,
 				1775C66212A7C175004D8E0F /* freetype */,
 				1775C62312A7C152004D8E0F /* expat */,
 				170718B31232817D0008441C /* GLView.mm */,
@@ -774,32 +753,6 @@
 			path = winfonts;
 			sourceTree = "<group>";
 		};
-		1775C89B12A7C199004D8E0F /* glutess */ = {
-			isa = PBXGroup;
-			children = (
-				1775C89F12A7C199004D8E0F /* src */,
-			);
-			name = glutess;
-			path = ../../inexlib/ourex/glutess;
-			sourceTree = SOURCE_ROOT;
-		};
-		1775C89F12A7C199004D8E0F /* src */ = {
-			isa = PBXGroup;
-			children = (
-				1775C8A212A7C199004D8E0F /* dict.c */,
-				1775C8A412A7C199004D8E0F /* geom.c */,
-				1775C8A712A7C199004D8E0F /* memalloc.c */,
-				1775C8A912A7C199004D8E0F /* mesh.c */,
-				1775C8AB12A7C199004D8E0F /* normal.c */,
-				1775C8B012A7C199004D8E0F /* priorityq.c */,
-				1775C8B312A7C199004D8E0F /* render.c */,
-				1775C8B512A7C199004D8E0F /* sweep.c */,
-				1775C8B712A7C199004D8E0F /* tess.c */,
-				1775C8B912A7C199004D8E0F /* tessmono.c */,
-			);
-			path = src;
-			sourceTree = "<group>";
-		};
 		1775C8C812A7C1AB004D8E0F /* jpeg */ = {
 			isa = PBXGroup;
 			children = (
@@ -1106,16 +1059,6 @@
 				1775C89512A7C176004D8E0F /* type1.c in Sources */,
 				1775C89912A7C176004D8E0F /* type42.c in Sources */,
 				1775C89A12A7C176004D8E0F /* winfnt.c in Sources */,
-				1775C8BC12A7C199004D8E0F /* dict.c in Sources */,
-				1775C8BD12A7C199004D8E0F /* geom.c in Sources */,
-				1775C8BE12A7C199004D8E0F /* memalloc.c in Sources */,
-				1775C8BF12A7C199004D8E0F /* mesh.c in Sources */,
-				1775C8C012A7C199004D8E0F /* normal.c in Sources */,
-				1775C8C212A7C199004D8E0F /* priorityq.c in Sources */,
-				1775C8C412A7C199004D8E0F /* render.c in Sources */,
-				1775C8C512A7C199004D8E0F /* sweep.c in Sources */,
-				1775C8C612A7C199004D8E0F /* tess.c in Sources */,
-				1775C8C712A7C199004D8E0F /* tessmono.c in Sources */,
 				1775C93112A7C1AC004D8E0F /* cdjpeg.c in Sources */,
 				1775C93212A7C1AC004D8E0F /* jcapimin.c in Sources */,
 				1775C93312A7C1AC004D8E0F /* jcapistd.c in Sources */,
@@ -1254,7 +1197,7 @@
 				INSTALL_PATH = /Applications;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PRODUCT_NAME = ArcheryTune;
-				SDKROOT = macosx10.9;
+				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
@@ -1272,7 +1215,7 @@
 				INSTALL_PATH = /Applications;
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PRODUCT_NAME = ArcheryTune;
-				SDKROOT = macosx10.9;
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -1294,7 +1237,6 @@
 					../../inexlib/ourex/freetype/include,
 					../../inexlib/ourex/freetype/include/freetype,
 					../../inexlib/ourex/freetype/src/builds,
-					../../inexlib/ourex/glutess,
 					../../inexlib/ourex/jpeg/jpeg,
 					../../inexlib/ourex/cfitsio/include,
 					../../inexlib/ourex/gl2ps,
@@ -1302,7 +1244,6 @@
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
 					"-DEXLIB_HAS_GL_VBO",
-					"-DWALL_DATA_CLIENT",
 				);
 				SDKROOT = macosx;
 			};
@@ -1325,14 +1266,12 @@
 					../../inexlib/ourex/freetype/include,
 					../../inexlib/ourex/freetype/include/freetype,
 					../../inexlib/ourex/freetype/src/builds,
-					../../inexlib/ourex/glutess,
 					../../inexlib/ourex/jpeg/jpeg,
 					../../inexlib/ourex/cfitsio/include,
 					../../inexlib/ourex/gl2ps,
 				);
 				OTHER_CFLAGS = (
 					"-DEXLIB_HAS_GL_VBO",
-					"-DWALL_DATA_CLIENT",
 				);
 				SDKROOT = macosx;
 			};
