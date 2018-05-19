@@ -1,11 +1,13 @@
 #!/bin/sh -f
 
+bush_home=`pwd`/../../bush
+
 save_dir=`pwd`
 
 #/////////////////////////////////////////////////////////////
 #/// cleanup comres //////////////////////////////////////////
 #/////////////////////////////////////////////////////////////
-../../inexlib/inlib/mgr/find_rm ../comres '*.*'
+${bush_home}/find_rm ../comres '*.*'
 #/////////////////////////////////////////////////////////////
 #/// get some files from ioda and put them in comres /////////
 #/////////////////////////////////////////////////////////////
@@ -19,7 +21,8 @@ if [ ! -d ${from} ] ; then
 fi
 
 files=""
-files="${files} arialbd.ttf helvetica.ttf"
+files="${files} arialbd.ttf helveticabd.ttf courbd.ttf lucidagrandebd.ttf" #gui fonts.
+files="${files} helvetica.ttf"
 
 # cam panel :
 files="${files} move2red.jpg crazyeye_run.jpg flip_flop.jpg"
@@ -39,7 +42,7 @@ files="${files} application_exit.jpg"
 files="${files} connect_to_wall.jpg"
 files="${files} edit_clear.jpg edit_undo.jpg"
 files="${files} move2red.jpg flip_flop.jpg"
-files="${files} object_rotate_left.jpg"
+files="${files} object_rotate_left.jpg stop_object_rotate_left.jpg"
 files="${files} document_export.jpg"
 files="${files} routing_step.jpg console.jpg tools.jpg"
 
@@ -82,66 +85,16 @@ done
 cd ${save_dir}
 
 #/////////////////////////////////////////////////////////////
+#/// Android : ///////////////////////////////////////////////
 #/////////////////////////////////////////////////////////////
-#/////////////////////////////////////////////////////////////
-
-cd ..
-
-tos="./Android/res/raw ./NativeAndroid/res/raw"
-
-find ./comres -name '*' -type f -print > ./comres_tmp
-
-for dir in ${tos} ; do
-  if [ -d ${dir} ] ; then
-    ${save_dir}/../../inexlib/inlib/mgr/find_rm "${dir}" '*_*'
-    for file in $(cat ./comres_tmp) ; do
-      name="`basename ${file}`"
-      if [ ${dir} = "./Android/res/raw" ] ; then
-        if [ ${name} != favicon.ico ] ; then
-          raw_file=`echo ${name} | sed -e 's:\.:_:g'`
-          raw_file=`echo ${raw_file} | tr "[:upper:]" "[:lower:]"`
-          /bin/cp ${file} ${dir}/${raw_file}
-        fi
-      elif [ ${dir} = "./NativeAndroid/res/raw" ] ; then
-        if [ ${name} != favicon.ico ] ; then
-          raw_file=`echo ${name} | sed -e 's:\.:_:g'`
-          raw_file=`echo ${raw_file} | tr "[:upper:]" "[:lower:]"`
-          /bin/cp ${file} ${dir}/${raw_file}
-        fi
-      else
-       /bin/cp ${file} ${dir}/.
-      fi
-    done
-  fi
-done
-/bin/rm -f ./comres_tmp
-
-cd ${save_dir}
+. ${bush_home}/and_app_res
 
 #/////////////////////////////////////////////////////////////
+#/// iOS : ///////////////////////////////////////////////////
 #/////////////////////////////////////////////////////////////
-#/////////////////////////////////////////////////////////////
-which=_no_back_plus_gros
 
 if [ -d ../icons ] ; then
-  if [ -d ../Android/res ] ; then
-    mkdir -p ../Android/res/drawable-ldpi
-    mkdir -p ../Android/res/drawable-mdpi
-    mkdir -p ../Android/res/drawable-hdpi
-
-    cp ../icons/icon_36${which}.png ../Android/res/drawable-ldpi/icon.png
-    cp ../icons/icon_48${which}.png ../Android/res/drawable-mdpi/icon.png
-    cp ../icons/icon_72${which}.png ../Android/res/drawable-hdpi/icon.png
-  fi
-  if [ -d ../NativeAndroid/res ] ; then
-    mkdir -p ../NativeAndroid/res/drawable-ldpi
-    mkdir -p ../NativeAndroid/res/drawable-mdpi
-    mkdir -p ../NativeAndroid/res/drawable-hdpi
-
-    cp ../icons/icon_36${which}.png ../NativeAndroid/res/drawable-ldpi/icon.png
-    cp ../icons/icon_48${which}.png ../NativeAndroid/res/drawable-mdpi/icon.png
-    cp ../icons/icon_72${which}.png ../NativeAndroid/res/drawable-hdpi/icon.png
-  fi
+  which=_no_back_plus_gros
   if [ -d ../iOS ] ; then
     cp ../icons/icon_57${which}.png ../iOS/Icon.png
     cp ../icons/icon_72${which}.png ../iOS/Icon-72.png
