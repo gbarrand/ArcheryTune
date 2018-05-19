@@ -24,25 +24,24 @@ public:
   }
 public:
   sf<bool> back_visible;  
-  sf_vec<inlib::colorf,float> color;
+  sf_vec<colorf,float> color;
   //sf<float> transparency;
   sf_img<inlib::byte> img;
   sf<float> hmargin_factor;
   sf_enum<sg::hjust> hjust;
   sf_enum<sg::vjust> vjust;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(arm_color)
-      INLIB_ADD_FIELD_DESC(back_visible)
-      INLIB_ADD_FIELD_DESC(color)
-      INLIB_ADD_FIELD_DESC(img)
-      INLIB_ADD_FIELD_DESC(hmargin_factor)
-      INLIB_ADD_FIELD_DESC(hjust)
-      INLIB_ADD_FIELD_DESC(vjust)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::image_button)
+    static const desc_fields s_v(parent::node_desc_fields(),7, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(arm_color),
+      INLIB_ARG_FIELD_DESC(back_visible),
+      INLIB_ARG_FIELD_DESC(color),
+      INLIB_ARG_FIELD_DESC(img),
+      INLIB_ARG_FIELD_DESC(hmargin_factor),
+      INLIB_ARG_FIELD_DESC(hjust),
+      INLIB_ARG_FIELD_DESC(vjust)
+    );
     return s_v;
   }
 private:
@@ -61,7 +60,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) m_back_sep.render(a_action);
+    if(back_visible.value()) m_back_sep.render(a_action);
     m_sep.render(a_action);
   }
   virtual void pick(pick_action& a_action) {
@@ -69,7 +68,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) {
+    if(back_visible.value()) {
       nodekit_pick(a_action,m_back_sep,this);
     }
     //m_sep.pick(a_action);
@@ -81,7 +80,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) {
+    if(back_visible.value()) {
       m_back_sep.search(a_action);
       if(a_action.done()) return;
     }
@@ -93,9 +92,9 @@ public:
   :parent()
   ,base_button(back_area::color)
   ,back_visible(true)
-  ,color(inlib::colorf::white())
+  ,color(colorf_white())
   //,transparency(0)
-  ,img(inlib::img_byte())
+  ,img(img_byte())
   ,hmargin_factor(0.9f)
   ,hjust(center)
   //,hjust(right)
@@ -150,7 +149,8 @@ protected:
     m_mat.color = color;
     m_sep.add(new noderef(m_mat));
 
-    float z = 1; //field ?
+    //sf<float> zfront ?
+    float zz = back_visible.value()?0.01f:0;
 
     float himg = height * hmargin_factor;
     float aimg = float(img.value().width())/float(img.value().height());
@@ -173,7 +173,7 @@ protected:
       y =  height*0.5f-himg*0.5f-hmarg;
     }
 
-    m_tsf.set_translate(x,y,z); //in front back_area.
+    m_tsf.set_translate(x,y,zz); //in front back_area.
 
     m_tsf.mul_scale(himg,himg,1); //applied first.
 

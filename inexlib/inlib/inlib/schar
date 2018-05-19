@@ -16,13 +16,21 @@ inline bool belong(const std::string& a_string,char a_c){
   return false;
 }
 
-inline unsigned int numchar(const std::string& a_string,char a_c){
-  unsigned int num = 0;  
+inline size_t numchar(const std::string& a_string,char a_c){
+  size_t num = 0;  
   std::string::const_iterator it;
   for(it=a_string.begin();it!=a_string.end();++it) {
     if((*it)==a_c) num++;
   }
   return num;
+}
+
+inline bool is_spaces(const std::string& a_string){
+  std::string::const_iterator it;
+  for(it=a_string.begin();it!=a_string.end();++it) {
+    if((*it)!=' ') return false;
+  }
+  return true;
 }
 
 }

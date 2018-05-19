@@ -53,11 +53,11 @@ public:
 
    {//WARNING : the below _cbk->action() may do m_cbks.push_back().
     //          We avoid an iterator here :
-    unsigned int num = m_cbks.size();
-    for(unsigned int index=0;index<num;index++) {
+    size_t num = m_cbks.size();
+    for(size_t index=0;index<num;index++) {
       bcbk* _cbk = m_cbks[index]; 
       if(_cbk->is_valid()) {
-        bool to_render = (_cbk->action()==bcbk::return_to_render?true:false);
+        bool to_render = (_cbk->action()==return_to_render?true:false);
         if(to_render) {
           win_render();
           win_rendered = true;
@@ -81,7 +81,7 @@ public:
     return win_rendered;
   }
 
-  unsigned int num_cbks() const {return m_cbks.size();}
+  size_t num_cbks() const {return m_cbks.size();}
 
   // the below is used in inlib::cbk::timer::invalidate_timer_works()
   const std::vector<bcbk*>& cbks() const {return m_cbks;}
@@ -104,7 +104,7 @@ public:
 
 protected:
   void clear() {
-    inlib::clear<bcbk>(m_cbks);
+    safe_clear<bcbk>(m_cbks);
   }
   void copy_cbks(const ui& a_from) {
     if(&a_from==this) return;

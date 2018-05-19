@@ -7,7 +7,6 @@
 #include "matrix_action"
 #include "primitive_visitor"
 
-//#include "../cast"
 #include "../box3f"
 
 namespace inlib {

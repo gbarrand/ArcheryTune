@@ -7,10 +7,10 @@
 // directional light
 
 #include "node"
-#include "sfs"
+#include "sf_vec3f"
 #include "render_action"
 
-#include "../colorf"
+#include "../colorfs"
 
 namespace inlib {
 namespace sg {
@@ -18,18 +18,17 @@ namespace sg {
 class torche : public node {
   INLIB_NODE(torche,inlib::sg::torche,node)
 public:
-  sf_vec<inlib::colorf,float> color;
-  sf_vec<inlib::vec3f,float> direction;
+  sf_vec<colorf,float> color;
+  sf_vec3f direction;
   sf<bool> on;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(color)
-      INLIB_ADD_FIELD_DESC(direction)
-      INLIB_ADD_FIELD_DESC(on)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::torche)
+    static const desc_fields s_v(parent::node_desc_fields(),3, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(color),
+      INLIB_ARG_FIELD_DESC(direction),
+      INLIB_ARG_FIELD_DESC(on)
+    );
     return s_v;
   }
 private:
@@ -59,8 +58,8 @@ public:
 public:
   torche()
   :parent()
-  ,color(inlib::colorf::white())
-  ,direction(inlib::vec3f(0,0,-1))
+  ,color(colorf_white())
+  ,direction(vec3f(0,0,-1))
   ,on(true)
   {
     add_fields();

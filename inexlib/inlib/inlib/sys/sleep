@@ -4,7 +4,7 @@
 #ifndef inlib_sys_sleep
 #define inlib_sys_sleep
 
-#ifdef WIN32
+#ifdef _WIN32
 //#include <windows.h>
 extern"C" {
   __declspec(dllimport) void __stdcall Sleep(unsigned long);
@@ -16,7 +16,7 @@ extern"C" {
 namespace inlib {
 
 inline void sleep_secs(unsigned int a_secs){
-#ifdef WIN32
+#ifdef _WIN32
   ::Sleep(a_secs*1000);
 #else
   ::sleep(a_secs);
@@ -24,7 +24,7 @@ inline void sleep_secs(unsigned int a_secs){
 }
 
 inline void sleep_milli_secs(unsigned int a_milli_sec){
-#ifdef WIN32
+#ifdef _WIN32
   ::Sleep(a_milli_sec);
 #else
   ::usleep(a_milli_sec*1000); //it is in micro seconds.
@@ -32,5 +32,7 @@ inline void sleep_milli_secs(unsigned int a_milli_sec){
 }
 
 }
+
+//inlib_build_use kernel
 
 #endif

@@ -34,10 +34,9 @@ public:
     if(a_action.done()) return;
     if(a_action.do_path()) a_action.path_pop();
   }
-  virtual void get_matrix(get_matrix_action& a_action) {
-    m_node.get_matrix(a_action);
-  }
+  virtual void get_matrix(get_matrix_action& a_action) {m_node.get_matrix(a_action);}
   virtual bool write(write_action& a_action) {return m_node.write(a_action);}
+  virtual void is_visible(visible_action& a_action) {m_node.is_visible(a_action);}
 public:
   noderef(node& a_node):parent(),m_node(a_node){}
   virtual ~noderef(){}

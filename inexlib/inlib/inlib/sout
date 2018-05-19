@@ -29,7 +29,4 @@ public:
 
 }
 
-// quoted string to stream :
-#define inline_out(a__s) "\"" << (a__s) << "\""
-
 #endif

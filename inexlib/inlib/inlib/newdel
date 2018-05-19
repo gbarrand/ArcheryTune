@@ -8,10 +8,12 @@
 #include "mem"
 #endif
 
+#include <cstddef>
+
 namespace inlib {
 
 template <class T>
-inline T* mnew(unsigned int a_n){
+inline T* mnew(size_t a_n){
   T* p = new T[a_n];
 #ifdef INLIB_MEM
   if(p) mem::increment(s_new().c_str());
@@ -35,9 +37,7 @@ inline void mdel(T*& a_p){
 namespace inlib {
 
 template <class T>
-inline bool mrealloc(T*& a_pointer,
-                     unsigned int a_new_size,unsigned int a_old_size,
-                     bool a_init = false) {
+inline bool mrealloc(T*& a_pointer,size_t a_new_size,size_t a_old_size,bool a_init = false) {
   if(!a_new_size) { 
     mdel(a_pointer); 
     return true;
@@ -53,14 +53,14 @@ inline bool mrealloc(T*& a_pointer,
     return false;
   }
   if(a_new_size>a_old_size) {
-    ::memcpy(pointer,a_pointer,(size_t)(a_old_size*sizeof(T)));
+    ::memcpy(pointer,a_pointer,a_old_size*sizeof(T));
     if(a_init){
-      unsigned int num = a_new_size-a_old_size;   
+      size_t num = a_new_size-a_old_size;   
       T* pos = pointer+a_old_size;
-      for(unsigned int i=0;i<num;i++,pos++) *pos = T();
+      for(size_t i=0;i<num;i++,pos++) *pos = T();
     }
   } else {
-    ::memcpy(pointer,a_pointer,(size_t)(a_new_size*sizeof(T)));
+    ::memcpy(pointer,a_pointer,a_new_size*sizeof(T));
   }
   mdel(a_pointer);
   a_pointer = pointer;

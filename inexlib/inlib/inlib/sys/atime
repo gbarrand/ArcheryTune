@@ -4,7 +4,7 @@
 #ifndef inlib_sys_atime
 #define inlib_sys_atime
 
-#ifdef WIN32
+#ifdef _MSC_VER
 #include <sys/timeb.h>
 #else
 #include <sys/time.h>
@@ -20,7 +20,7 @@ public:
   typedef uint64 num_t;
 public:
   static atime now() {
-#ifdef WIN32
+#ifdef _MSC_VER
     struct timeb tb;
     ::ftime(&tb);
     return atime((num_t)tb.time,(num_t)(tb.millitm * 1000));
@@ -31,6 +31,8 @@ public:
 #endif
   }
   static atime diff(const atime& a_to,const atime& a_from){
+    // it is assumed that a_to > a_from.
+
     num_t f_all_mcs = a_from.m_secs * 1000000 + a_from.m_micro_secs;
     num_t n_all_mcs = a_to.m_secs * 1000000 + a_to.m_micro_secs;
 
@@ -44,12 +46,10 @@ public:
   static atime elapsed(const atime& a_from){return diff(now(),a_from);}
 public:
   //atime():m_secs(0),m_micro_secs(0){} //for sf_atime.
-  atime(num_t a_secs,num_t a_micro_secs)
-  :m_secs(a_secs),m_micro_secs(a_micro_secs){}
+  atime(num_t a_secs,num_t a_micro_secs):m_secs(a_secs),m_micro_secs(a_micro_secs){}
   virtual ~atime(){}
 public:
-  atime(const atime& a_from)
-  :m_secs(a_from.m_secs),m_micro_secs(a_from.m_micro_secs){}
+  atime(const atime& a_from):m_secs(a_from.m_secs),m_micro_secs(a_from.m_micro_secs){}
   atime& operator=(const atime& a_from){
     m_secs = a_from.m_secs;
     m_micro_secs = a_from.m_micro_secs;
@@ -60,9 +60,9 @@ public:
   num_t micro_seconds() const {return m_micro_secs;}
   num_t milli_seconds() const {return m_secs*1000+m_micro_secs/1000;}
 
-  double value() const {
-    return ((double)m_secs) + ((double)m_micro_secs)/1000000.0; 
-  }
+  num_t value_micro_seconds() const {return m_secs*1000000+m_micro_secs;}
+
+  double value() const {return ((double)m_secs) + ((double)m_micro_secs)/1000000.0;}
 
   bool operator==(const atime& a_from) const {
     if(a_from.m_secs!=m_secs) return false;

@@ -4,9 +4,7 @@
 #ifndef inlib_system
 #define inlib_system
 
-#include <string>
 #include <cstdlib>
-#include <ostream>
 
 #include "cstr"
 #include "sout"
@@ -17,14 +15,20 @@
 #include "vmanip"
 #include "srep"
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
+
 namespace inlib {
 
-inline bool isenv(const std::string& a_string){
+inline bool is_env(const std::string& a_string){
   const char* env = ::getenv(a_string.c_str());
   return (env?true:false);
 }
 
-inline bool getenv(const std::string& a_string,std::string& a_value){
+inline bool isenv(const std::string& a_string){return is_env(a_string);} //deprecated.
+
+inline bool get_env(const std::string& a_string,std::string& a_value){
   const char* env = ::getenv(a_string.c_str());
   if(env) {
     a_value = std::string(env?env:"");
@@ -34,6 +38,7 @@ inline bool getenv(const std::string& a_string,std::string& a_value){
     return false;
   }
 }
+inline bool getenv(const std::string& a_string,std::string& a_value){return get_env(a_string,a_value);} //deprecated.
 
 template <class T>
 inline bool get_env(const std::string& a_string,T& a_v){
@@ -48,49 +53,62 @@ inline bool get_env_bool(const std::string& a_string,bool& a_v){
   return to(s,a_v);
 }
 
-inline bool putenv(const std::string& a_env,const std::string& a_value){
+inline bool put_env(const std::string& a_env,const std::string& a_value){
   std::string value = a_env+"="+a_value;
-  if(::putenv(inlib::str_dup(value.c_str(),false))) return false;
+#ifdef INLIB_MEM
+  if(::putenv(str_dup(value.c_str(),false))) return false;
+#else
+  if(::putenv(str_dup(value.c_str()))) return false;
+#endif
   //check:
   std::string s;
   if(!getenv(a_env,s)) return false;
   if(s!=a_value) return false;
   return true;
 }
+inline bool putenv(const std::string& a_env,const std::string& a_value){return put_env(a_env,a_value);} //deprecated.
 
-inline bool rmenv(const std::string& a_env){
-#ifdef WIN32
+inline bool rm_env(const std::string& a_env){
+#ifdef _MSC_VER
   std::string value = a_env+"=";
-  if(::putenv(inlib::str_dup(value.c_str(),false))) return false;
+#ifdef INLIB_MEM
+  if(::putenv(str_dup(value.c_str(),false))) return false;
+#else
+  if(::putenv(str_dup(value.c_str()))) return false;
+#endif
 #else
   ::unsetenv(a_env.c_str());
 #endif
   return true;
 }
 
+inline bool rmenv(const std::string& a_env) {return rm_env(a_env);} //deprecated. Still used in OnX.
+
 inline bool check_getenv(std::ostream& a_out,
                          const std::string& a_new,const std::string& a_old,
                          std::string& a_env){
-  if(inlib::getenv(a_new,a_env)) return true;
-  if(inlib::getenv(a_old,a_env)) {
-    a_out << "Environment variable " << sout(a_old) << " is deprecated."
-          << " Use " << sout(a_new) << " instead."
-          << std::endl;
+  if(get_env(a_new,a_env)) return true;
+  if(get_env(a_old,a_env)) {
+    a_out << "Environment variable " << sout(a_old) << " is deprecated. Use " << sout(a_new) << " instead." << std::endl;
     return true;
   }
   return false;
 }
 
-inline int execute(const std::string& a_string) {
+inline int execute(std::ostream& a_out,const std::string& a_string) {
+#if TARGET_OS_IPHONE
+  a_out << "inlib::execute : system() not available on iOS. Can't execute " << sout(a_string) << "." << std::endl;
+  return EXIT_FAILURE;
+#else
   return ::system(a_string.c_str());
+  (void)a_out;
+#endif
 }
 
-inline bool env_append(const std::string& a_env,
-                       const std::string& a_sep,
-                       const std::vector<std::string>& a_vals){
+inline bool env_append(const std::string& a_env,const std::string& a_sep,const std::vector<std::string>& a_vals){
   std::string env_value;
-  if(inlib::isenv(a_env)) {
-    if(!inlib::getenv(a_env,env_value)) return false;
+  if(is_env(a_env)) {
+    if(!get_env(a_env,env_value)) return false;
   }
 
  {std::vector<std::string>::const_iterator it;
@@ -100,10 +118,10 @@ inline bool env_append(const std::string& a_env,
 
     if(env_value.size()) {
       std::vector<std::string> ws;
-      inlib::words(env_value,a_sep,false,ws);
+      words(env_value,a_sep,false,ws);
       // Remove existing one, so that value be put at end.
-      inlib::remove(ws,value);
-      if(!inlib::nums2s<std::string>(ws,env_value,a_sep)) {}
+      remove(ws,value);
+      if(!nums2s<std::string>(ws,env_value,a_sep)) {}
     }
 
     if(env_value.size()) env_value += a_sep;
@@ -115,19 +133,18 @@ inline bool env_append(const std::string& a_env,
   return true;
 }
 
-inline bool env_path_append(const std::string& a_env,
-                            const std::vector<std::string>& a_paths){
+inline bool env_path_append(const std::string& a_env,const std::vector<std::string>& a_paths){
   return env_append(a_env,psep(),a_paths);
 }
 
-inline bool env_append_path(const std::string& a_env,
-                            const std::string& a_path){
+inline bool env_append_path(const std::string& a_env,const std::string& a_path){
   std::vector<std::string> v;
   v.push_back(a_path);
   return env_append(a_env,psep(),v);
 }
 
-inline bool expand_vars(std::string& a_string){
+// OpenPAW, Panoramix :
+inline bool rep_env(std::string& a_string) {
   char spec_char = '\n';
   std::string::size_type dollar;
   while((dollar=a_string.find('$'))!=std::string::npos){
@@ -166,8 +183,7 @@ inline bool expand_vars(std::string& a_string){
     } else {
       std::string value = a_string.substr(0,dollar);
       value += val;
-      if(pos!=std::string::npos)
-        value += a_string.substr(pos,a_string.length()-pos);
+      if(pos!=std::string::npos) value += a_string.substr(pos,a_string.length()-pos);
       a_string = value;
     }
   }
@@ -175,65 +191,21 @@ inline bool expand_vars(std::string& a_string){
   return true;
 }
 
+inline bool repenv(std::string& a_string) {return rep_env(a_string);} //deprecated.
+
 inline bool file_name(const std::string& a_path,std::string& a_name) {
-  //used in OnX and a exlib::xml::parser::load_file() compatible for OnX.
+  //used in osc packages and a exlib::xml::parser::load_file() compatible for OnX.
   a_name = a_path;
-  if(!expand_vars(a_name)) {a_name.clear();return false;}
-#ifdef WIN32
+  if(!rep_env(a_name)) {a_name.clear();return false;}
+#ifdef _WIN32
   replace(a_name,"/","\\");
   replace(a_name,"\"","");
 #endif
   return true;
 }
 
-inline std::string plugin_prefix(){
-#if defined(WIN32)
-  return "";
-#elif defined(__APPLE__)
-  return "";
-#elif defined(__CYGWIN__) && defined(__GNUC__)
-  return "";
-#else //UNIX
-  return "lib";
-#endif
 }
 
-inline std::string plugin_suffix(){
-#if defined(WIN32)
-  return "dll";
-#elif defined(__APPLE__)
-  return "bundle";
-#elif defined(__CYGWIN__) && defined(__GNUC__)
-  return "dll";
-#else //UNIX
-  return "so";
-#endif
-}
-
-inline std::string plugin_name(const std::string& a_name){
-#if defined(WIN32)
-  return a_name + ".dll";
-#elif defined(__CYGWIN__) && defined(__GNUC__)
-  return a_name + ".dll";
-#elif defined(__APPLE__)
-  return a_name + ".bundle";
-#else
-  return std::string("lib") + a_name + ".so";
-#endif
-}
-
-inline std::string so_name(const std::string& a_name){
-#if defined(WIN32)
-  return a_name + ".dll";
-#elif defined(__CYGWIN__) && defined(__GNUC__)
-  return a_name + ".dll";
-#elif defined(__APPLE__)
-  return "lib" + a_name + ".dylib";
-#else
-  return std::string("lib") + a_name + ".so";
-#endif
-}
-
-}
+//inlib_build_use kernel
 
 #endif

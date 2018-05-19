@@ -4,7 +4,7 @@
 #ifndef inlib_WebGL_render
 #define inlib_WebGL_render
 
-#include "../sg/gl_manager"
+#include "../sg/render_manager"
 #include "../sg/render_action"
 #include "../glprims"
 #include "../vmanip"
@@ -79,52 +79,57 @@ inline std::string get_mode(gl::mode_t a_mode) {
   else return "md1()"; //should not happen.
 }
 
-class manager : public virtual sg::gl_manager {
-#ifdef INLIB_MEM
-  INLIB_SCLASS(inlib::WebGL::manager)
-#endif
+class manager : public virtual sg::render_manager {
 public:
-  virtual void begin_render(unsigned int a_w,unsigned int a_h,float a_r,float a_g,float a_b,float a_a) {
+  INLIB_SCLASS(inlib::WebGL::manager)
+  virtual void* cast(const std::string& a_class) const {
+    if(void* p = cmp_cast<manager>(this,a_class)) {return p;}
+    else return 0;
+  }  
+public:
+  virtual bool begin_render(int,int,unsigned int a_w,unsigned int a_h,float a_r,float a_g,float a_b,float a_a,bool = true) {
     m_js << "begdraw("
          << a_w << "," << a_h
          << "," << a_r << "," << a_g << "," << a_b << "," << a_a
          << ");" << std::endl;
+    return true;
   }
 
   virtual void end_render() {}
 
-  virtual unsigned int create_texture(const img_byte& a_img) {
-    //::printf("debug : create_texture\n");
+  virtual unsigned int create_texture(const img_byte& a_img,bool /*a_NEAREST*/) {
+    //::printf("debug : create_texture : size = %d, w = %d, h = %d, bpp %d\n",
+    //    a_img.size(),a_img.width(),a_img.height(),a_img.bpp());
 
-    img_byte _img;
+    img_byte* _img = 0;
+    bool _img_delete = false;
+
     if(a_img.bpp()==1) { //exa eiffel-tower.png
-      img_byte img3;
-      if(!a_img.bw2x(3,img3)) {
+      _img = new img_byte;
+      _img_delete = true;
+      if(!a_img.bw2x(3,*_img)) {
         m_out << "inlib::WebGL::manager::create_texture :"
               << " a_imgr.bw2x() failed."
               << std::endl;
+        delete _img;
         return 0;
       }
-      img3.yswap(_img);
     } else if(a_img.bpp()==3) {
-      a_img.yswap(_img);
-    } else if(a_img.bpp()==4) { //exa windusrf.png.
-      img_byte img3;
-      if(!a_img.rgba2rgb(img3)) {
-        m_out << "inlib::WebGL::manager::create_texture :"
-              << " a_imgr.rgba2rbg() failed."
-              << std::endl;
-        return 0;
-      }
-      img3.yswap(_img);
+      _img = const_cast<img_byte*>(&a_img);
+    } else if(a_img.bpp()==4) { //exa windusrf.png, text_freetype/font_pixmap.
+      _img = const_cast<img_byte*>(&a_img);
     } else {
       //should not happen.
       m_out << "inlib::WebGL::manager::create_texture :"
             << " image with bpp " << a_img.bpp() << " not (yet) supported."
             << std::endl;
+      if(_img_delete) delete _img;
       return 0;
     }
-    if(_img.is_empty()) return 0;
+    if(_img->is_empty()) {
+      if(_img_delete) delete _img;
+      return 0;
+    }
 
     m_gen_id++;
     std::string sid = "g_tex_";
@@ -139,14 +144,20 @@ public:
 
 /*    if((m_compression==0)||(m_compression==1)) {
       if(m_compression==0)*/ {
+        //::printf("debug : ldtexb %d : %d %d\n",_img.size(),_img.width(),_img.height());
         m_texs_js << "{var v = new Uint8Array([";
-       {const inlib::byte* pos = _img.buffer();
-        unsigned int nbyte = _img.size();
+       {const byte* pos = _img->buffer();
+        unsigned int nbyte = _img->size();
         for(unsigned int i=0;i<nbyte;i++,pos++) {if(i) m_texs_js << ",";m_texs_js << (unsigned int)(*pos);}}
         m_texs_js << "]);" << std::endl;
         m_texs_js << sid << " = ctex();" << std::endl;
-        m_texs_js << "ldtexb(" << sid
-                  << "," << _img.width() << "," << _img.height() << ",v,false);delete v;}" << std::endl;
+	if(_img->bpp()==4) {
+          m_texs_js << "ldtexba(" << sid
+                    << "," << _img->width() << "," << _img->height() << ",v,0);delete v;}" << std::endl;
+	} else {
+          m_texs_js << "ldtexb(" << sid
+                    << "," << _img->width() << "," << _img->height() << ",v,0);delete v;}" << std::endl;
+	}
       } /*else { //1
         std::vector<char> img_b64;
         base64::encode(_img.size(),(char*)_img.buffer(),img_b64);
@@ -169,6 +180,7 @@ public:
               << " gzip failed."
               << std::endl;
         delete [] cp_buffer;
+        if(_img_delete) delete _img;
         return 0;
       }
       if(!cp_length) {
@@ -176,6 +188,7 @@ public:
               << " zero compression size."
               << std::endl;
         delete [] cp_buffer;
+        if(_img_delete) delete _img;
         return 0;
       }
 
@@ -185,6 +198,7 @@ public:
         for(unsigned int i=0;i<cp_length;i++,pos++) {if(i) m_texs_js << ",";m_texs_js << (unsigned int)(*pos);}}
         m_texs_js << "]);" << std::endl;
         m_texs_js << sid << " = ctex();" << std::endl;
+	if(_img.bpp()==4) { //FIXME
         m_texs_js << "ldtexb(" << sid
                   << "," << _img.width() << "," << _img.height() << ",v," << m_compression
                   << ");delete v;}" << std::endl;
@@ -196,6 +210,7 @@ public:
         inlib_vforcit(char,cp_b64,it) m_texs_js << *it;
         m_texs_js << "\";" << std::endl;
         m_texs_js << sid << " = ctex();" << std::endl;
+	if(_img.bpp()==4) { //FIXME
         m_texs_js << "ldtexb(" << sid
                   << "," << _img.width() << "," << _img.height() << ",v," << m_compression
                   << ");}" << std::endl;
@@ -203,21 +218,20 @@ public:
 
       delete [] cp_buffer;
     } else {
-      m_out << "inlib::WebGL::manager::create_texture :"
-            << " unknown compression mode " << m_compression << "."
-            << std::endl;
+      m_out << "inlib::WebGL::manager::create_texture : unknown compression mode " << m_compression << "." << std::endl;
+      if(_img_delete) delete _img;
       return 0;
     }
 */
-
-    m_gstos[m_gen_id] = new gsto_t(gsto_t::kind_texture,sid,"",_img.size(),m_out,*this);
+    m_gstos[m_gen_id] = new gsto_t(gsto_t::kind_texture,sid,"",_img->size(),m_out,*this);
 #ifdef INLIB_MEM
     mem::increment(s_tex().c_str());
 #endif
+    if(_img_delete) delete _img;
     return m_gen_id;
   }
 
-  virtual unsigned int create_gsto_from_data(unsigned int a_floatn,const float* a_data) {
+  virtual unsigned int create_gsto_from_data(size_t a_floatn,const float* a_data) {
     if(!a_floatn) return 0;
 
     m_gen_id++;
@@ -226,7 +240,7 @@ public:
 
     m_vbos_js << "{var v = new Float32Array([";
    {const float* pos = a_data;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {if(i) m_vbos_js << ",";m_vbos_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {if(i) m_vbos_js << ",";m_vbos_js << *pos;}}
     m_vbos_js << "]);" << std::endl;
     m_vbos_js << sid << " = cbuf();" << std::endl;
     m_vbos_js << "bbd(" << sid << ",v);" << std::endl;
@@ -259,16 +273,16 @@ public:
   virtual void available_not_memory_gsto_mode(std::string& a_s) const {
     a_s = sg::s_gsto_gl_vbo();
   }
-  virtual unsigned int used_texture_memory() const {
-    unsigned int sz = 0;
+  virtual size_t used_texture_memory() const {
+    size_t sz = 0;
     std::map<unsigned int,gsto_t*>::const_iterator it;
     for(it=m_gstos.begin();it!=m_gstos.end();++it) {
        if((*it).second->m_kind==gsto_t::kind_texture) sz += (*it).second->m_size;
     }
     return sz;
   }
-  virtual unsigned int gstos_size() const {
-    unsigned int sz = 0;
+  virtual size_t gstos_size() const {
+    size_t sz = 0;
     std::map<unsigned int,gsto_t*>::const_iterator it;
     for(it=m_gstos.begin();it!=m_gstos.end();++it) sz += (*it).second->m_size;
     return sz;
@@ -290,11 +304,11 @@ public:
 #ifdef INLIB_MEM
     mem::decrement(s_class().c_str());
 #endif
-    clear<unsigned int,gsto_t>(m_gstos);
+    safe_clear<unsigned int,gsto_t>(m_gstos);
   }
 private:
   manager(const manager& a_from)
-  :sg::gl_manager(a_from)
+  :sg::render_manager(a_from)
   ,m_out(a_from.m_out)
   ,m_compression(a_from.m_compression)
   ,m_gen_id(a_from.m_gen_id)
@@ -306,12 +320,12 @@ private:
   manager& operator=(const manager& a_from){
     if(&a_from==this) return *this;
     m_compression = a_from.m_compression;
-    clear<unsigned int,gsto_t>(m_gstos);
+    safe_clear<unsigned int,gsto_t>(m_gstos);
     return *this;
   }
 public:
   void delete_gstos() {
-    clear<unsigned int,gsto_t>(m_gstos);
+    safe_clear<unsigned int,gsto_t>(m_gstos);
   }
 
 public:
@@ -392,7 +406,7 @@ public:
     return true;
   }
 
-  std::ostream& out() {return m_out;}
+  std::ostream& out() const {return m_out;}
   std::stringstream& js() {return m_js;}
   std::stringstream& texs_js() {return m_texs_js;}
   std::stringstream& vbos_js() {return m_vbos_js;}
@@ -408,7 +422,7 @@ protected:
       kind_vbo
     };
   public:
-    gsto_t(kind a_kind,const std::string& a_id,const std::string& a_path,unsigned int a_size,
+    gsto_t(kind a_kind,const std::string& a_id,const std::string& a_path,size_t a_size,
            std::ostream& a_out,manager& a_mgr)
     :m_kind(a_kind)
     ,m_id(a_id)
@@ -461,7 +475,7 @@ protected:
     kind m_kind;
     std::string m_id;
     std::string m_path;
-    unsigned int m_size;
+    size_t m_size;
     std::ostream& m_out;
     manager& m_mgr;
   };
@@ -523,66 +537,66 @@ public:
 class render : public sg::render_action {
 public:
   virtual void clear_color(float,float,float,float){}
-  virtual void draw_vertex_array(gl::mode_t a_mode,unsigned int a_floatn,const float* a_xyzs){
+  virtual void draw_vertex_array(gl::mode_t a_mode,size_t a_floatn,const float* a_xyzs){
     //::printf("debug : draw_vertex_array : %d %d\n",a_mode,a_floatn);
     if(!gl::is_mode(a_mode)) return;
 
     std::stringstream& _js = m_mgr.js();
 
-    unsigned int num = a_floatn/3;
+    size_t num = a_floatn/3;
 
     _js << "{var v = new Float32Array([";
    {const float* pos = a_xyzs;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
     _js << "]);" << std::endl;
     _js << "dva(" << get_mode(a_mode) << "," << num << ",v);" << std::endl;
     _js << "delete v;}" << std::endl;
 
   }
 
-  virtual void draw_vertex_array_xy(gl::mode_t a_mode,unsigned int a_floatn,const float* a_xys){
+  virtual void draw_vertex_array_xy(gl::mode_t a_mode,size_t a_floatn,const float* a_xys){
     //::printf("debug : draw_vertex_array_xy : %d %d\n",a_mode,a_floatn);
     if(!gl::is_mode(a_mode)) return;
 
     std::stringstream& _js = m_mgr.js();
 
-    unsigned int num = a_floatn/2;
+    size_t num = a_floatn/2;
 
     _js << "{var v = new Float32Array([";
    {const float* pos = a_xys;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
     _js << "]);" << std::endl;
     _js << "dvaxy(" << get_mode(a_mode) << "," << num << ",v);" << std::endl;
     _js << "delete v;}" << std::endl;
 
   }
 
-  virtual void draw_vertex_color_array(gl::mode_t a_mode,unsigned int a_floatn,const float* a_xyzs,const float* a_rgbas){
+  virtual void draw_vertex_color_array(gl::mode_t a_mode,size_t a_floatn,const float* a_xyzs,const float* a_rgbas){
     //::printf("debug : draw_vertex_color_array : %d %d\n",a_mode,a_floatn);
     if(!gl::is_mode(a_mode)) return;
 
     std::stringstream& _js = m_mgr.js();
 
-    unsigned int num = a_floatn/3;
+    size_t num = a_floatn/3;
 
     _js << "{var v = new Float32Array([";
    {const float* pos = a_xyzs;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
    {const float* pos = a_rgbas;
-    unsigned int number = num*4;
-    for(unsigned int i=0;i<number;i++,pos++) {_js << ",";_js << *pos;}}
+    size_t number = num*4;
+    for(size_t i=0;i<number;i++,pos++) {_js << ",";_js << *pos;}}
     _js << "]);" << std::endl;
     _js << "dvca(" << get_mode(a_mode) << "," << num << ",v," << a_floatn*4 << ");" << std::endl;
     _js << "delete v;}" << std::endl;
   }
 
-  virtual void draw_vertex_normal_array(gl::mode_t a_mode,unsigned int a_floatn,const float* a_xyzs,const float* a_nms){
+  virtual void draw_vertex_normal_array(gl::mode_t a_mode,size_t a_floatn,const float* a_xyzs,const float* a_nms){
     //::printf("debug : draw_vertex_normal_array : %d %d\n",a_mode,a_floatn);
     if(!gl::is_mode(a_mode)) return;
 
     std::stringstream& _js = m_mgr.js();
 
-    unsigned int num = a_floatn/3;
+    size_t num = a_floatn/3;
 
     if(m_light_on) {
       _js << "lgon(" << m_light_direction.x() << "," << m_light_direction.y() << "," << m_light_direction.z()
@@ -592,9 +606,9 @@ public:
 
     _js << "{var v = new Float32Array([";
    {const float* pos = a_xyzs;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
    {const float* pos = a_nms;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {_js << ",";_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {_js << ",";_js << *pos;}}
     _js << "]);" << std::endl;
     _js << "dvna(" << get_mode(a_mode) << "," << num << ",v," << a_floatn*4 << ");" << std::endl;
     _js << "lgoff();" << std::endl;
@@ -602,13 +616,13 @@ public:
   }
 
   virtual void draw_vertex_color_normal_array(gl::mode_t a_mode,
-                                              unsigned int a_floatn,const float* a_xyzs,const float* a_rgbas,const float* a_nms){
+                                              size_t a_floatn,const float* a_xyzs,const float* a_rgbas,const float* a_nms){
     //::printf("debug : draw_vertex_color_normal_array : %d %d\n",a_mode,a_floatn);
     if(!gl::is_mode(a_mode)) return;
 
     std::stringstream& _js = m_mgr.js();
 
-    unsigned int num = a_floatn/3;
+    size_t num = a_floatn/3;
 
     if(m_light_on) {
       _js << "lgon(" << m_light_direction.x() << "," << m_light_direction.y() << "," << m_light_direction.z()
@@ -618,12 +632,12 @@ public:
 
     _js << "{var v = new Float32Array([";
    {const float* pos = a_xyzs;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
    {const float* pos = a_nms;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {_js << ",";_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {_js << ",";_js << *pos;}}
    {const float* pos = a_rgbas;
-    unsigned int number = num*4;
-    for(unsigned int i=0;i<number;i++,pos++) {_js << ",";_js << *pos;}}
+    size_t number = num*4;
+    for(size_t i=0;i<number;i++,pos++) {_js << ",";_js << *pos;}}
     _js << "]);" << std::endl;
     _js << "dvnca(" << get_mode(a_mode) << "," << num << ",v," << a_floatn*4 << "," << a_floatn*4*2 << ");" << std::endl;
     _js << "delete v;}" << std::endl;
@@ -632,14 +646,14 @@ public:
   }
 
   virtual void draw_vertex_array_texture(gl::mode_t a_mode,
-                                         unsigned int a_floatn,
+                                         size_t a_floatn,
                                          const float* a_xyzs,
-                                         unsigned int a_id,
+                                         gstoid a_id,
                                          const float* a_tex_coords) {
     //::printf("debug : draw_vertex_array_texture : %d %d\n",a_mode,a_floatn);
     if(!gl::is_mode(a_mode)) return;
 
-    unsigned int num = a_floatn/3;
+    size_t num = a_floatn/3;
     if(!num) return;
 
     //expect 2*num a_tex_coords.
@@ -666,9 +680,9 @@ public:
 
     _js << "{var v = new Float32Array([";
    {const float* pos = a_xyzs;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
    {const float* pos = a_tex_coords;
-    for(unsigned int i=0;i<2*num;i++,pos++) {_js << ",";_js << *pos;}}
+    for(size_t i=0;i<2*num;i++,pos++) {_js << ",";_js << *pos;}}
     _js << "]);" << std::endl;
 
     beg_check(_js,sid);
@@ -679,15 +693,15 @@ public:
   }
 
   virtual void draw_vertex_normal_array_texture(gl::mode_t a_mode,
-                                         unsigned int a_floatn,
+                                         size_t a_floatn,
                                          const float* a_xyzs,
                                          const float* a_nms,
-                                         unsigned int a_id,
+                                         gstoid a_id,
                                          const float* a_tex_coords) {
     //::printf("debug : draw_vertex_normal_array_texture : %d %d\n",a_mode,a_floatn);
     if(!gl::is_mode(a_mode)) return;
 
-    unsigned int num = a_floatn/3;
+    size_t num = a_floatn/3;
     if(!num) return;
 
     //expect 2*num a_tex_coords.
@@ -714,11 +728,11 @@ public:
 
     _js << "{var v = new Float32Array([";
    {const float* pos = a_xyzs;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {if(i) _js << ",";_js << *pos;}}
    {const float* pos = a_nms;
-    for(unsigned int i=0;i<a_floatn;i++,pos++) {_js << ",";_js << *pos;}}
+    for(size_t i=0;i<a_floatn;i++,pos++) {_js << ",";_js << *pos;}}
    {const float* pos = a_tex_coords;
-    for(unsigned int i=0;i<2*num;i++,pos++) {_js << ",";_js << *pos;}}
+    for(size_t i=0;i<2*num;i++,pos++) {_js << ",";_js << *pos;}}
     _js << "]);" << std::endl;
 
     beg_check(_js,sid);
@@ -765,14 +779,14 @@ public:
   virtual void load_proj_matrix(const mat4f& a_mtx) {
     m_mgr.js() << "{var v = [";
    {const float* pos = a_mtx.data();
-    for(unsigned int i=0;i<16;i++,pos++) {if(i) m_mgr.js() << ",";m_mgr.js() << *pos;}}
+    for(size_t i=0;i<16;i++,pos++) {if(i) m_mgr.js() << ",";m_mgr.js() << *pos;}}
     m_mgr.js() << "];ldmatp(v);}" << std::endl;
   }
 
   virtual void load_model_matrix(const mat4f& a_mtx) {
     m_mgr.js() << "{var v = [";
    {const float* pos = a_mtx.data();
-    for(unsigned int i=0;i<16;i++,pos++) {if(i) m_mgr.js() << ",";m_mgr.js() << *pos;}}
+    for(size_t i=0;i<16;i++,pos++) {if(i) m_mgr.js() << ",";m_mgr.js() << *pos;}}
     m_mgr.js() << "];ldmatm(v);}" << std::endl;
   }
 
@@ -829,7 +843,7 @@ public:
   /////////////////////////////////////////////////////////////////
   /// VBO /////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////
-  virtual void begin_gsto(unsigned int a_id) {
+  virtual void begin_gsto(gstoid a_id) {
     std::string sid;
     if(!m_mgr.find_sid(a_id,sid)) {
       m_out << "inlib::WebGL::render::begin_gsto :"
@@ -844,19 +858,19 @@ public:
   }
   
   typedef sg::bufpos bufpos;
-  virtual void draw_gsto_v(gl::mode_t a_mode,unsigned int a_elems,bufpos a_pos_xyzs) {
+  virtual void draw_gsto_v(gl::mode_t a_mode,size_t a_elems,bufpos a_pos_xyzs) {
     _draw_v(a_mode,a_elems,a_pos_xyzs);
   }
 
-  virtual void draw_gsto_vc(gl::mode_t a_mode,unsigned int a_elems,bufpos a_pos_xyzs,bufpos a_pos_rgbas){
+  virtual void draw_gsto_vc(gl::mode_t a_mode,size_t a_elems,bufpos a_pos_xyzs,bufpos a_pos_rgbas){
     _draw_vc(a_mode,a_elems,a_pos_xyzs,a_pos_rgbas);
   }
 
-  virtual void draw_gsto_vn(gl::mode_t a_mode,unsigned int a_elems,bufpos a_pos_xyzs,bufpos a_pos_nms){
+  virtual void draw_gsto_vn(gl::mode_t a_mode,size_t a_elems,bufpos a_pos_xyzs,bufpos a_pos_nms){
     _draw_vn(a_mode,a_elems,a_pos_xyzs,a_pos_nms);
   }
 
-  virtual void draw_gsto_vcn(gl::mode_t a_mode,unsigned int a_elems,bufpos a_pos_xyzs,bufpos a_pos_rgbas,bufpos a_pos_nms){
+  virtual void draw_gsto_vcn(gl::mode_t a_mode,size_t a_elems,bufpos a_pos_xyzs,bufpos a_pos_rgbas,bufpos a_pos_nms){
     _draw_vcn(a_mode,a_elems,a_pos_xyzs,a_pos_rgbas,a_pos_nms);
   }
 
@@ -873,7 +887,7 @@ public:
   /////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////
-  virtual sg::gl_manager& gl_manager() {return m_mgr;}
+  virtual sg::render_manager& render_manager() {return m_mgr;}
 public:
   render(manager& a_mgr,std::ostream& a_out,unsigned int a_ww,unsigned int a_wh)
   :sg::render_action(a_out,a_ww,a_wh)
@@ -902,17 +916,17 @@ protected:
     return *this;
   }
 protected:
-  void _draw_v(gl::mode_t a_mode,unsigned int a_elems,const bufpos a_pos_xyzs){
+  void _draw_v(gl::mode_t a_mode,size_t a_elems,const bufpos a_pos_xyzs){
     if(!gl::is_mode(a_mode)) return;
     m_mgr.js() << "dvb(" << get_mode(a_mode) << "," << a_elems << "," << a_pos_xyzs << ");" << std::endl;
   }
 
-  void _draw_vc(gl::mode_t a_mode,unsigned int a_elems,const bufpos a_pos_xyzs,const bufpos a_pos_rgbas){
+  void _draw_vc(gl::mode_t a_mode,size_t a_elems,const bufpos a_pos_xyzs,const bufpos a_pos_rgbas){
     if(!gl::is_mode(a_mode)) return;
     m_mgr.js() << "dvcb(" << get_mode(a_mode) << "," << a_elems << "," << a_pos_xyzs << "," << a_pos_rgbas << ");" << std::endl;
   }
 
-  void _draw_vn(gl::mode_t a_mode,unsigned int a_elems,const bufpos a_pos_xyzs,const bufpos a_pos_nms){
+  void _draw_vn(gl::mode_t a_mode,size_t a_elems,const bufpos a_pos_xyzs,const bufpos a_pos_nms){
     if(!gl::is_mode(a_mode)) return;
     std::stringstream& _js = m_mgr.js();
 
@@ -926,7 +940,7 @@ protected:
     _js << "lgoff();" << std::endl;
   }
 
-  void _draw_vcn(gl::mode_t a_mode,unsigned int a_elems,
+  void _draw_vcn(gl::mode_t a_mode,size_t a_elems,
                  const bufpos a_pos_xyzs,const bufpos a_pos_rgbas,const bufpos a_pos_nms){
     if(!gl::is_mode(a_mode)) return;
     std::stringstream& _js = m_mgr.js();

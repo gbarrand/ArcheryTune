@@ -47,4 +47,6 @@ public:
 
 }}
 
+//inlib_build_use kernel
+
 #endif

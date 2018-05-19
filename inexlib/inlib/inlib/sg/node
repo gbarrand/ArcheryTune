@@ -19,6 +19,7 @@ namespace sg {
   class pick_action;
   class bbox_action;
   class event_action;
+  class visible_action;
 }}
 
 namespace inlib {
@@ -36,11 +37,12 @@ public:
   virtual node* copy() const = 0;
 
   virtual unsigned int cls_version() const {return 1;}
-  virtual const std::vector<field_desc>& node_fields() const {
-    static const std::vector<field_desc> s_v;
+  
+  virtual const desc_fields& node_desc_fields() const {
+    static const desc_fields s_v;
     return s_v;
   }
-
+  
   virtual void render(render_action&) {}
   virtual void pick(pick_action&) {}
   virtual void bbox(bbox_action&) {}
@@ -77,9 +79,10 @@ public:
     return true;
   }
   virtual void event(event_action&) {}
-  virtual bool read(read_action& a_action) {
-    return read_fields(a_action);
-  }
+  virtual bool read(read_action& a_action) {return read_fields(a_action);}
+  virtual void is_visible(visible_action&) {}
+  
+  virtual void protocol_one_fields(std::vector<field*>& a_fields) const {a_fields = m_fields;}
 public:
   node(){
 #ifdef INLIB_MEM
@@ -112,6 +115,7 @@ protected:
   bool write_fields(write_action& a_action) {
 
     check_fields(a_action.out()); //costly.
+  //dump_field_descs(a_action.out());
 
     unsigned int index = 0;
     inlib_vforcit(field*,m_fields,it) {
@@ -146,11 +150,31 @@ protected:
       if(!fd) {
         a_action.out() << "inlib::node::read_fields :"
                        << " for node class " << s_cls()
+                       << " : field desc name " << fdesc.name()
                        << " : field desc class " << fdesc.cls()
                        << " : field desc offset " << fdesc.offset()
                        << " : field not found."
                        << "."
                        << std::endl;
+//#define INLIB_NODE_DEBUG_READ_FIELD
+#ifdef INLIB_NODE_DEBUG_READ_FIELD
+        check_fields(a_action.out()); //costly.
+        dump_field_descs(a_action.out());
+       {a_action.out() << "read field descs of node class " << s_cls() << " :" << std::endl;
+        inlib_vforcit(field_desc,rndesc.fields(),itr) {
+          a_action.out() << "name " << (*itr).name()
+                << ", class " << (*itr).cls()
+                << ", offset " << (*itr).offset()
+                << std::endl;
+        }}
+       {a_action.out() << "m_fields of node class " << s_cls() << " :" << std::endl;
+        inlib_vforcit(field*,m_fields,itm) {
+          a_action.out() << "field class " << (*itm)->s_cls()
+                << ", found offset " << field_offset(*itm)
+                << std::endl;
+        }}
+        ::exit(0);
+#endif
         fd = a_action.field_factory().create(fdesc.cls());
         if(!fd) {
           a_action.out() << "inlib::node::read_fields :"
@@ -207,44 +231,63 @@ public:
     return true;
   }
 */
-  std::vector<field*>& fields() {return m_fields;}
-  const std::vector<field*>& fields() const {return m_fields;}
-
 public:
   field& field_from_desc(const field_desc& a_desc) const {
     //WARNING : touchy.
     return *((field*)((char*)this+a_desc.offset()));
   }
 protected:
-  inlib::sg::field_desc::offset_t field_offset(const field* a_field) const {
+  field_desc::offset_t field_offset(const field* a_field) const {
     //WARNING : touchy.
     return ((char*)(a_field)-(char*)(this));
   }
 
-  INLIB_CLASS_STRING(inlib_not_found)
-  const std::string& field_name(const field& a_field) const {
-    //WARNING : touchy.
-    const std::vector<field_desc>& fds = node_fields();
-    inlib_vforcit(field_desc,fds,it) {
-      if((*it).offset()==field_offset(&a_field)) return (*it).name();
-    }
-    return s_inlib_not_found(); //should not happen.
-  }
-
-  field* find_field(const field_desc& a_desc) const {
-  //::printf("debug : find_field : %s ...\n",a_desc.name().c_str());
+  field* find_field(const field_desc& a_rdesc) const {
+/*
+    //WARNING : must not use field name since, through inheritance, a node can have two field with same name.
+    //          (For exa sg::text has one field "color" and another one coming from back_area).
+    //::printf("debug : find_field : %s ...\n",a_rdesc.name().c_str());
     inlib_vforcit(field*,m_fields,it) {
-   //::printf("debug : find_field :   look : %s\n",field_name(*(*it)).c_str());
-//      if(rcmp((*it)->s_cls(),a_desc.cls())&&
-//         (field_offset(*it)==a_desc.offset())) return (*it);
-      if(rcmp(field_name(*(*it)),a_desc.name())) return (*it);
+      //::printf("debug : find_field :   look : %s\n",field_name(*(*it)).c_str());
+      if(field_offset(*it)==a_rdesc.offset()) return (*it);
+    }
+*/
+    const std::vector<field_desc>& fds = node_desc_fields();
+    inlib_vforcit(field_desc,fds,it) {
+      if((*it).name()==a_rdesc.name()) {
+        inlib_vforcit(field*,m_fields,itf) {
+          //::printf("debug : find_field :   look : %s\n",field_name(*(*it)).c_str());
+          if(field_offset(*itf)==(*it).offset()) return (*itf);
+        }
+      }
     }
     return 0;
   }
 
+  void dump_field_descs(std::ostream& a_out) const {
+    a_out << "field descs of node class " << s_cls() << " :" << std::endl;
+    const std::vector<field_desc>& fds = node_desc_fields();
+    inlib_vforcit(field_desc,fds,itd) {
+      a_out << "name " << (*itd).name()
+            << ", class " << (*itd).cls()
+            << ", offset " << (*itd).offset()
+            << std::endl;
+    }
+  }
+
   void check_fields(std::ostream& a_out) const {
+    const std::vector<field_desc>& fds = node_desc_fields();
     inlib_vforcit(field*,m_fields,it) {
-      if(rcmp(field_name(*(*it)),s_inlib_not_found())) {
+      bool found = false;
+      inlib_vforcit(field_desc,fds,itd) {
+        if( ((*itd).offset()==field_offset(*it)) &&
+            ((*itd).cls()==(*it)->s_cls())
+        ){
+          found = true;
+          break;
+        }
+      }
+      if(!found) {
         a_out << "inlib::sg::node::check_fields :"
               << " WARNING : node of class " << s_cls()
               << " has bad fields description."
@@ -278,14 +321,31 @@ private:\
   typedef a__parent parent;\
 public:\
   static const std::string& s_class() {\
-    static const std::string s_v\
-      (std::string(#a__class)+"<"+a__T::s_class()+">");\
+    static const std::string s_v(std::string(#a__class)+"<"+a__T::s_class()+">");\
     return s_v;\
   }\
   static void check_class_name() {a__class<a__T>::s_class();}\
 public:\
   virtual const std::string& s_cls() const {return s_class();}\
   virtual inlib::sg::node* copy() const {return new a__class(*this);}\
+public:\
+  virtual void* cast(const std::string& a_class) const {\
+    if(void* p = inlib::cmp_cast<a__class>(this,a_class)) return p;\
+    return parent::cast(a_class);\
+  }
+
+#define INLIB_NODE_VT2(a__T1,a__T2,a__class,a__sclass,a__parent)\
+private:\
+  typedef a__parent parent;\
+public:\
+  static const std::string& s_class() {\
+    static const std::string s_v(std::string(#a__class)+"<"+a__T1::s_class()+","+a__T2::s_class()+">");\
+    return s_v;\
+  }\
+  static void check_class_name() {a__class<a__T1,a__T2>::s_class();}\
+public:\
+  virtual const std::string& s_cls() const {return s_class();}\
+  /*virtual inlib::sg::node* copy() const {return new a__class(*this);}*/\
 public:\
   virtual void* cast(const std::string& a_class) const {\
     if(void* p = inlib::cmp_cast<a__class>(this,a_class)) return p;\

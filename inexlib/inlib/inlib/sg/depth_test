@@ -16,12 +16,11 @@ class depth_test : public node {
 public:
   sf<bool> on;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(on)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::depth_test)
+    static const desc_fields s_v(parent::node_desc_fields(),1, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(on)
+    );
     return s_v;
   }
 private:

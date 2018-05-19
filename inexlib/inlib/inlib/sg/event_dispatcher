@@ -31,12 +31,8 @@ public:
 public:
   const sg::cbks& cbks() const {return m_cbks;}
   //sg::cbks& cbks() {return m_cbks;}
-  void add_callback(bcbk* a_cbk) { //we take ownership of a_cbk
-    m_cbks.add(a_cbk);
-  }
-  void copy_cbks(const sg::cbks& a_from,bool a_clear = true) {
-    m_cbks.copy(a_from,a_clear);
-  }
+  void add_callback(bcbk* a_cbk) {m_cbks.add(a_cbk);} //we take ownership of a_cbk
+  void copy_cbks(const sg::cbks& a_from,bool a_clear = true) {m_cbks.copy(a_from,a_clear);}
   void clear_cbks(){m_cbks.clear();}
 protected:
   sg::cbks m_cbks;

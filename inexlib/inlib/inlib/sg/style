@@ -9,7 +9,9 @@
 #include "node"
 
 #include "style_parser"
-#include "sfs"
+#include "sf_string"
+#include "sf_vec3f"
+#include "sf_enum"
 
 namespace inlib {
 namespace sg {
@@ -23,6 +25,7 @@ public:
   sf<float> line_width;
   sf<float> marker_size;
   sf<float> font_size;
+  sf_enum<sg::font_modeling> font_modeling;
   sf<lpat> line_pattern;
   sf_enum<sg::marker_style> marker_style;
   sf_enum<sg::area_style> area_style;
@@ -53,50 +56,50 @@ public:
   sf_string options;
   sf_string color_mapping;
   sf<bool> enforced;
-  sf_vec<vec3f,float> translation;
+  sf_vec3f translation;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(color)
-      INLIB_ADD_FIELD_DESC(highlight_color)
-      INLIB_ADD_FIELD_DESC(back_color)
-      INLIB_ADD_FIELD_DESC(line_width)
-      INLIB_ADD_FIELD_DESC(marker_size)
-      INLIB_ADD_FIELD_DESC(font_size)
-      INLIB_ADD_FIELD_DESC(line_pattern)
-      INLIB_ADD_FIELD_DESC(marker_style)
-      INLIB_ADD_FIELD_DESC(area_style)
-      INLIB_ADD_FIELD_DESC(modeling)
-      INLIB_ADD_FIELD_DESC(light_model);
-      INLIB_ADD_FIELD_DESC(tick_modeling);
-      INLIB_ADD_FIELD_DESC(encoding)
-      INLIB_ADD_FIELD_DESC(smoothing)
-      INLIB_ADD_FIELD_DESC(hinting)
-      INLIB_ADD_FIELD_DESC(cut)
-      INLIB_ADD_FIELD_DESC(painting)
-      INLIB_ADD_FIELD_DESC(hatching)
-      INLIB_ADD_FIELD_DESC(projection)
-      INLIB_ADD_FIELD_DESC(font)
-      INLIB_ADD_FIELD_DESC(multi_node_limit)
-      INLIB_ADD_FIELD_DESC(divisions)
-      INLIB_ADD_FIELD_DESC(rotation_steps)
-      INLIB_ADD_FIELD_DESC(spacing)
-      INLIB_ADD_FIELD_DESC(angle)
-      INLIB_ADD_FIELD_DESC(scale)
-      INLIB_ADD_FIELD_DESC(offset)
-      INLIB_ADD_FIELD_DESC(strip_width)
-      INLIB_ADD_FIELD_DESC(visible)
-      INLIB_ADD_FIELD_DESC(bar_offset)
-      INLIB_ADD_FIELD_DESC(bar_width)
-      INLIB_ADD_FIELD_DESC(editable)
-      INLIB_ADD_FIELD_DESC(automated)
-      INLIB_ADD_FIELD_DESC(options)
-      INLIB_ADD_FIELD_DESC(color_mapping)
-      INLIB_ADD_FIELD_DESC(enforced)
-      INLIB_ADD_FIELD_DESC(translation)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::style)
+    static const desc_fields s_v(parent::node_desc_fields(),38, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(color),
+      INLIB_ARG_FIELD_DESC(highlight_color),
+      INLIB_ARG_FIELD_DESC(back_color),
+      INLIB_ARG_FIELD_DESC(line_width),
+      INLIB_ARG_FIELD_DESC(marker_size),
+      INLIB_ARG_FIELD_DESC(font_size),
+      INLIB_ARG_FIELD_DESC(font_modeling),
+      INLIB_ARG_FIELD_DESC(line_pattern),
+      INLIB_ARG_FIELD_DESC(marker_style),
+      INLIB_ARG_FIELD_DESC(area_style),
+      INLIB_ARG_FIELD_DESC(modeling),
+      INLIB_ARG_FIELD_DESC(light_model),
+      INLIB_ARG_FIELD_DESC(tick_modeling),
+      INLIB_ARG_FIELD_DESC(encoding),
+      INLIB_ARG_FIELD_DESC(smoothing),
+      INLIB_ARG_FIELD_DESC(hinting),
+      INLIB_ARG_FIELD_DESC(cut),
+      INLIB_ARG_FIELD_DESC(painting),
+      INLIB_ARG_FIELD_DESC(hatching),
+      INLIB_ARG_FIELD_DESC(projection),
+      INLIB_ARG_FIELD_DESC(font),
+      INLIB_ARG_FIELD_DESC(multi_node_limit),
+      INLIB_ARG_FIELD_DESC(divisions),
+      INLIB_ARG_FIELD_DESC(rotation_steps),
+      INLIB_ARG_FIELD_DESC(spacing),
+      INLIB_ARG_FIELD_DESC(angle),
+      INLIB_ARG_FIELD_DESC(scale),
+      INLIB_ARG_FIELD_DESC(offset),
+      INLIB_ARG_FIELD_DESC(strip_width),
+      INLIB_ARG_FIELD_DESC(visible),
+      INLIB_ARG_FIELD_DESC(bar_offset),
+      INLIB_ARG_FIELD_DESC(bar_width),
+      INLIB_ARG_FIELD_DESC(editable),
+      INLIB_ARG_FIELD_DESC(automated),
+      INLIB_ARG_FIELD_DESC(options),
+      INLIB_ARG_FIELD_DESC(color_mapping),
+      INLIB_ARG_FIELD_DESC(enforced),
+      INLIB_ARG_FIELD_DESC(translation)
+    );
     return s_v;
   }
 private:
@@ -107,6 +110,7 @@ private:
     add_field(&line_width);
     add_field(&marker_size);
     add_field(&font_size);
+    add_field(&font_modeling);
     add_field(&line_pattern);
     add_field(&marker_style);
     add_field(&area_style);
@@ -142,12 +146,13 @@ private:
 public:
   style()
   :parent()
-  ,color(colorf::black())
-  ,highlight_color(colorf::black())
-  ,back_color(colorf::white())
+  ,color(colorf_black())
+  ,highlight_color(colorf_black())
+  ,back_color(colorf_white())
   ,line_width(1)
   ,marker_size(1)
   ,font_size(10)
+  ,font_modeling(font_filled)
   ,line_pattern(line_solid)
   ,marker_style(marker_dot)
   ,area_style(area_solid)
@@ -192,6 +197,7 @@ public:
   ,line_width(a_from.line_width)
   ,marker_size(a_from.marker_size)
   ,font_size(a_from.font_size)
+  ,font_modeling(a_from.font_modeling)
   ,line_pattern(a_from.line_pattern)
   ,marker_style(a_from.marker_style)
   ,area_style(a_from.area_style)
@@ -235,6 +241,7 @@ public:
     line_width = a_from.line_width;
     marker_size = a_from.marker_size;
     font_size = a_from.font_size;
+    font_modeling = a_from.font_modeling;
     line_pattern = a_from.line_pattern;
     marker_style = a_from.marker_style;
     area_style = a_from.area_style;
@@ -280,6 +287,7 @@ public:
     sp.line_width(line_width.value());
     sp.marker_size(marker_size.value());
     sp.font_size(font_size.value());
+    sp.font_modeling(font_modeling.value());
     sp.line_pattern(line_pattern.value());
     sp.marker_style(marker_style.value());
     sp.area_style(area_style.value());
@@ -330,6 +338,7 @@ public:
     line_width.value(sp.line_width());
     marker_size.value(sp.marker_size());
     font_size.value(sp.font_size());
+    font_modeling.value(sp.font_modeling());
     line_pattern.value(sp.line_pattern());
     marker_style.value(sp.marker_style());
     area_style.value(sp.area_style());

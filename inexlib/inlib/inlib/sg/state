@@ -145,9 +145,20 @@ public:
     return *this;
   }
 public:
+  bool project_point(float& a_x,float& a_y,float& a_z,float& a_w) const {
+    a_w = 1;
+    m_model.mul_4f(a_x,a_y,a_z,a_w);
+    m_proj.mul_4f(a_x,a_y,a_z,a_w);
+    if(a_w==0.0F) return false;
+    a_x /= a_w;
+    a_y /= a_w;
+    a_z /= a_w;
+    return true;
+  }
+  
   void screen2ndc(int a_x,int a_y, //signed because of wall.
                   float& a_wcx,float& a_wcy,float& a_wcz,float& a_wcw) const {
-    // a proj point in near plan has (z,w) :
+    // a proj point in near plane has (z,w) :
     //   ortho -1,1   -> z/w = -1    and xy in [-1,1][-1,1]
     //   persp -n,n   -> z/w = -1    and xy in [-n,n][-n,n]
 
@@ -196,7 +207,7 @@ public:
     a_wcz /= w;
     return true;
   }  
-  void camera_proj_only(mat4f& a_mtx) {
+  void camera_proj_only(mat4f& a_mtx) const {
     float l = m_camera_lrbt[0];
     float r = m_camera_lrbt[1];
     float b = m_camera_lrbt[2];

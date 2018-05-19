@@ -51,30 +51,48 @@ public:
   };
   sf_enum<edit_type> edit_what;
   sf<bool> show_mode;
+  sf_string font;
+  sf_enum<sg::font_modeling> font_modeling;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(width)
-      INLIB_ADD_FIELD_DESC(height)
-      INLIB_ADD_FIELD_DESC(back_color)
-      INLIB_ADD_FIELD_DESC(front_color)
-      INLIB_ADD_FIELD_DESC(border_color)
-      INLIB_ADD_FIELD_DESC(arm_color)
-      INLIB_ADD_FIELD_DESC(text_wmargin_factor)
-      INLIB_ADD_FIELD_DESC(text_hmargin_factor)
-      INLIB_ADD_FIELD_DESC(numeric_width)
-      INLIB_ADD_FIELD_DESC(numeric_height)
-      INLIB_ADD_FIELD_DESC(list_width)
-      INLIB_ADD_FIELD_DESC(list_height)
-      INLIB_ADD_FIELD_DESC(list_scroll_width)
-      INLIB_ADD_FIELD_DESC(list_visible_items)
-      INLIB_ADD_FIELD_DESC(vars)
-      INLIB_ADD_FIELD_DESC(vars_label)
-      INLIB_ADD_FIELD_DESC(edit_what)
-      INLIB_ADD_FIELD_DESC(show_mode)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::edvalop)
+    static const desc_fields s_v(parent::node_desc_fields(),20, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(width),
+      INLIB_ARG_FIELD_DESC(height),
+      INLIB_ARG_FIELD_DESC(back_color),
+      INLIB_ARG_FIELD_DESC(front_color),
+      INLIB_ARG_FIELD_DESC(border_color),
+      INLIB_ARG_FIELD_DESC(arm_color),
+      INLIB_ARG_FIELD_DESC(text_wmargin_factor),
+      INLIB_ARG_FIELD_DESC(text_hmargin_factor),
+      INLIB_ARG_FIELD_DESC(numeric_width),
+      INLIB_ARG_FIELD_DESC(numeric_height),
+      INLIB_ARG_FIELD_DESC(list_width),
+      INLIB_ARG_FIELD_DESC(list_height),
+      INLIB_ARG_FIELD_DESC(list_scroll_width),
+      INLIB_ARG_FIELD_DESC(list_visible_items),
+      INLIB_ARG_FIELD_DESC(vars),
+      INLIB_ARG_FIELD_DESC(vars_label),
+      INLIB_ARG_FIELD_DESC(edit_what),
+      INLIB_ARG_FIELD_DESC(show_mode),
+      
+      INLIB_ARG_FIELD_DESC_OPTS_BEG(font,8)
+        font_hershey().c_str(),
+        font_arial_ttf().c_str(),
+        font_arialbd_ttf().c_str(),
+        font_timesbd_ttf().c_str(),
+        font_symbol_ttf().c_str(),
+        font_stixgeneral_otf().c_str(),
+        font_helvetica_ttf().c_str(),
+        font_times_roman_ttf().c_str()
+      INLIB_ARG_FIELD_DESC_OPTS_END,
+      
+      INLIB_ARG_FIELD_DESC_ENUMS_BEG(font_modeling,3)
+        INLIB_ARG_ENUM(font_outline),
+        INLIB_ARG_ENUM(font_filled),
+        INLIB_ARG_ENUM(font_pixmap)
+      INLIB_ARG_FIELD_DESC_ENUMS_END
+    );
     return s_v;
   }
 private:
@@ -97,6 +115,8 @@ private:
     add_field(&vars_label);
     add_field(&edit_what);
     add_field(&show_mode);
+    add_field(&font);
+    add_field(&font_modeling);
   }
 public:
   virtual void render(render_action& a_action) {
@@ -122,8 +142,10 @@ public:
       update_sg(a_action.out());
       reset_touched();
     }
+    if(a_action.do_path()) a_action.path_push(this);
     m_switch.search(a_action);
     if(a_action.done()) return;
+    if(a_action.do_path()) a_action.path_pop();
   }
   virtual void event(event_action& a_action) {
     if(touched()) {
@@ -139,10 +161,10 @@ public:
 
   ,width(1)
   ,height(1)
-  ,back_color(colorf::white())
-  ,front_color(colorf::black())
-  ,border_color(colorf::black())
-  ,arm_color(colorf::grey())
+  ,back_color(colorf_white())
+  ,front_color(colorf_black())
+  ,border_color(colorf_black())
+  ,arm_color(colorf_grey())
   ,text_wmargin_factor(0.9f)
   ,text_hmargin_factor(0.9f)
   ,numeric_width(1)
@@ -155,6 +177,8 @@ public:
   ,vars_label("xyz...")
   ,edit_what(edit_calc)
   ,show_mode(true)
+  ,font(font_hershey())
+  ,font_modeling(font_filled)
 
   ,m_ttf(a_ttf)
 
@@ -245,7 +269,7 @@ public:
   }
   virtual ~edvalop(){
     delete m_valop;
-    clear<valop>(m_stack);
+    safe_clear<valop>(m_stack);
   }
 public:
   edvalop(const edvalop& a_from)
@@ -269,6 +293,8 @@ public:
   ,vars_label(a_from.vars_label)
   ,edit_what(a_from.edit_what)
   ,show_mode(a_from.show_mode)
+  ,font(a_from.font)
+  ,font_modeling(a_from.font_modeling)
 
   ,m_ttf(a_from.m_ttf)
 
@@ -312,6 +338,8 @@ public:
     vars_label = a_from.vars_label;
     edit_what = a_from.edit_what;
     show_mode = a_from.show_mode;
+    font = a_from.font;
+    font_modeling = a_from.font_modeling;
 
     m_cbks = a_from.m_cbks;
 
@@ -334,6 +362,7 @@ public:
     return *this;
   }
 public:
+  const _switch& container() const {return m_switch;} //must be consistent with pick().
   void add_callback(bcbk* a_cbk) { //we take ownership of a_cbk
     m_cbks.add(a_cbk);
     touch();
@@ -348,8 +377,9 @@ public:
     m_valop = a_v;
   }
 
-  //const valop& result() const {return *m_valop;}
-  valop& result() {return *m_valop;}
+  void set_result(const valop& a_v) {*m_valop = a_v;}
+
+  const valop& result() const {return *m_valop;}
 
   //const ival_funcs& funcs() const {return m_funcs;}
   void set_funcs(const val_funcs& a_funcs) {m_funcs = a_funcs;}
@@ -767,8 +797,7 @@ public:
         return return_to_render;
 
 /*
-        if(//const up_event* up_evt = 
-               safe_cast<event,up_event>(*m_event)){
+        if(//const up_event* up_evt = event_cast<event,up_event>(*m_event)){
           //::printf("debug : edvalop : action_up\n");
 
           wout alert(m_event_action->out());
@@ -776,11 +805,9 @@ public:
           cube_manip* cm = cbk::move_manip::is_maniped
             (m_event_action->out(),m_this.m_switch,m_node,false);
           if(cm) {
-            cbk::move_manip::manip_up
-              (alert,m_event_action->out(),m_this.m_switch,m_node,false);
+            cbk::move_manip::manip_up(alert,m_event_action->out(),m_this.m_switch,m_node,false);
           } else {
-            cbk::move_manip::set_manip
-              (alert,m_event_action->out(),m_this.m_switch,m_node,false);
+            cbk::move_manip::set_manip(alert,m_event_action->out(),m_this.m_switch,m_node,false);
           }
    
           //cbk::move_manip::toggle_manip
@@ -864,8 +891,7 @@ protected:
       sep->add(create_button(a_out,"latin",action_begin_latin(),0,col++));
     } else if(edit_what.value()==edit_ntuple) {
       if(vars.values().size()) {
-        sep->add(create_button
-                   (a_out,vars_label.value(),action_begin_var(),0,col++));
+        sep->add(create_button(a_out,vars_label.value(),action_begin_var(),0,col++));
       }
     }
     sep->add(create_button(a_out,"12..."  ,action_begin_numeric(),0,col++));
@@ -906,6 +932,8 @@ protected:
 
     enforce_common_text_height(a_out,*sep);
 
+    m_numeric.font = font;
+    m_numeric.font_modeling = font_modeling;
     m_numeric.width = numeric_width;
     m_numeric.height = numeric_height;
     m_numeric.back_color = back_color;
@@ -920,6 +948,8 @@ protected:
     m_numeric.clear_cancel_cbks();
     m_numeric.add_cancel_callback(new _cbk(*this,a_out,action_cancel()));
 
+    m_list.font = font;
+    m_list.font_modeling = font_modeling;
     m_list.width = list_width;
     m_list.height = list_height;
     m_list.scroll_width = list_scroll_width;
@@ -951,7 +981,7 @@ protected:
     separator* sep = new separator;
 
     rgba* mat = new rgba();
-    mat->color = colorf::black();
+    mat->color = colorf_black();
     sep->add(mat);
 
     sep->add(new normal);
@@ -970,7 +1000,8 @@ protected:
       _sep->clear();
       base_freetype* tft = base_freetype::create(m_ttf);
       //TTNODE* tft = new TTNODE();   
-      tft->font = gui_font();
+      tft->font = font;
+      tft->modeling = font_modeling;
       tft->strings.add("???");
       _sep->add(tft);
     }
@@ -992,11 +1023,8 @@ protected:
     return sep;
   }
 
-  separator* create_button(std::ostream& a_out,
-                           const std::string& a_label,
-                           unsigned int a_action,
-                           unsigned int a_row,
-                           unsigned int a_col) {
+  separator* create_button(std::ostream& a_out,const std::string& a_label,
+                           unsigned int a_action,unsigned int a_row,unsigned int a_col) {
     separator* sep = new separator;
 
     float wbutton = width/m_cols;
@@ -1012,7 +1040,8 @@ protected:
     b->width = wbutton;
     b->height = hbutton;
     b->color = front_color;
-    b->font = gui_font();
+    b->font = font;
+    b->font_modeling = font_modeling;
     b->back_area::color = back_color;
     b->back_area::border_color = border_color;
     b->arm_color = arm_color;

@@ -28,13 +28,12 @@ public:
   sf<float> radius;
   sf<unsigned int> steps;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(radius)
-      INLIB_ADD_FIELD_DESC(steps)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::circle)
+    static const desc_fields s_v(parent::node_desc_fields(),2, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(radius),
+      INLIB_ARG_FIELD_DESC(steps)
+    );
     return s_v;
   }
 private:
@@ -94,6 +93,7 @@ public:
     } else {
       a_action.set_done(false);
       a_action.zs().clear();
+      a_action.ws().clear();
       a_action.add_line_loop(m_xyzs);
       if(a_action.done()) {
         a_action.add_pick(*this,a_action.zs(),a_action.ws(),a_action.state());

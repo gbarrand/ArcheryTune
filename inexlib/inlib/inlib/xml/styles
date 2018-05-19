@@ -31,15 +31,13 @@ public:
     return *this;
   }
 public:
-  std::ostream& out() {return m_out;}
+  std::ostream& out() const {return m_out;}
 
   typedef std::pair<std::string,std::string> style_item_t;
   typedef std::vector<style_item_t> style_t;
   typedef std::pair<std::string,style_t> named_style_t;
 
-  const std::vector<named_style_t>& named_styles() const {
-    return m_named_styles;
-  }
+  const std::vector<named_style_t>& named_styles() const {return m_named_styles;}
   std::vector<named_style_t>& named_styles() {return m_named_styles;}
 
   typedef std::pair<std::string,std::string> alias_t;
@@ -53,8 +51,7 @@ public:
     return 0;
   }
 
-  void find_styles(const std::string& a_pattern,
-                   std::vector<std::string>& a_v) const {
+  void find_styles(const std::string& a_pattern,std::vector<std::string>& a_v) const {
     a_v.clear();
     inlib_vforcit(named_style_t,m_named_styles,it){
       if(match((*it).first,a_pattern)) a_v.push_back((*it).first);
@@ -106,10 +103,7 @@ public:
   }
 */
   template <class T>
-  bool res_value(const style_t& a_sty,
-                 const std::string& a_key,
-                 T& a_v,
-                 const std::string& a_msg) const {
+  bool res_value(const style_t& a_sty,const std::string& a_key,T& a_v,const std::string& a_msg) const {
     //NOTE : if ret false, we do not set a_v to something.
 
     std::string _s;
@@ -136,9 +130,7 @@ public:
   }
 
   template <class T>
-  bool res_value(const std::string& a_style,
-                 const std::string& a_key,
-                 T& a_v) const {
+  bool res_value(const std::string& a_style,const std::string& a_key,T& a_v) const {
     //NOTE : if ret false, we do not set a_v to something.
 
     //look if a_style is an alias :
@@ -158,10 +150,7 @@ public:
     return true;
   }
 
-  bool res_color(const style_t& a_sty,
-                 const std::string& a_key,
-                 colorf& a_color,
-                 const std::string& a_msg) const {
+  bool res_color(const style_t& a_sty,const std::string& a_key,colorf& a_color,const std::string& a_msg) const {
     //NOTE : if ret false, we do not set a_color to something.
     std::string s;
     if(!find(a_sty,a_key,s)) {
@@ -183,9 +172,7 @@ public:
     return true;
   }
 
-  bool res_color(const std::string& a_style,
-                 const std::string& a_key,
-                 colorf& a_color) const {
+  bool res_color(const std::string& a_style,const std::string& a_key,colorf& a_color) const {
     //NOTE : if ret false, we do not set a_color to something.
 
     //look if a_style is an alias :
@@ -203,10 +190,7 @@ public:
     return res_color(*sty,a_key,a_color,style);
   }
 
-  bool res_bool(const style_t& a_sty,
-                const std::string& a_key,
-                bool& a_v,
-                const std::string& a_msg) const {
+  bool res_bool(const style_t& a_sty,const std::string& a_key,bool& a_v,const std::string& a_msg) const {
     //NOTE : if ret false, we do not set a_v to something.
     std::string s;
     if(!find(a_sty,a_key,s)) {
@@ -231,9 +215,7 @@ public:
     return true;
   }
 
-  bool res_bool(const std::string& a_style,
-                const std::string& a_key,
-                bool& a_v) const {
+  bool res_bool(const std::string& a_style,const std::string& a_key,bool& a_v) const {
     //NOTE : if ret false, we do not set a_color to something.
 
     //look if a_style is an alias :
@@ -329,6 +311,199 @@ protected:
   sg::cmaps_t m_cmaps;
 };
 
+}}
+
+#include "tree"
+#include "../vmanip"
+
+namespace inlib {
+namespace xml {
+
+inline void load_style(styles& a_styles,const tree& a_tree) {
+  std::string name;
+  a_tree.attribute_value("name",name);
+  if(name.empty()) {
+    a_styles.out() << "exlib::sg::gui_viewer::load_style :"
+          << " <style> without name."
+          << std::endl;
+    return;
+  }  
+
+  styles::style_t sty;
+
+ {looper _for(a_tree);
+  while(element* _elem = _for.next_element()) {
+
+      if(_elem->name()=="copy") {
+
+        std::string from;
+        _elem->attribute_value("from",from); //expect another style name.
+        if(from.empty()) {
+          a_styles.out() << "exlib::sg::gui_viewer::load_style :"
+                         << " <copy> without from."
+                         << std::endl;
+          return;
+        } 
+
+        const styles::style_t* csty = a_styles.find_style(from);
+        if(!csty) {
+          a_styles.out() << "exlib::sg::gui_viewer::load_style :"
+                     << " <copy> : from " << sout(from) << " not found."
+                     << std::endl;
+          return;
+        }
+
+        append(sty,*csty);
+
+      } else {
+        sty.push_back(styles::style_item_t(_elem->name(),_elem->value()));
+      }
+
+  }}
+  
+  if(sty.size()) a_styles.add_style(name,sty);
+}
+
+inline void load_plotter_style(styles& a_styles,const tree& a_tree) {
+  std::string pname;
+  a_tree.attribute_value("name",pname);
+  if(pname.empty()) {
+    a_styles.out() << "exlib::sg::gui_viewer::load_plotter_style :"
+          << " <plotter_style> without name."
+          << std::endl;
+    return;
+  }  
+
+ {styles::style_t sty;
+  sty.push_back(styles::style_item_t("tag","plotter_style"));
+
+ {looper _for(a_tree);
+  while(element* _elem = _for.next_element()) {
+
+      if(_elem->name()=="copy") {
+
+        std::string from;
+        _elem->attribute_value("from",from); //expect a plotter_style name.
+        if(from.empty()) {
+          a_styles.out() << "exlib::sg::gui_viewer::load_plotter_style :"
+                << " <copy> without from."
+                << std::endl;
+          return;
+        } 
+
+        const styles::style_t* csty = a_styles.find_style(from);
+        if(!csty) {
+          a_styles.out() << "exlib::sg::gui_viewer::load_plotter_style :"
+                << " <copy> : from " << sout(from) << " not found."
+                << std::endl;
+          return;
+        }
+        if(csty->size()) a_styles.add_style(pname,*csty);
+
+        if(styles::is_plotter_style(*csty)) {
+          //search all <from>.<sub_style> styles :
+          std::string head = from+".";
+          std::string::size_type l = head.size();
+
+          styles sts(a_styles.out());
+
+          const std::vector<styles::named_style_t>& nss =
+            a_styles.named_styles();
+          inlib_vforcit(styles::named_style_t,nss,it){
+            const std::string& name = (*it).first;
+            if(name.substr(0,l)==head) {
+              std::string tail = name.substr(l,name.size()-l);
+              const styles::style_t& ssty = (*it).second;
+              if(ssty.size()) {
+                sts.add_style(pname+"."+tail,ssty);
+              }
+            }
+          }
+
+          a_styles.append(sts);
+
+        }
+
+
+      } else {
+        sty.push_back(styles::style_item_t(_elem->name(),_elem->value()));
+      }
+
+  }}
+
+  if(sty.size()) a_styles.add_style(pname,sty);}
+
+ {looper _for(a_tree);
+  while(tree* _tree = _for.next_tree()) {
+
+      const std::string& tag = _tree->tag_name();
+      if(tag=="style") {
+
+        std::string name;
+        _tree->attribute_value("name",name);
+        if(name.empty()) {
+          a_styles.out() << "exlib::sg::gui_viewer::load_plotter_style :"
+                << " <style> without name."
+                << std::endl;
+          return;
+        }
+  
+       {styles::style_t sty;
+
+       {looper _for2(*_tree);
+        while(element* _elem = _for2.next_element()) {
+          sty.push_back(styles::style_item_t(_elem->name(),_elem->value()));
+        }}
+
+        if(sty.size()) {
+          std::string path = pname+"."+name;
+          a_styles.add_style(path,sty);
+        }}
+
+      } else {
+        a_styles.out() << "exlib::sg::gui_viewer::load_plotter_style :"
+              << " unexpected tag " << sout(tag) << "."
+              << std::endl;
+      }
+
+  }}
+
+}
+
+inline bool scan_style_tree(styles& a_styles,const tree& a_tree) {
+
+  if(a_tree.tag_name()!="styles") return false;
+  
+  // look for aliases :
+ {looper _for(a_tree);
+  while(element* _elem = _for.next_element()) {
+
+      std::string name;
+      _elem->attribute_value("name",name);
+      if(name.empty()) {
+        a_styles.out() << "exlib::sg::gui_viewer::load_style :"
+              << " <alias> without name."
+              << std::endl;
+        continue;
+      }
+      add<std::string,std::string>(a_styles.aliases(),name,_elem->value());
+  }}
+
+  // scan children :
+ {looper _for(a_tree);
+  while(tree* _tree = _for.next_tree()) {
+
+      const std::string& tag = _tree->tag_name();
+      if(tag=="style") {   
+        load_style(a_styles,*_tree);
+      } else if(tag=="plotter_style") {   
+        load_plotter_style(a_styles,*_tree);
+      }
+
+  }}
+  
+  return true;
+}
 }}
 
 #endif

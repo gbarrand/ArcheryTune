@@ -5,7 +5,6 @@
 #define inlib_sg_back_area
 
 #include "node"
-#include "../colorf"
 #include "atb_vertices"
 #include "rgba"
 #include "draw_style"
@@ -25,10 +24,7 @@ public:
   static unsigned int corner_bottom_right() {return 1<<2;}
   static unsigned int corner_bottom_left()  {return 1<<3;}
   static unsigned int corner_all()          {
-    return corner_top_right()|
-           corner_top_left()|
-           corner_bottom_right()|
-           corner_bottom_left();
+    return corner_top_right()|corner_top_left()|corner_bottom_right()|corner_bottom_left();
   }
 public:
   sf<float> width;
@@ -41,6 +37,7 @@ public:
 
   sf<bool> border_visible;  
   sf_vec<colorf,float> border_color;
+  sf<float> border_line_width;
 
   sf<float> shadow; //in percent of width.
 
@@ -48,22 +45,22 @@ public:
   sf<unsigned int> corner_steps;
   sf<unsigned int> corner_mask;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(width)
-      INLIB_ADD_FIELD_DESC(height)
-      INLIB_ADD_FIELD_DESC(color)
-      INLIB_ADD_FIELD_DESC(gradient)
-      INLIB_ADD_FIELD_DESC(color_top)
-      INLIB_ADD_FIELD_DESC(border_visible)
-      INLIB_ADD_FIELD_DESC(border_color)
-      INLIB_ADD_FIELD_DESC(shadow)
-      INLIB_ADD_FIELD_DESC(corner_radius)
-      INLIB_ADD_FIELD_DESC(corner_steps)
-      INLIB_ADD_FIELD_DESC(corner_mask)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::back_area)
+    static const desc_fields s_v(parent::node_desc_fields(),12, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(width),
+      INLIB_ARG_FIELD_DESC(height),
+      INLIB_ARG_FIELD_DESC(color),
+      INLIB_ARG_FIELD_DESC(gradient),
+      INLIB_ARG_FIELD_DESC(color_top),
+      INLIB_ARG_FIELD_DESC(border_visible),
+      INLIB_ARG_FIELD_DESC(border_color),
+      INLIB_ARG_FIELD_DESC(border_line_width),
+      INLIB_ARG_FIELD_DESC(shadow),
+      INLIB_ARG_FIELD_DESC(corner_radius),
+      INLIB_ARG_FIELD_DESC(corner_steps),
+      INLIB_ARG_FIELD_DESC(corner_mask)
+    );
     return s_v;
   }
 private:
@@ -76,6 +73,7 @@ private:
     add_field(&color_top);
     add_field(&border_visible);
     add_field(&border_color);
+    add_field(&border_line_width);
 
     add_field(&shadow);
 
@@ -113,11 +111,12 @@ public:
   :parent()
   ,width(1)
   ,height(1)
-  ,color(colorf::white())
+  ,color(colorf_white())
   ,gradient(false)
-  ,color_top(colorf::white())
+  ,color_top(colorf_white())
   ,border_visible(true)
-  ,border_color(colorf::black())
+  ,border_color(colorf_black())
+  ,border_line_width(1)
   ,shadow(0)
   ,corner_radius(0) //in percent of the height.
   ,corner_steps(12)
@@ -136,6 +135,7 @@ public:
   ,color_top(a_from.color_top)
   ,border_visible(a_from.border_visible)
   ,border_color(a_from.border_color)
+  ,border_line_width(a_from.border_line_width)
   ,shadow(a_from.shadow)
   ,corner_radius(a_from.corner_radius)
   ,corner_steps(a_from.corner_steps)
@@ -152,6 +152,7 @@ public:
     color_top = a_from.color_top;
     border_visible = a_from.border_visible;
     border_color = a_from.border_color;
+    border_line_width = a_from.border_line_width;
     shadow = a_from.shadow;
     corner_radius = a_from.corner_radius;
     corner_steps = a_from.corner_steps;
@@ -169,12 +170,16 @@ protected:
     float xe =  width*0.5f;
     float yb = -height*0.5f;
 
+    float zshadow = -0.05f;
+    float zback = 0;
+    float zborder = 0.01f;
+
     if(shadow.value()) {
-      float zz = -0.05f;
-      float ye =  height*0.5f;
+      float zz = zshadow;
+      float ye = height*0.5f;
 
       sg::rgba* mat = new sg::rgba();
-      mat->color = colorf::black();
+      mat->color = colorf_black();
       m_back_sep.add(mat);
 
       normal* nm = new normal;
@@ -206,7 +211,7 @@ protected:
       vtxs->mode = gl::triangle_strip();
       m_back_sep.add(vtxs);
 
-      float zz = 0;
+      float zz = zback;
 
       unsigned int ncol = 50;
       float dy = height/ncol;
@@ -242,7 +247,7 @@ protected:
 
     } else {
 
-      float zz = 0;
+      float zz = zback;
       float ye =  height*0.5f;
 
       sg::rgba* mat = new sg::rgba();
@@ -333,7 +338,7 @@ protected:
     }}
 
     if(border_visible.value()){
-      float zz = 1;
+      float zz = zborder;
       float ye = height*0.5f;
 
       sg::rgba* mat = new sg::rgba();
@@ -342,7 +347,7 @@ protected:
   
       draw_style* ds = new draw_style;
       ds->style = draw_style::lines;
-      ds->line_width = 1;
+      ds->line_width = border_line_width;
       m_back_sep.add(ds);
   
       vertices* vtxs = new vertices;

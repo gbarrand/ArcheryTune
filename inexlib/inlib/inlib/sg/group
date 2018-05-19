@@ -52,7 +52,7 @@ public:
     if(a_action.do_path()) a_action.path_push(this);
     inlib_vforcit(node*,m_children,it) {
       (*it)->search(a_action);
-      if(a_action.done()) return; //we don't have to pop_node()
+      if(a_action.done()) return;
     }
     if(a_action.do_path()) a_action.path_pop();
   }
@@ -68,6 +68,11 @@ public:
     if(!write_children(a_action)) return false;
     if(!a_action.end_node(*this)) return false;
     return true;
+  }
+  virtual void is_visible(visible_action& a_action) {
+    inlib_vforcit(node*,m_children,it) {
+      (*it)->is_visible(a_action);
+    }
   }
 public:
   group():node(){}
@@ -132,8 +137,7 @@ public:
   template <class T>
   T* rsearch_from(const node* a_node) const {
     bool found = false;
-    std::vector<node*>::const_reverse_iterator it;
-    for(it=m_children.rbegin();it!=m_children.rend();++it) {
+    inlib_vforcrit(node*,m_children,it) {
       // the below logic permits to test a_node.
       if(!found) {if(*it==a_node) found = true;}
       if(found) {
@@ -149,8 +153,7 @@ public:
                      const std::string& a_class,
                      bool a_inc_a_node = true) const {
     bool found = false;
-    std::vector<node*>::const_reverse_iterator it;
-    for(it=m_children.rbegin();it!=m_children.rend();++it) {
+    inlib_vforcrit(node*,m_children,it) {
       // the below logic permits to test a_node.
       if(!found) {
         if(*it==a_node) {
@@ -226,15 +229,15 @@ public:
     //touch();
   }
 
-  void clear(){
-    inlib::clear<node>(m_children);
-  }
+//void clear() {safe_clear<node>(m_children);}
+  void clear() {safe_reverse_clear<node>(m_children);}
+
   void raw_clear(){ //used for sg coming from exlib/rroot/vis_volume.
-    inlib::raw_clear<node>(m_children);
+    inlib::raw_clear<node>(m_children); //inlib:: is needed.
   }
-  unsigned int size() const {return m_children.size();}
+  size_t size() const {return m_children.size();}
   bool empty() const {return m_children.size()?false:true;}
-  node* operator[](unsigned int a_index) const{
+  node* operator[](size_t a_index) const{
     //WARNING : no check is done on a_index.
     return m_children[a_index];    
   }
@@ -266,24 +269,29 @@ public:
     }
     return false;
   }
-
+*/
   template <class T>
-  T* rsearch() const {
-    std::vector<node*>::const_reverse_iterator it;
-    for(it=m_children.rbegin();it!=m_children.rend();++it) {
+  T* rsearch() const { //used in agora.
+    inlib_vforcrit(node*,m_children,it) {
       T* o = safe_cast<node,T>(*(*it));
       if(o) return o;
     }
     return 0;
   }
 
-  bool is_in(node* a_node){
+  bool position(const node* a_node,unsigned int& a_index) const {
+    a_index = 0;
     inlib_vforcit(node*,m_children,it) {
       if(a_node==(*it)) return true;
+      a_index++;
     }
     return false;
   }
-*/
+
+  node* node_at(unsigned int a_index) const {
+    if(a_index>=m_children.size()) return 0;
+    return m_children[a_index];
+  }
 
   template <class T>
   T* child(unsigned int a_index) const {

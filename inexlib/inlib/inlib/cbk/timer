@@ -17,7 +17,7 @@ public:
   static unsigned int action_do()     {return 1;}
   static unsigned int action_stop()   {return 2;}
 public:
-  virtual return_action action() {
+  virtual sg::return_action action() {
 
     if(m_action==action_start()) {
 
@@ -38,7 +38,7 @@ public:
         m_ui.add_work(_cbk);
       }
 
-      return return_to_render;     
+      return sg::return_to_render;     
 
     } else if(m_action==action_stop()) {
 
@@ -47,7 +47,7 @@ public:
 
     }
 
-    return return_none;     
+    return sg::return_none;     
   }
   virtual sg::bcbk* copy() const {return new timer(*this);}
 

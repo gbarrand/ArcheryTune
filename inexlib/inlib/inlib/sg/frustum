@@ -31,15 +31,14 @@ public:
   sf<float> bottom;
   sf<float> top;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(left)
-      INLIB_ADD_FIELD_DESC(right)
-      INLIB_ADD_FIELD_DESC(bottom)
-      INLIB_ADD_FIELD_DESC(top)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::frustum)
+    static const desc_fields s_v(parent::node_desc_fields(),4, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(left),
+      INLIB_ARG_FIELD_DESC(right),
+      INLIB_ARG_FIELD_DESC(bottom),
+      INLIB_ARG_FIELD_DESC(top)
+    );
     return s_v;
   }
 private:
@@ -58,13 +57,13 @@ public:
   ,top(0.5f)
   {
 #ifdef INLIB_MEM
-    inlib::mem::increment(s_class().c_str());
+    mem::increment(s_class().c_str());
 #endif
     add_fields();
   }
   virtual ~frustum(){
 #ifdef INLIB_MEM
-    inlib::mem::decrement(s_class().c_str());
+    mem::decrement(s_class().c_str());
 #endif
   }
 public:
@@ -76,7 +75,7 @@ public:
   ,top(a_from.top)
   {
 #ifdef INLIB_MEM
-    inlib::mem::increment(s_class().c_str());
+    mem::increment(s_class().c_str());
 #endif
     add_fields();
   }

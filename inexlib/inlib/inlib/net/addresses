@@ -6,7 +6,7 @@
 
 // the below works for Cocoa and iPhone.
 
-#ifdef WIN32
+#ifdef _WIN32
 //FIXME : Windows : do the port.
 #else
 #include <sys/ioctl.h>
@@ -34,7 +34,7 @@ inline bool ip_addresses(std::ostream& a_out,
   a_ip_names.clear();
   a_ip_addrs.clear();
 
-#ifdef WIN32
+#ifdef _WIN32
   a_out << "inlib::net::ip_addresses :"
         << " not yet ported on this platform."
         << std::endl;
@@ -181,5 +181,7 @@ inline bool dump_ip_addresses(std::ostream& a_out){
 }
 
 }}
+
+//inlib_build_use socket
 
 #endif

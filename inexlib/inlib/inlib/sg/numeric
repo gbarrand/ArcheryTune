@@ -22,10 +22,10 @@ class numeric : public node {
 public:
   sf<float> width;
   sf<float> height;
-  sf_vec<inlib::colorf,float> back_color;
-  sf_vec<inlib::colorf,float> front_color;
-  sf_vec<inlib::colorf,float> border_color;
-  sf_vec<inlib::colorf,float> arm_color;
+  sf_vec<colorf,float> back_color;
+  sf_vec<colorf,float> front_color;
+  sf_vec<colorf,float> border_color;
+  sf_vec<colorf,float> arm_color;
   sf_string value;
   sf_enum<sg::number_type> number_type; //int,uint,real.
   sf<float> text_wmargin_factor;
@@ -35,27 +35,45 @@ public:
   sf<double> slider_max;
   sf<bool> show_cancel;
   sf<float> corner_radius;
+  sf_string font;
+  sf_enum<sg::font_modeling> font_modeling;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(width)
-      INLIB_ADD_FIELD_DESC(height)
-      INLIB_ADD_FIELD_DESC(back_color)
-      INLIB_ADD_FIELD_DESC(front_color)
-      INLIB_ADD_FIELD_DESC(border_color)
-      INLIB_ADD_FIELD_DESC(arm_color)
-      INLIB_ADD_FIELD_DESC(value)
-      INLIB_ADD_FIELD_DESC(number_type)
-      INLIB_ADD_FIELD_DESC(text_wmargin_factor)
-      INLIB_ADD_FIELD_DESC(text_hmargin_factor)
-      INLIB_ADD_FIELD_DESC(show_slider)
-      INLIB_ADD_FIELD_DESC(slider_min)
-      INLIB_ADD_FIELD_DESC(slider_max)
-      INLIB_ADD_FIELD_DESC(show_cancel)
-      INLIB_ADD_FIELD_DESC(corner_radius)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::numeric)
+    static const desc_fields s_v(parent::node_desc_fields(),17, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(width),
+      INLIB_ARG_FIELD_DESC(height),
+      INLIB_ARG_FIELD_DESC(back_color),
+      INLIB_ARG_FIELD_DESC(front_color),
+      INLIB_ARG_FIELD_DESC(border_color),
+      INLIB_ARG_FIELD_DESC(arm_color),
+      INLIB_ARG_FIELD_DESC(value),
+      INLIB_ARG_FIELD_DESC(number_type),
+      INLIB_ARG_FIELD_DESC(text_wmargin_factor),
+      INLIB_ARG_FIELD_DESC(text_hmargin_factor),
+      INLIB_ARG_FIELD_DESC(show_slider),
+      INLIB_ARG_FIELD_DESC(slider_min),
+      INLIB_ARG_FIELD_DESC(slider_max),
+      INLIB_ARG_FIELD_DESC(show_cancel),
+      INLIB_ARG_FIELD_DESC(corner_radius),
+      
+      INLIB_ARG_FIELD_DESC_OPTS_BEG(font,8)
+        font_hershey().c_str(),
+        font_arial_ttf().c_str(),
+        font_arialbd_ttf().c_str(),
+        font_timesbd_ttf().c_str(),
+        font_symbol_ttf().c_str(),
+        font_stixgeneral_otf().c_str(),
+        font_helvetica_ttf().c_str(),
+        font_times_roman_ttf().c_str()
+      INLIB_ARG_FIELD_DESC_OPTS_END,
+      
+      INLIB_ARG_FIELD_DESC_ENUMS_BEG(font_modeling,3)
+        INLIB_ARG_ENUM(font_outline),
+        INLIB_ARG_ENUM(font_filled),
+        INLIB_ARG_ENUM(font_pixmap)
+      INLIB_ARG_FIELD_DESC_ENUMS_END
+    );
     return s_v;
   }
 private:
@@ -75,6 +93,8 @@ private:
     add_field(&slider_max);
     add_field(&show_cancel);
     add_field(&corner_radius);
+    add_field(&font);
+    add_field(&font_modeling);
   }
 public:
   virtual void render(render_action& a_action) {
@@ -99,8 +119,10 @@ public:
       update_sg(show_slider.touched()||show_cancel.touched()?true:false);
       reset_touched();
     }
+    if(a_action.do_path()) a_action.path_push(this);
     m_sep.search(a_action);
     if(a_action.done()) return;
+    if(a_action.do_path()) a_action.path_pop();
   }
 public:
   numeric(const base_freetype& a_ttf)
@@ -108,10 +130,10 @@ public:
 
   ,width(1)
   ,height(1)
-  ,back_color(inlib::colorf::white())
-  ,front_color(inlib::colorf::black())
-  ,border_color(inlib::colorf::black())
-  ,arm_color(inlib::colorf::grey())
+  ,back_color(colorf_white())
+  ,front_color(colorf_black())
+  ,border_color(colorf_black())
+  ,arm_color(colorf_grey())
   ,value("")
   ,number_type(number_real)
   ,text_wmargin_factor(0.9f)
@@ -121,6 +143,8 @@ public:
   ,slider_max(1)
   ,show_cancel(false)
   ,corner_radius(0)
+  ,font(font_hershey())
+  ,font_modeling(font_filled)
 
   ,m_cbks()
   ,m_cancel_cbks()
@@ -166,6 +190,8 @@ public:
   ,slider_max(a_from.slider_max)
   ,show_cancel(a_from.show_cancel)
   ,corner_radius(a_from.corner_radius)
+  ,font(a_from.font)
+  ,font_modeling(a_from.font_modeling)
 
   ,m_cbks(a_from.m_cbks)
   ,m_cancel_cbks(a_from.m_cancel_cbks)
@@ -209,12 +235,17 @@ public:
     slider_max = a_from.slider_max;
     show_cancel = a_from.show_cancel;
     corner_radius = a_from.corner_radius;
+    font = a_from.font;
+    font_modeling = a_from.font_modeling;
 
     m_cbks = a_from.m_cbks;
     m_cancel_cbks = a_from.m_cancel_cbks;
 
     return *this;
   }
+public:
+  const separator& container() const {return m_sep;} //must be consistent with pick().
+  void clear() {value.value("");} //for gui_viewer popup templates.
 public:
   void add_callback(bcbk* a_cbk) { //we take ownership of a_cbk
     m_cbks.callbacks().push_back(a_cbk);
@@ -234,18 +265,10 @@ public:
     touch();
   }
 protected:
-  static const std::string& s_dot() {
-    static const std::string s_v(".");
-    return s_v;
-  }
-  static const std::string& s_sign() {
-    static const std::string s_v("+/-");
-    return s_v;
-  }
-  static const std::string& s_pow() {
-    static const std::string s_v("e");
-    return s_v;
-  }
+  INLIB_CLASS_STRING_VALUE(dot,.)
+  INLIB_CLASS_STRING_VALUE(sign,+/-)
+  INLIB_CLASS_STRING_VALUE(pow,e)
+  INLIB_CLASS_STRING_VALUE(double_dot,:)
 
   INLIB_CLASS_STRING(C)
   INLIB_CLASS_STRING(Ok)
@@ -343,14 +366,14 @@ protected:
         }
 
       } else if(m_numeric.number_type==number_ip) {
-        //four uints separated by dots.
+        //four uints separated by three dots.
         if(m_action==s_C()) {
           s.clear();
         } else if(m_action==numeric::s_dot()) {
           if(s.empty()) {
             //do nothing.
           } else {
-            if(inlib::numchar(s,'.')>=3) {
+            if(numchar(s,'.')>=3) {
             } else if(s[s.size()-1]!='.') {
               s += m_action;
             }
@@ -358,6 +381,40 @@ protected:
         } else if(m_action==numeric::s_sign()) {
           //do nothing.
         } else if(m_action==numeric::s_pow()) {
+          //do nothing.
+        } else {
+          s += m_action;
+        }
+
+      } else if(m_numeric.number_type==number_radec) {
+        //h:m:s or d:ma:sa
+        if(m_action==s_C()) {
+          s.clear();
+        } else if(m_action==numeric::s_double_dot()) {
+          if(s.empty()) {
+            //do nothing.
+          } else {
+            const char& last = s[s.size()-1];
+            if((last==':')||(last=='.')||(numchar(s,':')>=2)||(numchar(s,'.')>=1)) {
+              //do nothing.
+            } else {
+              s += m_action;
+            }
+          }
+        } else if(m_action==numeric::s_dot()) {
+          if(s.empty()) {
+            //do nothing.
+          } else {
+            const char& last = s[s.size()-1];
+            if((last==':')||(last=='.')) {
+              //do nothing.
+            } else {
+              s += m_action;
+            }
+          }
+        } else if(m_action==numeric::s_sign()) {
+          //do nothing.
+        } else if(m_action==numeric::s_pow()) { //should not happen.
           //do nothing.
         } else {
           s += m_action;
@@ -426,6 +483,7 @@ protected:
     update_clear();
     update_pow();
     update_enter();
+
     if(show_slider.value()) update_slider();
     if(show_cancel.value()) update_cancel();
 
@@ -485,11 +543,7 @@ protected:
     return sep;
   }
 
-  void update_button(matrix& a_mtx,
-                     text_button& a_b,
-                     const std::string& a_label,
-                     unsigned int a_row,
-                     unsigned int a_col) {
+  void update_button(matrix& a_mtx,text_button& a_b,const std::string& a_label,unsigned int a_row,unsigned int a_col) {
     float wbutton = width/3;
 
     float xx = -width*0.5f+wbutton*0.5f+a_col*wbutton;
@@ -499,7 +553,8 @@ protected:
     a_b.width = wbutton;
     a_b.height = hitem();
     a_b.color = front_color;
-    a_b.font = gui_font();
+    a_b.font = font;
+    a_b.font_modeling = font_modeling;
     a_b.back_area::color = back_color;
     a_b.back_area::border_color = border_color;
     a_b.arm_color = arm_color;
@@ -533,7 +588,8 @@ protected:
     m_clear.corner_mask = back_area::corner_bottom_left();
 
     m_clear.color = front_color;
-    m_clear.font = gui_font();
+    m_clear.font = font;
+    m_clear.font_modeling = font_modeling;
     m_clear.wmargin_factor = text_wmargin_factor;
     m_clear.hmargin_factor = text_hmargin_factor;
     m_clear.arm_color = arm_color;
@@ -562,7 +618,8 @@ protected:
     m_pow.back_area::color = back_color;
     m_pow.back_area::border_color = border_color;
     m_pow.color = front_color;
-    m_pow.font = gui_font();
+    m_pow.font = font;
+    m_pow.font_modeling = font_modeling;
     m_pow.wmargin_factor = text_wmargin_factor;
     m_pow.hmargin_factor = text_hmargin_factor;
     m_pow.arm_color = arm_color;
@@ -570,10 +627,15 @@ protected:
     m_pow.confine = true;
     m_pow.hjust = center;
 
-    m_pow.set_label(s_pow());
-
     m_pow.clear_cbks();
-    m_pow.add_callback(new button_cbk(*this,s_pow()));
+
+    if(number_type.value()==number_radec) {
+      m_pow.set_label(s_double_dot());
+      m_pow.add_callback(new button_cbk(*this,s_double_dot()));
+    } else {
+      m_pow.set_label(s_pow());
+      m_pow.add_callback(new button_cbk(*this,s_pow()));
+    }
   }
 
   void update_enter() {
@@ -595,7 +657,8 @@ protected:
     m_enter.corner_mask = back_area::corner_bottom_right();
 
     m_enter.color = front_color;
-    m_enter.font = gui_font();
+    m_enter.font = font;
+    m_enter.font_modeling = font_modeling;
     m_enter.wmargin_factor = text_wmargin_factor;
     m_enter.hmargin_factor = text_hmargin_factor;
     m_enter.arm_color = arm_color;
@@ -621,7 +684,8 @@ protected:
     m_cancel.back_area::color = back_color;
     m_cancel.back_area::border_color = border_color;
     m_cancel.color = front_color;
-    m_cancel.font = gui_font();
+    m_cancel.font = font;
+    m_cancel.font_modeling = font_modeling;
     m_cancel.wmargin_factor = text_wmargin_factor;
     m_cancel.hmargin_factor = text_hmargin_factor;
     m_cancel.arm_color = arm_color;
@@ -646,15 +710,15 @@ protected:
     m_result.height = htext;
 
     //FIXME : handle the three below from res.
-    m_result.back_area::color = inlib::colorf::white();
-    m_result.back_area::border_color = inlib::colorf::black();
+    m_result.back_area::color = colorf_white();
+    m_result.back_area::border_color = colorf_black();
     m_result.corner_radius = corner_radius;
-    m_result.corner_mask = 
-      back_area::corner_top_left()|back_area::corner_top_right();
+    m_result.corner_mask = back_area::corner_top_left()|back_area::corner_top_right();
 
-    m_result.color = inlib::colorf::black();
+    m_result.color = colorf_black();
 
-    m_result.font = gui_font();
+    m_result.font = font;
+    m_result.font_modeling = font_modeling;
     m_result.wmargin_factor = text_wmargin_factor;
     m_result.hmargin_factor = text_hmargin_factor;
 
@@ -694,26 +758,17 @@ protected:
       double dv = m_numeric.slider_max-m_numeric.slider_min;
       double v = m_numeric.slider_min+dv*m_numeric.m_slider.value;
      {std::string stmp;
-      if(!inlib::num2s(v,stmp)){}
+      if(!num2s(v,stmp)){}
       m_numeric.value = stmp;}
       return return_to_render;
     }
     virtual bcbk* copy() const {return new slider_cbk(*this);}
   public:
-    slider_cbk(numeric& a_numeric)
-    :parent()
-    ,m_numeric(a_numeric)
-    {}
+    slider_cbk(numeric& a_numeric):parent(),m_numeric(a_numeric) {}
     virtual ~slider_cbk(){}
   public:
-    slider_cbk(const slider_cbk& a_from)
-    :parent(a_from)
-    ,m_numeric(a_from.m_numeric)
-    {}
-    slider_cbk& operator=(const slider_cbk& a_from){
-      parent::operator=(a_from);
-      return *this;
-    }
+    slider_cbk(const slider_cbk& a_from):parent(a_from),m_numeric(a_from.m_numeric) {}
+    slider_cbk& operator=(const slider_cbk& a_from){parent::operator=(a_from);return *this;}
   protected:
     numeric& m_numeric;
   };

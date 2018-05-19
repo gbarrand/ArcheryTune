@@ -99,7 +99,7 @@ public:
     }
   }
 
-protected:
+public:
   unsigned int m_action;
   bool m_no_set_done; //to tell not doing m_event_action->set_done(true).
   event* m_event;         //owner

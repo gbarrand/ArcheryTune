@@ -6,7 +6,7 @@
 
 #include "../vec3f"
 
-#include "sfs"
+#include "sf_vec"
 #include "node"
 #include "enums"
 #include "style_parser"
@@ -22,15 +22,14 @@ public:
   sf<float> width;
   sf<lpat> pattern;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(visible)
-      INLIB_ADD_FIELD_DESC(color)
-      INLIB_ADD_FIELD_DESC(width)
-      INLIB_ADD_FIELD_DESC(pattern)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::line_style)
+    static const desc_fields s_v(parent::node_desc_fields(),4, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(visible),
+      INLIB_ARG_FIELD_DESC(color),
+      INLIB_ARG_FIELD_DESC(width),
+      INLIB_ARG_FIELD_DESC(pattern)
+    );
     return s_v;
   }
 private:
@@ -44,7 +43,7 @@ public:
   line_style()
   :parent()
   ,visible(true)
-  ,color(colorf::black())
+  ,color(colorf_black())
   ,width(1)
   ,pattern(line_solid)
   {
@@ -71,8 +70,7 @@ public:
     return *this;
   }
 public:
-  bool from_string(std::ostream& a_out,const cmaps_t& a_cmaps,
-                          const std::string& a_s){
+  bool from_string(std::ostream& a_out,const cmaps_t& a_cmaps,const std::string& a_s){
     style_parser sp;
 
     sp.visible(visible.value());

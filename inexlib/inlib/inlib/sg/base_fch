@@ -10,6 +10,8 @@
 #include "../path"
 #include "../file_format"
 
+#include "sf_string"
+
 namespace inlib {
 namespace sg {
 
@@ -30,15 +32,14 @@ public:
   sf_string value;
   sf_string format;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(exts)
-      INLIB_ADD_FIELD_DESC(dirs)
-      INLIB_ADD_FIELD_DESC(value)
-      INLIB_ADD_FIELD_DESC(format)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::base_fch)
+    static const desc_fields s_v(parent::node_desc_fields(),4, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(exts),
+      INLIB_ARG_FIELD_DESC(dirs),
+      INLIB_ARG_FIELD_DESC(value),
+      INLIB_ARG_FIELD_DESC(format)
+    );
     return s_v;
   }
 private:
@@ -228,8 +229,7 @@ public:
           m_this.items.add(item);
         }}
 
-        m_this.m_stack.push_back
-          (stack_item(m_this.label.value(),m_this.items));
+        m_this.m_stack.push_back(stack_item(m_this.label.value(),m_this.items));
 
         return return_to_render;
 

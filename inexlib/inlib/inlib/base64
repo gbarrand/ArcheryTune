@@ -5,6 +5,7 @@
 #define inlib_base64
 
 #include <vector>
+#include <cstddef>
 
 namespace inlib {
 namespace base64 {
@@ -30,8 +31,7 @@ inline unsigned int read3(const char* a_mx,char*& a_pos,
   return n;
 }
 
-inline void encode(unsigned int a_sz,const char* a_b,
-                   std::vector<char>& a_out) {
+inline void encode(size_t a_sz,const char* a_b,std::vector<char>& a_out) {
   a_out.clear();
 
   unsigned char buff[3];
@@ -61,8 +61,7 @@ inline void encode(unsigned int a_sz,const char* a_b,
 
 }
 
-inline void decode(unsigned int a_sz,const char* a_b,
-                   std::vector<char>& a_out) {
+inline void decode(size_t a_sz,const char* a_b,std::vector<char>& a_out) {
   a_out.clear();
 
   char* mx = (char*)a_b+a_sz;  

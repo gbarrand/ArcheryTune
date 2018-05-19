@@ -35,11 +35,11 @@ public:
     inlib_vforcit(bcbk*,a_from.m_cbks,it) m_cbks.push_back((*it)->copy());
   }
   void clear() {
-    inlib::clear<bcbk>(m_cbks);
+    safe_clear<bcbk>(m_cbks);
   }
 
   void do_actions() const {
-    // WARNING : dangerous. Used by batch apps.
+    // WARNING : dangerous. Used by offscreen apps.
     inlib_vforcit(bcbk*,m_cbks,it) (*it)->action();
   }
 

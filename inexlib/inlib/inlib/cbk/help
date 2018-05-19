@@ -16,17 +16,15 @@ namespace cbk {
 class help : public sg::acbk {
   static unsigned int action_main()   {return 0;}
   static unsigned int action_vis()    {return 1;}
-
-  typedef sg::list g_ui_list;
 public:
   typedef const char** (*help_func)(unsigned int&);
   typedef std::pair<std::string,help_func> help_item;
   typedef std::vector<help_item> help_t;
 public:
-  virtual return_action action() {
+  virtual sg::return_action action() {
     if(m_action==action_main()) {
-      g_ui_list* list = new g_ui_list(m_gv.ttf());
-      m_gv.set_colors(*list);
+      sg::list* list = new sg::list(m_gv.ttf());
+      m_gv.set_style(*list);
       help_t::const_iterator it;
       for(it=m_help.begin();it!=m_help.end();++it) {
         const std::string& label = (*it).first;
@@ -35,7 +33,7 @@ public:
         list->add(label,_cbk);
       }
       m_gv.push_list(list);
-      return return_to_render;     
+      return sg::return_to_render;     
 
     } else if(m_action==action_vis()) {
 
@@ -43,7 +41,7 @@ public:
       const char** lines = 0;
 
       help_func hfunc;
-      if(!inlib::find(m_help,m_what,hfunc)) {
+      if(!find(m_help,m_what,hfunc)) {
         m_gv.map_warn_not_found();
       } else {
         lines = hfunc(linen);
@@ -52,17 +50,17 @@ public:
       std::vector<std::string> txt;
      {for(unsigned int index=0;index<linen;index++) {
         std::string s = lines[index];
-        inlib::replace(s,"@@double_quote@@","\"");
-        inlib::replace(s,"@@back_slash@@","\\");
-        //inlib::replace(s,"@@version@@",version);
+        replace(s,"@@double_quote@@","\"");
+        replace(s,"@@back_slash@@","\\");
+        //replace(s,"@@version@@",version);
         txt.push_back(s);
       }}
 
       m_gv.gui_text(txt);
 
-      return return_to_render;     
+      return sg::return_to_render;     
     }
-    return return_none;     
+    return sg::return_none;     
   }
   virtual bcbk* copy() const {return new help(*this);}
 public:
@@ -93,5 +91,7 @@ protected:
 };
 
 }}
+
+//inlib_build_use kernel
 
 #endif

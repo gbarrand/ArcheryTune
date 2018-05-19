@@ -22,12 +22,11 @@ public:
     return parent::cast(a_class);
   }
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(arm_color)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::simple_button)
+    static const desc_fields s_v(parent::node_desc_fields(),1, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(arm_color)
+    );
     return s_v;
   }
 private:
@@ -53,7 +52,7 @@ public:
     if(a_action.done()) return;
   }
 
-  virtual void pick(inlib::sg::pick_action& a_action) {
+  virtual void pick(pick_action& a_action) {
     if(touched()) {
       back_area::update_sg();
       reset_touched();

@@ -31,21 +31,41 @@ public:
   sf_string value; //<r> <g> <b>
   sf<float> text_wmargin_factor;
   sf<float> text_hmargin_factor;
+  sf<bool> show_cancel;
+  sf_string font;
+  sf_enum<sg::font_modeling> font_modeling;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(width)
-      INLIB_ADD_FIELD_DESC(height)
-      INLIB_ADD_FIELD_DESC(back_color)
-      INLIB_ADD_FIELD_DESC(front_color)
-      INLIB_ADD_FIELD_DESC(border_color)
-      INLIB_ADD_FIELD_DESC(arm_color)
-      INLIB_ADD_FIELD_DESC(value)
-      INLIB_ADD_FIELD_DESC(text_wmargin_factor)
-      INLIB_ADD_FIELD_DESC(text_hmargin_factor)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::colors)
+    static const desc_fields s_v(parent::node_desc_fields(),12, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(width),
+      INLIB_ARG_FIELD_DESC(height),
+      INLIB_ARG_FIELD_DESC(back_color),
+      INLIB_ARG_FIELD_DESC(front_color),
+      INLIB_ARG_FIELD_DESC(border_color),
+      INLIB_ARG_FIELD_DESC(arm_color),
+      INLIB_ARG_FIELD_DESC(value),
+      INLIB_ARG_FIELD_DESC(text_wmargin_factor),
+      INLIB_ARG_FIELD_DESC(text_hmargin_factor),
+      INLIB_ARG_FIELD_DESC(show_cancel),
+      
+      INLIB_ARG_FIELD_DESC_OPTS_BEG(font,8)
+        font_hershey().c_str(),
+        font_arial_ttf().c_str(),
+        font_arialbd_ttf().c_str(),
+        font_timesbd_ttf().c_str(),
+        font_symbol_ttf().c_str(),
+        font_stixgeneral_otf().c_str(),
+        font_helvetica_ttf().c_str(),
+        font_times_roman_ttf().c_str()
+      INLIB_ARG_FIELD_DESC_OPTS_END,
+      
+      INLIB_ARG_FIELD_DESC_ENUMS_BEG(font_modeling,3)
+        INLIB_ARG_ENUM(font_outline),
+        INLIB_ARG_ENUM(font_filled),
+        INLIB_ARG_ENUM(font_pixmap)
+      INLIB_ARG_FIELD_DESC_ENUMS_END
+    );
     return s_v;
   }
 private:
@@ -59,6 +79,9 @@ private:
     add_field(&value);
     add_field(&text_wmargin_factor);
     add_field(&text_hmargin_factor);
+    add_field(&show_cancel);
+    add_field(&font);
+    add_field(&font_modeling);
   }
 public:
   virtual void render(render_action& a_action) {
@@ -83,23 +106,29 @@ public:
       update_sg(a_action.out());
       reset_touched();
     }
+    if(a_action.do_path()) a_action.path_push(this);
     m_sep.search(a_action);
     if(a_action.done()) return;
+    if(a_action.do_path()) a_action.path_pop();
   }
 public:
   colors(const base_freetype& a_ttf)
   :parent()
   ,width(1)
   ,height(1)
-  ,back_color(colorf::white())
-  ,front_color(colorf::black())
-  ,border_color(colorf::black())
-  ,arm_color(colorf::grey())
+  ,back_color(colorf_white())
+  ,front_color(colorf_black())
+  ,border_color(colorf_black())
+  ,arm_color(colorf_grey())
   ,value("")
   ,text_wmargin_factor(0.9f)
   ,text_hmargin_factor(0.9f)
+  ,show_cancel(false)
+  ,font(font_hershey())
+  ,font_modeling(font_filled)
 
   ,m_cbks()
+  ,m_cancel_cbks()
   ,m_ttf(a_ttf)
   {
     add_fields();
@@ -117,8 +146,12 @@ public:
   ,value(a_from.value)
   ,text_wmargin_factor(a_from.text_wmargin_factor)
   ,text_hmargin_factor(a_from.text_hmargin_factor)
+  ,show_cancel(a_from.show_cancel)
+  ,font(a_from.font)
+  ,font_modeling(a_from.font_modeling)
 
   ,m_cbks(a_from.m_cbks)
+  ,m_cancel_cbks(a_from.m_cancel_cbks)
   ,m_ttf(a_from.m_ttf)
   {
     add_fields();
@@ -135,11 +168,18 @@ public:
     value = a_from.value;
     text_wmargin_factor = a_from.text_wmargin_factor;
     text_hmargin_factor = a_from.text_hmargin_factor;
+    show_cancel = a_from.show_cancel;
+    font = a_from.font;
+    font_modeling = a_from.font_modeling;
 
     m_cbks = a_from.m_cbks;
+    m_cancel_cbks = a_from.m_cancel_cbks;
 
     return *this;
   }
+public:
+  const separator& container() const {return m_sep;} //must be consistent with pick().
+  void clear() {value.value("");} //for gui_viewer popup templates.
 public:
   void add_callback(bcbk* a_cbk) { //we take ownership of a_cbk
     m_cbks.callbacks().push_back(a_cbk);
@@ -147,6 +187,14 @@ public:
   }
   void clear_cbks(){
     m_cbks.clear();
+    touch();
+  }
+  void add_cancel_callback(bcbk* a_cbk) { //we take ownership of a_cbk
+    m_cancel_cbks.callbacks().push_back(a_cbk);
+    touch();
+  }
+  void clear_cancel_cbks(){
+    m_cancel_cbks.clear();
     touch();
   }
 public:
@@ -157,6 +205,7 @@ public:
 protected:
   INLIB_CLASS_STRING(C)
   INLIB_CLASS_STRING(Ok)
+  INLIB_CLASS_STRING(Cancel)
 
   class button_cbk : public bcbk {
     typedef bcbk parent;
@@ -209,7 +258,7 @@ protected:
     style_default_colormap def_cmap; //costly
 
     unsigned int index = 0;
-    unsigned int number = def_cmap.size();
+    unsigned int number = (unsigned int)def_cmap.size();
   
     unsigned int rows = 6;
     unsigned int cols = 11;
@@ -224,8 +273,7 @@ protected:
                 << " not found in default colormap."
                 << std::endl;
         } else {
-          m_sep.add
-            (create_button((*it).second.second,(*it).second.first,row,col));
+          m_sep.add(create_button((*it).second.second,(*it).second.first,row,col));
         }
 
 
@@ -236,6 +284,7 @@ protected:
     m_sep.add(create_result());
     m_sep.add(create_clear());
     m_sep.add(create_enter());
+    if(show_cancel.value()) m_sep.add(create_cancel());
   }
 protected:
   separator* create_button(const colorf& a_color,
@@ -258,7 +307,8 @@ protected:
     b->width = wbutton;
     b->height = hbutton;
     b->color = front_color;
-    b->font = gui_font();
+    b->font = font;
+    b->font_modeling = font_modeling;
     b->back_area::color = a_color;
     b->back_area::border_color = border_color;
     b->arm_color = arm_color;
@@ -301,7 +351,8 @@ protected:
     b->back_area::color = back_color;
     b->back_area::border_color = border_color;
     b->color = front_color;
-    b->font = gui_font();
+    b->font = font;
+    b->font_modeling = font_modeling;
     b->wmargin_factor = text_wmargin_factor;
     b->hmargin_factor = text_hmargin_factor;
     b->arm_color = arm_color;
@@ -335,7 +386,8 @@ protected:
     b->back_area::color = back_color;
     b->back_area::border_color = border_color;
     b->color = front_color;
-    b->font = gui_font();
+    b->font = font;
+    b->font_modeling = font_modeling;
     b->wmargin_factor = text_wmargin_factor;
     b->hmargin_factor = text_hmargin_factor;
     b->arm_color = arm_color;
@@ -346,6 +398,42 @@ protected:
     b->set_label(s_Ok());
 
     b->copy_cbks(m_cbks);
+
+    sep->add(b);
+
+    return sep;
+  }
+
+  separator* create_cancel() {
+    separator* sep = new separator;
+
+    float wtext = width-2.0f*width/11.0f;
+    float htext = height/8;
+
+    float xx = 0;
+    float yy = -height*0.5f+htext*0.5f;
+    matrix* m = new matrix;
+    m->set_translate(xx,yy,0);
+    sep->add(m);
+
+    tb_t* b = new tb_t(m_ttf);
+    b->width = wtext;
+    b->height = htext;
+    b->back_area::color = back_color;
+    b->back_area::border_color = border_color;
+    b->color = front_color;
+    b->font = font;
+    b->font_modeling = font_modeling;
+    b->wmargin_factor = text_wmargin_factor;
+    b->hmargin_factor = text_hmargin_factor;
+    b->arm_color = arm_color;
+
+    b->confine = true;
+    b->hjust = center;
+
+    b->set_label(s_Cancel());
+
+    b->copy_cbks(m_cancel_cbks);
 
     sep->add(b);
 
@@ -370,11 +458,12 @@ protected:
     b->height = htext;
 
     //FIXME : handle the three below from res.
-    b->back_area::color = colorf::white();
-    b->back_area::border_color = colorf::black();
-    b->color = colorf::black();
+    b->back_area::color = colorf_white();
+    b->back_area::border_color = colorf_black();
+    b->color = colorf_black();
 
-    b->font = gui_font();
+    b->font = font;
+    b->font_modeling = font_modeling;
     b->wmargin_factor = text_wmargin_factor;
     b->hmargin_factor = text_hmargin_factor;
 
@@ -390,6 +479,7 @@ protected:
   }
 protected:
   sg::cbks m_cbks;
+  sg::cbks m_cancel_cbks;
   separator m_sep;
   const base_freetype& m_ttf;
 };

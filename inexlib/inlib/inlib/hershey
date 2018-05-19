@@ -24,7 +24,7 @@ private:
   };
 public:
 
-  static unsigned int max_poly() { return 4;}
+  static unsigned int max_poly() { return 8;} //font special reaches 8
   static unsigned int max_point() {return 160;} // 40 * 4
 
   static void special_char_points(char a_char,float a_scale, //input

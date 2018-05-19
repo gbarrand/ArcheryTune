@@ -5,10 +5,13 @@
 #define inlib_sg_base_tex
 
 #include "../platform"
-#include "../colorf"
 #include "../img"
+#include "../line"
+#include "../vec3f"
+
 #include "sf_vec"
 #include "sf_img"
+#include "../colorfs"
 
 namespace inlib {
 namespace sg {
@@ -26,12 +29,21 @@ public:
   sf_vec<colorf,float> back_color;
   sf<bool> expand;
   sf<unsigned int> limit;
+  sf<bool> nearest; //for glTexParameteri. See exlib/sg/GL_manager. default=true for astro images.
+public:
+  enum intersect_type {
+    intersect_down,
+    intersect_move,
+    intersect_up
+  };
+  virtual bool intersect_value(std::ostream&,intersect_type a_type,const line<vec3f>& a_line,std::string& a_s) const = 0;
 public:
   base_tex()
   :img(img_byte())
-  ,back_color(colorf::white())
+  ,back_color(colorf_white())
   ,expand(false)
   ,limit(device::tex_mem_limit()) //OpenGL-ES glTex limitation.
+  ,nearest(true)
   ,m_img()
   {}
   virtual ~base_tex(){}
@@ -41,6 +53,7 @@ public:
   ,back_color(a_from.back_color)
   ,expand(a_from.expand)
   ,limit(a_from.limit)
+  ,nearest(a_from.nearest)
   ,m_img()
   {}
   base_tex& operator=(const base_tex& a_from){
@@ -48,19 +61,26 @@ public:
     back_color = a_from.back_color;
     expand = a_from.expand;
     limit = a_from.limit;
+    nearest = a_from.nearest;
     m_img.make_empty();
     return *this;
   }
 protected:
   void _update_sg_(std::ostream& a_out) {
-    //clean_texs(); //must reset for all gl_manager.
+    //clean_texs(); //must reset for all render_manager.
 
-    if(img.value().is_empty()) {
+    const img_byte& _img = img.value();
+
+   //::printf("debug : base_tex::_update_sg : size = %d, w = %d, h = %d, bpp %d\n",
+   //    _img.size(),_img.width(),_img.height(),_img.bpp());
+
+
+    if(_img.is_empty()) {
       m_img.make_empty();
       return;
     }
 
-    unsigned int bpp = img.value().bpp();
+    unsigned int bpp = _img.bpp();
     if((bpp!=1)&&(bpp!=3)&&(bpp!=4)) {
       a_out << "inlib::sg::tex_rect::update_sg :"
             << " bpp " << bpp << " not handled."
@@ -75,13 +95,16 @@ protected:
 
     // image must be power of two in width and height.
 
-    unsigned char pixel[4];
-    pixel[0] = (unsigned char)(255.0f*back_color.value().r());
-    pixel[1] = (unsigned char)(255.0f*back_color.value().g());
-    pixel[2] = (unsigned char)(255.0f*back_color.value().b());
-    pixel[3] = (unsigned char)(255.0f*back_color.value().a());
+    const colorf& bc = back_color.value();
+    //::printf("debug : back_color %g %g %g %g\n",bc.r(),bc.g(),bc.b(),bc.a());
 
-    //dump(a_out,"debug : 0000 :",img.value());
+    byte pixel[4];
+    pixel[0] = bc.ruchar();
+    pixel[1] = bc.guchar();
+    pixel[2] = bc.buchar();
+    pixel[3] = bc.auchar();
+
+    //dump(a_out,"debug : 0000 :",_img);
 
     if((back_color.value().a()!=1)&&(bpp!=4)) {
       //transparent background.
@@ -90,7 +113,7 @@ protected:
       //       transparency be taken into account for the "behind nodes".
 
       img_byte img4;
-      if(!img.value().rgb2rgba(img4,255)){
+      if(!_img.rgb2rgba(img4,255)){
         a_out << "inlib::sg::tex_rect::update_sg :"
               << " rgb2rgba failed."
               << std::endl;
@@ -107,7 +130,7 @@ protected:
       }
 
     } else {
-      if(!img.value().to_texture(expand.value(),pixel,m_img)){
+      if(!_img.to_texture(expand.value(),pixel,m_img)){
         a_out << "inlib::sg::tex_rect::update_sg :"
               << " problem with inlib::tex_rect::to_texture."
               << std::endl;
@@ -116,8 +139,8 @@ protected:
       }
     }
 
+  //a_out << "debug : limit : 000 : " << limit.value() << std::endl;
     if(limit.value()) {
-      //a_out << "debug : limit " << limit.value() << std::endl;
       unsigned int tw = m_img.width();
       unsigned int th = m_img.height();
       if((tw*th*m_img.bpp())>limit.value()) {
@@ -135,6 +158,7 @@ protected:
               m_img.make_empty();
               return;
             }
+          //a_out << "debug : base_tex : img.get_part due to limit (" << limit.value() << ")." << std::endl;
             m_img = part;
             break;
           }
@@ -142,11 +166,11 @@ protected:
         }
       }
     }
+    //dump_not_null(a_out,"debug : base_tex::_update_sg_ :",m_img);
+    
   }
 
-  static void dump(std::ostream& a_out,
-                   const std::string& a_cmt,
-                   const img_byte& a_img) {
+  static void dump(std::ostream& a_out,const std::string& a_cmt,const img_byte& a_img) {
     if(a_cmt.size()) a_out << a_cmt << std::endl;
     a_out << " width " << a_img.width()
           << " height " << a_img.height()
@@ -154,7 +178,32 @@ protected:
           << std::endl;
   }
 
+  static void dump_not_null(std::ostream& a_out,const std::string& a_cmt,const img_byte& a_img) {
+    if(a_cmt.size()) a_out << a_cmt << std::endl;
+    unsigned int w = a_img.width();
+    unsigned int h = a_img.height();
+    unsigned int n = a_img.bpp();
+    a_out << "img_byte : width " << w << " height " << h << " bpp " << n << std::endl;
+    byte* pos = a_img.buffer();
+    if(n==3) {
+      byte r,g,b;
+      for(unsigned int j=0;j<h;j++) {
+        for(unsigned int i=0;i<w;i++) {
+          r = *pos;pos++; 
+          g = *pos;pos++; 
+          b = *pos;pos++; 
+          if(r||g||b)
+            a_out << " " << i << " " << j 
+                  << " : " << (unsigned int)r << " " << (unsigned int)g << " " << (unsigned int)b
+                  << std::endl;
+        }
+      }   
+    }
+  }
+
   void set_tcs(float a_tcs[8]) {
+    const img_byte& _img = img.value();
+
     a_tcs[0] = 0;a_tcs[1] = 0;
     a_tcs[2] = 1;a_tcs[3] = 0;
     a_tcs[4] = 1;a_tcs[5] = 1;
@@ -164,8 +213,8 @@ protected:
     float bx = 0;
     float ay = 1;
     float by = 0;
-   {unsigned int iw = img.value().width();
-    unsigned int ih = img.value().height();
+   {unsigned int iw = _img.width();
+    unsigned int ih = _img.height();
     unsigned int rw = m_img.width();
     unsigned int rh = m_img.height();
     if(rw>iw) {

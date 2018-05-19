@@ -15,12 +15,12 @@
 
 namespace inlib {
 
-class opener : public inlib::file_opener {
+class opener : public file_opener {
 protected:
   typedef std::pair<std::string,iopener*> named_opener_t;
 public:
   virtual bool open(uint64 a_sz,const char* a_buffer,
-                    const inlib::args& a_args,
+                    const args& a_args,
                     bool& a_done){
 
     a_done = false;
@@ -64,7 +64,7 @@ public:
 
         static bool counter_inited = false;
         static int old_counter = 0;
-        int mem_counter = inlib::mem::counter();
+        int mem_counter = mem::counter();
         if(counter_inited) {
           if(mem_counter!=old_counter) {
             ::printf("debug : load_exsg : balance %d\n",
@@ -109,7 +109,7 @@ public:
 
   virtual bool open(const std::string& a_path,
                     const format_type& a_format,
-                    const inlib::args& a_args,
+                    const args& a_args,
                     bool& a_done){
     a_done = false;
 
@@ -117,19 +117,19 @@ public:
 
     if(m_verbose) {
       out << "inlib::opener::open :"
-          << " open file " << inlib::sout(a_path) << " ..."
+          << " open file " << sout(a_path) << " ..."
           << std::endl;
     }
 
-    if(!inlib::file::exists(a_path)) {
+    if(!file::exists(a_path)) {
       out << "inlib::opener::open :"
-          << " file " << inlib::sout(a_path) << " does not exist."
+          << " file " << sout(a_path) << " does not exist."
           << std::endl;
       m_gv.map_warn_failed();
       return false;
     }
 
-    if(inlib::rcmp(a_format,inlib::file::s_format_guessed())){
+    if(rcmp(a_format,file::s_format_guessed())){
       inlib_vforcit(named_opener_t,m_openers,it){
         if(m_verbose) {
           out << "inlib::opener::open :"
@@ -173,7 +173,7 @@ public:
     }
 
    {iopener* op;
-    if(inlib::find(m_openers,a_format,op)) {
+    if(find(m_openers,a_format,op)) {
       bool done;
       if(!op->open(a_path,m_gv,a_args,done)) {
         m_gv.warn(op->s_cls()+".open() failed.");
@@ -196,7 +196,7 @@ public:
 /*
   virtual bool is_openable(const std::string& a_path,bool& a_done){
     a_done = false;
-    if(!inlib::file::exists(a_path)) return false;
+    if(!file::exists(a_path)) return false;
     inlib_vforcit(named_opener_t,m_openers,it){
       bool is;
       if(!(*it).second->is(a_path,is)) return false;
@@ -209,7 +209,7 @@ public:
   }
 */
 public:
-  opener(inlib::sg::guiv& a_gv,unsigned int a_mem_limit)
+  opener(sg::guiv& a_gv,unsigned int a_mem_limit)
   :m_gv(a_gv)
   ,m_mem_limit(a_mem_limit)
   ,m_verbose(false)
@@ -217,7 +217,7 @@ public:
   virtual ~opener(){clear_openers();}
 public:
   opener(const opener& a_from)
-  :inlib::file_opener(a_from)
+  :file_opener(a_from)
   ,m_gv(a_from.m_gv)
   ,m_exts(a_from.m_exts)
   ,m_mem_limit(a_from.m_mem_limit)
@@ -259,7 +259,7 @@ protected:
     }
   }
 protected:
-  inlib::sg::guiv& m_gv;
+  sg::guiv& m_gv;
   std::vector<std::string> m_exts;
   unsigned int m_mem_limit;
   //have a vector (and not a map) since the order is important.
@@ -269,5 +269,7 @@ protected:
 };
 
 }
+
+//inlib_build_use kernel
 
 #endif

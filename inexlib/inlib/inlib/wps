@@ -19,9 +19,7 @@ class wps {
 
 public:
   typedef float VCol;
-  typedef bool(*rgb_func)(void*,
-                          unsigned int,unsigned int,
-                          VCol&,VCol&,VCol&);
+  typedef bool(*rgb_func)(void*,unsigned int,unsigned int,VCol&,VCol&,VCol&);
 public:
   wps(std::ostream& a_out):m_out(a_out){
     m_deviceWidth = (8.5f-1.f)*72*METAFILE_SCALE(); // 540 * METAFILE_SCALE
@@ -58,7 +56,7 @@ public:
   //const std::string& file_name() const {return m_fname;}
   //FILE* get_FILE() const {return m_file;}
 
-  bool open_file(const std::string& a_name){
+  bool open_file(const std::string& a_name,bool a_anonymous = false){
     if(m_file) return false;
 
     m_file = ::fopen(a_name.c_str(),"wb");    
@@ -70,12 +68,14 @@ public:
     m_pageNumber = 0;
     // Header :
     PrintFLN("%%!PS-Adobe-2.0");
-    PrintFLN("%%%%Creator: inlib::wps.");
-    PrintFLN("%%%%CreationDate: %s",get_date());
-    PrintFLN("%%%%Title: %s",m_fname.c_str());
+    if(a_anonymous) { //usefull for integration tests.
+    } else {
+      PrintFLN("%%%%Creator: inlib::wps.");
+      PrintFLN("%%%%CreationDate: %s",get_date());
+      PrintFLN("%%%%Title: %s",m_fname.c_str());
+    }
     PrintFLN("%%%%Pages: (atend)");
-    PrintFLN("%%%%BoundingBox: 0 0 %d %d",
-             (int)m_deviceWidth,(int)m_deviceHeight);
+    PrintFLN("%%%%BoundingBox: 0 0 %d %d",(int)m_deviceWidth,(int)m_deviceHeight);
     PrintFLN("%%%%DocumentFonts: Courier-Bold");
     PrintFLN("%%%%DocumentPaperSizes: a4");
     PrintFLN("%%%%EndComments");
@@ -122,8 +122,8 @@ public:
     return true;
   }
 
-  void close_file(){
-    if(!m_file) return;
+  bool close_file(){
+    if(!m_file) return false;
     PS_RESTORE();
     PrintFLN("%%%%Trailer");
     PrintFLN("%%%%Pages: %d",m_pageNumber);
@@ -131,6 +131,7 @@ public:
     ::fclose(m_file);
     m_file = 0;
     m_fname.clear();
+    return true;
   }
 
   void PS_PAGE_SCALE(float a_width,float a_height,bool a_portrait = true){
@@ -195,9 +196,7 @@ public:
     rgb_8 = 8
   };
 
-  void PS_IMAGE(Uint a_width,Uint a_height,
-                rgb_nbit a_nbit,
-                rgb_func a_proc,void* a_tag){
+  void PS_IMAGE(Uint a_width,Uint a_height,rgb_nbit a_nbit,rgb_func a_proc,void* a_tag){
     //NOTE : no check done on [a_width,a_height] being zero.
 
     Uint   row,col;
@@ -345,7 +344,7 @@ public:
   }
 
 protected:  
-  static unsigned int METAFILE_RECORD_LENGTH() {return 80;}
+  static size_t METAFILE_RECORD_LENGTH() {return 80;}
 
   static float METAFILE_SCALE() {return 1.0f;}
 
@@ -372,13 +371,13 @@ protected:
       return false;
     }
 
-    unsigned int length = m_string.size();
+    size_t length = m_string.size();
     if(length>METAFILE_RECORD_LENGTH()) {
       m_out << "inlib::wps::in_buffer : overflow." << std::endl;
       return false;
     }
   
-    unsigned int nlength = m_number + length;
+    size_t nlength = m_number + length;
     if(nlength>METAFILE_RECORD_LENGTH()) {
       m_buffer[m_number] = '\0';
       if(::fprintf(m_file,"%s\n",(char*)m_buffer)<0) {
@@ -435,7 +434,7 @@ protected:
   std::string   m_string;
   int           m_gsave;
   Uchar*        m_buffer;
-  unsigned int m_number;
+  size_t        m_number;
 //struct {
 //  int shade;
 //  int nbit;

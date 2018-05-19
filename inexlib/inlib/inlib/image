@@ -8,7 +8,6 @@
 #include <cstring> //memcpy
 #include <cstdio> //fopen
 
-#include "mnmx"
 #include "forit"
 
 namespace inlib {
@@ -55,10 +54,9 @@ inline unsigned char* concatenate(unsigned char** a_buffers,
       }
 
       for(unsigned int r=0;r<a_h;r++) {
-        unsigned char* pos = rb + (j*hbh+r+a_bh)*a_rw*a_bpp + 
-          (i*wbw+a_bw)*a_bpp;
+        unsigned char* pos = rb + (j*hbh+r+a_bh)*a_rw*a_bpp + (i*wbw+a_bw)*a_bpp;
         unsigned char* ptile = tile+r*aw3;        
-        for(unsigned int c=0;c<aw3;c++) *pos++ = *ptile++;
+        for(unsigned int c=0;c<aw3;c++,pos++,ptile++) *pos = *ptile;
       }
 
       index++;
@@ -181,9 +179,7 @@ inline unsigned char* concatenate(std::ostream& a_out,
   }
 
   unsigned int wa,ha;
-  unsigned char* ba = 
-    inlib::image::concatenate(bs,w1,h1,bpp1,
-                              a_cols,a_rows,a_bw,a_bh,a_bc,wa,ha);
+  unsigned char* ba = image::concatenate(bs,w1,h1,bpp1,a_cols,a_rows,a_bw,a_bh,a_bc,wa,ha);
   if(!ba) {
     a_out << "inlib::image::concatenate :"
           << " failed to concatenate all buffers."
@@ -253,30 +249,7 @@ inline bool convert(std::ostream& a_out,
 
 }}
 
-namespace inlib {
-namespace image {
-
-class ireader {
-public:
-  virtual ~ireader() {}
-public:
-  virtual ireader* copy() const = 0;
-  virtual bool is(const std::string&) const = 0;
-  virtual bool infos(std::ostream& a_out,const std::string& a_file,
-                     unsigned int& a_width,unsigned int& a_height,
-                     unsigned int& a_bpp) const = 0;
-  virtual unsigned char* read(std::ostream& a_out,const std::string& a_file,
-                              unsigned int& a_width,unsigned int& a_height,
-                              unsigned int& a_bpp) const = 0;
-  virtual unsigned char* read_part(std::ostream& a_out,
-                                   const std::string& a_file,
-                                   unsigned int a_sx,unsigned int a_sy,
-                                   unsigned int a_sw,unsigned int a_sh,
-                                   unsigned int& a_rw,unsigned int& a_rh,
-                                   unsigned int& a_rbpp) const = 0;
-};
-
-}}
+#include "image_reader"
 
 #include "sout"
 
@@ -317,7 +290,7 @@ public:
 
     std::string file;
     if(begin_file(file)) {
-      inlib_vforcit(inlib::image::ireader*,m_readers,it) {
+      inlib_vforcit(image::ireader*,m_readers,it) {
         if((*it)->is(file)) {
           unsigned char* buffer = _open(*(*it),file,a_w,a_h,a_bpp);
           end_file(file);
@@ -369,7 +342,7 @@ public:
     m_readers.push_back(a_reader); //take ownership.
   }
 protected:
-  unsigned char* _open(const inlib::image::ireader& a_reader,
+  unsigned char* _open(const image::ireader& a_reader,
                        const std::string& a_path,
                        unsigned int& a_w,unsigned int& a_h,
                        unsigned int& a_bpp){
@@ -421,7 +394,7 @@ protected:
   
     if(!buffer) {
       m_out << "inlib::image::iterator_reader::_open :"
-            << " for file " << inlib::sout(a_path)
+            << " for file " << sout(a_path)
             << " read failed."
             << std::endl;
       a_w = 0;a_h = 0;a_bpp = 0;

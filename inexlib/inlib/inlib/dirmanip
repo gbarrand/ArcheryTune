@@ -32,15 +32,15 @@ inline bool find_dir_with_dirs(std::ostream& a_out,
 
     if(a_verbose) {
       a_out << "find_dir_with_dirs :"
-            << " look for " << inlib::sout(a_path) << " ..."
+            << " look for " << sout(a_path) << " ..."
             << std::endl;
     }
 
     bool is;
-    if(inlib::dir::is_a(a_path,is)&&is) {
+    if(dir::is_a(a_path,is)&&is) {
       if(a_verbose) {
         a_out << "find_dir_with_dirs :"
-              << " found " << inlib::sout(a_path) << "."
+              << " found " << sout(a_path) << "."
               << std::endl;
       }
       return true;
@@ -50,7 +50,7 @@ inline bool find_dir_with_dirs(std::ostream& a_out,
 
   if(a_verbose) {
     a_out << "find_dir_with_dirs :"
-          << " " << inlib::sout(a_dir) << " not found."
+          << " " << sout(a_dir) << " not found."
           << std::endl;
   }
 
@@ -70,14 +70,14 @@ inline bool get_files(std::ostream& a_out,
   for(pit=a_dirs.begin();pit!=a_dirs.end();++pit) {
     const std::string& dir = *pit;
     bool is_dir;
-    if(!inlib::dir::is_a(dir,is_dir)) continue;
+    if(!dir::is_a(dir,is_dir)) continue;
     if(!is_dir) continue;
         
     std::vector<std::string> ls;
-    if(!inlib::dir::entries(dir,ls,false)){
+    if(!dir::entries(dir,ls,false)){
       a_out << "inlib::get_files :"
             << " can't get entries"
-            << " of directory " << inlib::sout(dir) << "."
+            << " of directory " << sout(dir) << "."
             << std::endl;
       status = false;
       continue; //continue anyway.
@@ -112,7 +112,7 @@ inline bool get_files(std::ostream& a_out,
     }
   }
 
-  inlib::unique(a_paths);
+  unique(a_paths);
   
   return status;
 }
@@ -125,7 +125,8 @@ inline bool mkdirs(std::ostream& a_out,
   bool absolute;
   bool win_path;
   std::string drive;
-  std::vector<std::string> dirs = path_words(a_path,absolute,win_path,drive);
+  std::vector<std::string> dirs;
+  path_words(a_path,dirs,absolute,win_path,drive);
   if(drive.size()) {
     a_out << "inlib::mkdirs :"
           << " path with a Windows drive not treated yet."
@@ -142,7 +143,7 @@ inline bool mkdirs(std::ostream& a_out,
     }
   }  
   if(absolute) {
-#ifdef WIN32
+#ifdef _WIN32
     a_out << "inlib::mkdirs :"
           << " absolute path not treated yet."
           << std::endl;
@@ -185,7 +186,8 @@ inline bool mkdirs_from(std::ostream& a_out,
   bool absolute;
   bool win_path;
   std::string drive;
-  std::vector<std::string> dirs = path_words(a_path,absolute,win_path,drive);
+  std::vector<std::string> dirs;
+  path_words(a_path,dirs,absolute,win_path,drive);
   if(drive.size()) {
     a_out << "inlib::mkdirs_from :"
           << " path with a Windows drive not treated yet."
@@ -256,6 +258,43 @@ inline bool check_env_dir(const std::string& a_env) {
   return is_dir;
 }
 
+inline bool create_out_dir(std::ostream& a_out,const std::string& a_name,unsigned int a_scale,
+                           std::string& a_out_dir,std::string& a_data_dir,bool a_verbose = false) {
+  std::string home_dir;
+  dir::home(home_dir);
+  if(a_verbose) a_out << "home_dir is " << home_dir << std::endl;
+
+  a_data_dir = home_dir+sep()+"Documents"+sep()+"TouchSky";
+  if(a_verbose) a_out << "data_dir is " << a_data_dir << std::endl;
+
+ {bool is;
+  if(!dir::is_a(a_data_dir,is)) {
+    a_out << "directory " << a_data_dir << " does not exists." << std::endl;
+    a_out_dir.clear();
+    a_data_dir.clear();
+    return false;
+  }}
+
+  std::string out_dir_from_data = a_name+sep();
+  numas(a_scale,out_dir_from_data);
+
+  a_out_dir = a_data_dir+sep()+out_dir_from_data;
+  if(a_verbose) a_out << "out_dir is " << a_out_dir << std::endl;
+
+ {bool is;
+  if(!dir::is_a(a_out_dir,is)||!is) mkdirs_from(a_out,a_data_dir,out_dir_from_data);
+  if(!dir::is_a(a_out_dir,is)||!is) {
+    a_out << "directory " << a_out_dir << " does not exists." << std::endl;
+    a_out_dir.clear();
+    a_data_dir.clear();
+    return false;
+  }}
+
+  return true;
 }
+
+}
+
+//inlib_build_use kernel
 
 #endif

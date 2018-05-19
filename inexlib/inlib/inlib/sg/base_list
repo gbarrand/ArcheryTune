@@ -7,6 +7,8 @@
 #include "acbk"
 #include "matrix"
 #include "arrow_button"
+#include "sf_string"
+#include "strings"
 
 #include "../platform"
 
@@ -44,29 +46,47 @@ public:
   sf_enum<sg::hjust> text_hjust;
   sf<float> buttons_to_arrows_factor;
   sf<float> corner_radius;
+  sf_string font;
+  sf_enum<sg::font_modeling> font_modeling;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(width)
-      INLIB_ADD_FIELD_DESC(height)
-      INLIB_ADD_FIELD_DESC(visible_items)
-      INLIB_ADD_FIELD_DESC(scroll_width)
-      INLIB_ADD_FIELD_DESC(label_back_color)
-      INLIB_ADD_FIELD_DESC(label_confine)
-      INLIB_ADD_FIELD_DESC(back_color)
-      INLIB_ADD_FIELD_DESC(front_color)
-      INLIB_ADD_FIELD_DESC(dir_color)
-      INLIB_ADD_FIELD_DESC(arm_color)
-      INLIB_ADD_FIELD_DESC(border_color)
-      INLIB_ADD_FIELD_DESC(text_common_height)
-      INLIB_ADD_FIELD_DESC(cancel_label)
-      INLIB_ADD_FIELD_DESC(label)
-      INLIB_ADD_FIELD_DESC(text_hjust)
-      INLIB_ADD_FIELD_DESC(buttons_to_arrows_factor)
-      INLIB_ADD_FIELD_DESC(corner_radius)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::base_list)
+    static const desc_fields s_v(parent::node_desc_fields(),19, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(width),
+      INLIB_ARG_FIELD_DESC(height),
+      INLIB_ARG_FIELD_DESC(visible_items),
+      INLIB_ARG_FIELD_DESC(scroll_width),
+      INLIB_ARG_FIELD_DESC(label_back_color),
+      INLIB_ARG_FIELD_DESC(label_confine),
+      INLIB_ARG_FIELD_DESC(back_color),
+      INLIB_ARG_FIELD_DESC(front_color),
+      INLIB_ARG_FIELD_DESC(dir_color),
+      INLIB_ARG_FIELD_DESC(arm_color),
+      INLIB_ARG_FIELD_DESC(border_color),
+      INLIB_ARG_FIELD_DESC(text_common_height),
+      INLIB_ARG_FIELD_DESC(cancel_label),
+      INLIB_ARG_FIELD_DESC(label),
+      INLIB_ARG_FIELD_DESC(text_hjust),
+      INLIB_ARG_FIELD_DESC(buttons_to_arrows_factor),
+      INLIB_ARG_FIELD_DESC(corner_radius),
+      
+      INLIB_ARG_FIELD_DESC_OPTS_BEG(font,8)
+        font_hershey().c_str(),
+        font_arial_ttf().c_str(),
+        font_arialbd_ttf().c_str(),
+        font_timesbd_ttf().c_str(),
+        font_symbol_ttf().c_str(),
+        font_stixgeneral_otf().c_str(),
+        font_helvetica_ttf().c_str(),
+        font_times_roman_ttf().c_str()
+      INLIB_ARG_FIELD_DESC_OPTS_END,
+      
+      INLIB_ARG_FIELD_DESC_ENUMS_BEG(font_modeling,3)
+        INLIB_ARG_ENUM(font_outline),
+        INLIB_ARG_ENUM(font_filled),
+        INLIB_ARG_ENUM(font_pixmap)
+      INLIB_ARG_FIELD_DESC_ENUMS_END
+    );
     return s_v;
   }
 private:
@@ -88,6 +108,8 @@ private:
     add_field(&text_hjust);
     add_field(&buttons_to_arrows_factor);
     add_field(&corner_radius);
+    add_field(&font);
+    add_field(&font_modeling);
   }
 public:
   virtual void render(render_action& a_action) {
@@ -112,8 +134,10 @@ public:
       update_sg(a_action.out());
       reset_touched();
     }
+    if(a_action.do_path()) a_action.path_push(this);
     m_sep.search(a_action);
     if(a_action.done()) return;
+    if(a_action.do_path()) a_action.path_pop();
   }
   virtual void bbox(bbox_action& a_action) {
     if(touched()) {
@@ -129,13 +153,13 @@ public:
   ,height(1)
   ,visible_items(5)
   ,scroll_width(0.2f)
-  ,label_back_color(colorf::white())
+  ,label_back_color(colorf_white())
   ,label_confine(false)
-  ,back_color(colorf::white())
-  ,front_color(colorf::black())
-  ,dir_color(colorf::lightgrey())
-  ,arm_color(colorf::grey())
-  ,border_color(colorf::black())
+  ,back_color(colorf_white())
+  ,front_color(colorf_black())
+  ,dir_color(colorf_lightgrey())
+  ,arm_color(colorf_grey())
+  ,border_color(colorf_black())
   ,text_common_height(false) //each item text matches button height and
                              //is truncated at right if needed.
   ,cancel_label("cancel")
@@ -143,6 +167,8 @@ public:
   ,text_hjust(left)
   ,buttons_to_arrows_factor(0.2f)
   ,corner_radius(0)
+  ,font(font_hershey())
+  ,font_modeling(font_filled)
 
   ,m_first_item(0)
   ,m_cancel_cbks()
@@ -170,6 +196,8 @@ public:
   ,text_hjust(a_from.text_hjust)
   ,buttons_to_arrows_factor(a_from.buttons_to_arrows_factor)
   ,corner_radius(a_from.corner_radius)
+  ,font(a_from.font)
+  ,font_modeling(a_from.font_modeling)
 
   ,m_first_item(a_from.m_first_item)
   ,m_cancel_cbks(a_from.m_cancel_cbks)
@@ -196,6 +224,8 @@ public:
     text_hjust = a_from.text_hjust;
     buttons_to_arrows_factor = a_from.buttons_to_arrows_factor;
     corner_radius = a_from.corner_radius;
+    font = a_from.font;
+    font_modeling = a_from.font_modeling;
 
     m_first_item = a_from.m_first_item;
     m_cancel_cbks = a_from.m_cancel_cbks;
@@ -207,6 +237,7 @@ public:
     m_first_item = 0;
   }
 
+  const separator& container() const {return m_sep;} //must be consistent with pick().
 public:
   void add_cancel_callback(bcbk* a_cbk) { //we take ownership of a_cbk
     m_cancel_cbks.callbacks().push_back(a_cbk);
@@ -290,10 +321,9 @@ protected:
     unsigned int beg = m_first_item;
     //012345 : 6 items
     //  2 
-    unsigned int remain =
-      m_first_item>number_of_items()?0:number_of_items()-m_first_item;
+    unsigned int remain = m_first_item>number_of_items()?0:number_of_items()-m_first_item;
 
-    unsigned int nvis = inlib::mn<unsigned int>(visible_items.value(),remain);
+    unsigned int nvis = mn<unsigned int>(visible_items.value(),remain);
 
    {// center dialog in middle of screen :
     float dy = -hitem();
@@ -436,7 +466,7 @@ protected:
       m_sep.add(sep);
 
       rgba* mat = new rgba();
-      mat->color = colorf::black();
+      mat->color = colorf_black();
       m_sep.add(mat);
 
       vertices* vtxs = new vertices;

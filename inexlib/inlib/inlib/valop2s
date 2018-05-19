@@ -10,7 +10,7 @@ namespace inlib {
 
 class valop2s : public virtual valop_visitor {
 public:
-  virtual bool binary(unsigned int a_type,valop& a_1,valop& a_2) {
+  virtual bool binary(unsigned int a_type,const valop& a_1,const valop& a_2) {
     std::string s;
     if(!stype(a_type,s)) return false;
 
@@ -35,8 +35,8 @@ public:
     return true;
   }
 
-  virtual bool unary(unsigned int a_type,valop& a_1) {
-    if(a_type==inlib::valop::MINUS) {
+  virtual bool unary(unsigned int a_type,const valop& a_1) {
+    if(a_type==valop::MINUS) {
       valop2s v;
       if(!v.visit(a_1)) {m_s.clear();return false;}
       if(a_1.is_leaf()) {
@@ -57,7 +57,7 @@ public:
 
   virtual bool option(const valop& a_v) {m_s += a_v.m_name;return true;}
 
-  virtual bool func_1(const valop& a_f,valop& a_1) {
+  virtual bool func_1(const valop& a_f,const valop& a_1) {
     m_s += a_f.m_function->name();
 
     valop2s v;
@@ -66,7 +66,7 @@ public:
 
     return true;
   }
-  virtual bool func_2(const valop& a_f,valop& a_1,valop& a_2) {
+  virtual bool func_2(const valop& a_f,const valop& a_1,const valop& a_2) {
     m_s += a_f.m_function->name();
 
    {valop2s v;
@@ -79,20 +79,16 @@ public:
 
     return true;
   }
-  virtual bool func_3(const valop&,valop&,valop&,valop&) {
+  virtual bool func_3(const valop&,const valop&,const valop&,const valop&) {
     return false;
   }
-  virtual bool func_4(const valop&,valop&,valop&,
-                                   valop&,valop&) {
+  virtual bool func_4(const valop&,const valop&,const valop&,const valop&,const valop&) {
     return false;
   }
-  virtual bool func_5(const valop&,valop&,valop&,
-                                   valop&,valop&,valop&) {
+  virtual bool func_5(const valop&,const valop&,const valop&,const valop&,const valop&,const valop&) {
     return false;
   }
-  virtual bool func_6(const valop&,valop&,valop&,
-                                   valop&,valop&,
-                                   valop&,valop&) {
+  virtual bool func_6(const valop&,const valop&,const valop&,const valop&,const valop&,const valop&,const valop&) {
     return false;
   }
 public:

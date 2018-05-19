@@ -41,6 +41,10 @@ inline bool replace(std::string& a_string,const std::string& a_old,const std::st
   return status;
 }
 
+inline bool replace_(std::string& a_string,const std::string& a_old,const std::string& a_new) {
+  return replace(a_string,a_old,a_new);
+}
+
 inline bool replace(std::vector<std::string>& a_strings,const std::string& a_old,const std::string& a_new){
   inlib_vforit(std::string,a_strings,it) {
     if(!replace(*it,a_old,a_new)) return false;
@@ -48,18 +52,22 @@ inline bool replace(std::vector<std::string>& a_strings,const std::string& a_old
   return true;
 }
 
-inline std::string to_xml(const std::string& a_string){
+inline void toxml(std::string& a_string){
   // > : &lt;
   // < : &gt;
   // & : &amp;
   // " : &quot;
   // ' : &apos;
+  replace(a_string,"&","&amp;"); //must be first.
+  replace(a_string,"<","&lt;");
+  replace(a_string,">","&gt;");
+  replace(a_string,"\"","&quot;");
+  replace(a_string,"'","&apos;");
+}
+
+inline std::string to_xml(const std::string& a_string){
   std::string s = a_string;
-  replace(s,"&","&amp;"); //must be first.
-  replace(s,"<","&lt;");
-  replace(s,">","&gt;");
-  replace(s,"\"","&quot;");
-  replace(s,"'","&apos;");
+  toxml(s);
   return s;
 }
 

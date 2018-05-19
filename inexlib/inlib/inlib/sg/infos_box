@@ -28,6 +28,7 @@ public:
 
   sf_vec<colorf,float> color;
   sf_string font;
+  sf_enum<sg::font_modeling> font_modeling;
   sf_string encoding; 
   sf<float> line_width; // for text_hershey.
   sf_enum<winding_type> front_face; //no more used.
@@ -39,27 +40,42 @@ public:
   sf_enum<hjust> rhjust;
   sf<bool> confine;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(lstrings)
-      INLIB_ADD_FIELD_DESC(rstrings)
-      INLIB_ADD_FIELD_DESC(num_spaces)
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::infos_box)
+    static const desc_fields s_v(parent::node_desc_fields(),15, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(lstrings),
+      INLIB_ARG_FIELD_DESC(rstrings),
+      INLIB_ARG_FIELD_DESC(num_spaces),
+      INLIB_ARG_FIELD_DESC(color),
+      
+      INLIB_ARG_FIELD_DESC_OPTS_BEG(font,8)
+        font_hershey().c_str(),
+        font_arial_ttf().c_str(),
+        font_arialbd_ttf().c_str(),
+        font_timesbd_ttf().c_str(),
+        font_symbol_ttf().c_str(),
+        font_stixgeneral_otf().c_str(),
+        font_helvetica_ttf().c_str(),
+        font_times_roman_ttf().c_str()
+      INLIB_ARG_FIELD_DESC_OPTS_END,
+      
+      INLIB_ARG_FIELD_DESC_ENUMS_BEG(font_modeling,3)
+        INLIB_ARG_ENUM(font_outline),
+        INLIB_ARG_ENUM(font_filled),
+        INLIB_ARG_ENUM(font_pixmap)
+      INLIB_ARG_FIELD_DESC_ENUMS_END,
+      
+      INLIB_ARG_FIELD_DESC(encoding),
+      INLIB_ARG_FIELD_DESC(line_width),
+      INLIB_ARG_FIELD_DESC(front_face),
 
-      INLIB_ADD_FIELD_DESC(color)
-      INLIB_ADD_FIELD_DESC(font)
-      INLIB_ADD_FIELD_DESC(encoding);
-      INLIB_ADD_FIELD_DESC(line_width)
-      INLIB_ADD_FIELD_DESC(front_face)
-
-      INLIB_ADD_FIELD_DESC(back_visible)
-      INLIB_ADD_FIELD_DESC(wmargin_factor)
-      INLIB_ADD_FIELD_DESC(hmargin_factor)
-      INLIB_ADD_FIELD_DESC(lhjust)
-      INLIB_ADD_FIELD_DESC(rhjust)
-      INLIB_ADD_FIELD_DESC(confine)
-    }
+      INLIB_ARG_FIELD_DESC(back_visible),
+      INLIB_ARG_FIELD_DESC(wmargin_factor),
+      INLIB_ARG_FIELD_DESC(hmargin_factor),
+      INLIB_ARG_FIELD_DESC(lhjust),
+      INLIB_ARG_FIELD_DESC(rhjust),
+      INLIB_ARG_FIELD_DESC(confine)
+    );
     return s_v;
   }
 private:
@@ -70,6 +86,7 @@ private:
 
     add_field(&color);
     add_field(&font);
+    add_field(&font_modeling);
     add_field(&encoding); 
     add_field(&line_width);
     add_field(&front_face);
@@ -87,7 +104,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) m_back_sep.render(a_action);
+    if(back_visible.value()) m_back_sep.render(a_action);
     m_sep.render(a_action);
   }
   virtual void pick(pick_action& a_action) {
@@ -95,7 +112,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) {
+    if(back_visible.value()) {
       m_back_sep.pick(a_action);
       if(a_action.done()) return;
     }
@@ -107,7 +124,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) {
+    if(back_visible.value()) {
       m_back_sep.search(a_action);
       if(a_action.done()) return;
     }
@@ -119,7 +136,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) if(!m_back_sep.write(a_action)) return false;
+    if(back_visible.value()) if(!m_back_sep.write(a_action)) return false;
     return m_sep.write(a_action);
   }
   virtual void bbox(bbox_action& a_action) {
@@ -127,7 +144,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) m_back_sep.bbox(a_action);
+    if(back_visible.value()) m_back_sep.bbox(a_action);
     m_sep.bbox(a_action);
   }
 public:
@@ -137,8 +154,9 @@ public:
   ,rstrings()
   ,num_spaces(4)
 
-  ,color(colorf::black())
+  ,color(colorf_black())
   ,font(font_hershey())
+  ,font_modeling(font_filled)
   ,encoding(encoding_PAW())
   ,line_width(1)
   ,front_face(winding_ccw)
@@ -165,6 +183,7 @@ public:
 
   ,color(a_from.color)
   ,font(a_from.font)
+  ,font_modeling(a_from.font_modeling)
   ,encoding(a_from.encoding)
   ,line_width(a_from.line_width)
   ,front_face(a_from.front_face)
@@ -189,6 +208,7 @@ public:
 
     color = a_from.color;
     font = a_from.font;
+    font_modeling = a_from.font_modeling;
     encoding = a_from.encoding;
     line_width = a_from.line_width;
     front_face = a_from.front_face;
@@ -262,6 +282,7 @@ public:
       //TTNODE* text = new TTNODE;
       ltext = text;
       text->font = font;
+      text->modeling = font_modeling;
       sep->add(text);
     }
     ltext->strings = lstrings;
@@ -287,6 +308,7 @@ public:
       //TTNODE* text = new TTNODE;
       rtext = text;
       text->font = font;
+      text->modeling = font_modeling;
       sep->add(text);
     }
     rtext->strings = rstrings;
@@ -309,11 +331,12 @@ public:
       text->strings.add(s);
       text->hjust = left;
       text->font = font;
+      text->modeling = font_modeling;
     }}
 
-    float zfront = 1; //field ?
+    //sf<float> zfront ?
+    float zz = back_visible.value()?0.01f:0;
 
-    float zz = zfront;
     float fw = width * wmargin_factor;
 
     if(confine) {

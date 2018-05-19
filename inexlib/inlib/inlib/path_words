@@ -9,7 +9,8 @@
 
 namespace inlib {
 
-inline std::vector<std::string> path_words(const std::string& a_path,bool& a_absolute,bool& a_win_path,std::string& a_drive){
+inline void path_words(const std::string& a_path,std::vector<std::string>& a_words,
+                       bool& a_absolute,bool& a_win_path,std::string& a_drive){
 
   //  a_path could be at the Windows syntax : <drive>:\dir1\dir2...
   // If so, only dir1, dirn are put in a_words.
@@ -32,7 +33,7 @@ inline std::vector<std::string> path_words(const std::string& a_path,bool& a_abs
 
   a_absolute = (path.size()&&(path[0]=='/')?true:false);
 
-  return words(path,"/");
+  words(path,"/",false,a_words);
 }
 
 }

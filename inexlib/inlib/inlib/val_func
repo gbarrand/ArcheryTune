@@ -26,10 +26,10 @@ public: //ival_func
     if(void* p = cmp_cast<val_func>(this,a_class)) {return p;}
     else return 0;
   }
-  virtual unsigned int number_of_arguments() const { return m_num_args;}
+  virtual size_t number_of_arguments() const { return m_num_args;}
   virtual const std::string& name() const { return m_name;}
 public:
-  val_func(const std::string& aName,unsigned int aNumber)
+  val_func(const std::string& aName,size_t aNumber)
   :m_name(aName),m_num_args(aNumber){
 #ifdef INLIB_MEM
     mem::increment(s_class().c_str());
@@ -57,9 +57,7 @@ protected:
   typedef bool(*InDomain)(double);
   typedef double(*Func1)(double,double);
 
-  bool eval0(const value& a_x,
-             value& a_return,std::string& aError,
-             Func0 aFunc) {
+  bool eval0(const value& a_x,value& a_return,std::string& aError,Func0 aFunc) {
 
     if(a_x.type()==value::ARRAY_DOUBLE) {
   
@@ -69,10 +67,8 @@ protected:
   
       // In the below, we need a non const method.
       std::vector<double>& stdv = a_return.array_double();
-      unsigned int number = stdv.size();
-      for(unsigned int index=0;index<number;index++) { 
-        stdv[index] = aFunc(stdv[index]);
-      }
+      size_t number = stdv.size();
+      for(size_t index=0;index<number;index++) stdv[index] = aFunc(stdv[index]);
       return true;
     } else {
       double x;
@@ -82,9 +78,7 @@ protected:
       return true;
     }
   }
-  bool eval0(const value& a_x,
-             value& a_return,std::string& aError,
-             Func0 aFunc,InDomain aDomain) {
+  bool eval0(const value& a_x,value& a_return,std::string& aError,Func0 aFunc,InDomain aDomain) {
 
     if(a_x.type()==value::ARRAY_DOUBLE) {
   
@@ -94,13 +88,13 @@ protected:
   
       // In the below, we need a non const method.
       std::vector<double>& stdv = a_return.array_double();
-      unsigned int number = stdv.size();
-      for(unsigned int index=0;index<number;index++) { 
+      size_t number = stdv.size();
+      for(size_t index=0;index<number;index++) { 
         double x = stdv[index];
         if(!aDomain(x)) {
           aError = std::string("inlib::val_func::eval0 : ")
                  + " " + m_name + " : variable value ";
-          if(!inlib::numas<double>(x,aError)){}
+          if(!numas<double>(x,aError)){}
           aError += " out of domain.";
           a_return.set_none();
           return false;
@@ -115,7 +109,7 @@ protected:
       if(!aDomain(x)) {
         aError = std::string("inlib::val_func::eval0(2) : ")
                + " " + m_name + " : variable value ";
-        if(!inlib::numas<double>(x,aError)){}
+        if(!numas<double>(x,aError)){}
         aError += " out of domain.";
         a_return.set_none();
         return false;
@@ -125,8 +119,8 @@ protected:
       return true;
     }
   }
-  bool eval1(const value& a_x,value& a_return,std::string& aError,
-             const value& a_1,Func1 aFunc) {
+
+  bool eval1(const value& a_x,value& a_return,std::string& aError,const value& a_1,Func1 aFunc) {
 
     double d_1;
     if(!TO_D(a_1,d_1,a_return,aError)) return false;
@@ -139,8 +133,8 @@ protected:
   
       // In the below, we need a non const method.
       std::vector<double>& stdv = a_return.array_double();
-      unsigned int number = stdv.size();
-      for(unsigned int index=0;index<number;index++) { 
+      size_t number = stdv.size();
+      for(size_t index=0;index<number;index++) { 
         stdv[index] = aFunc(stdv[index],d_1);
       }
       return true;
@@ -153,8 +147,7 @@ protected:
   }
 
 protected:  
-  static bool TO_D(const value& a_vx,double& a_x,
-            value& a_return,std::string& aError) {
+  static bool TO_D(const value& a_vx,double& a_x,value& a_return,std::string& aError) {
     if(!a_vx.to_double(a_x)) {
       aError = "inlib::val_func::TO_D : can't convert value to double.";
       a_return.set_none();
@@ -164,7 +157,7 @@ protected:
   }
 protected:
   std::string m_name;
-  unsigned int m_num_args;
+  size_t m_num_args;
 };
 
 class val_func_cfunc : public val_func {
@@ -172,8 +165,7 @@ public:
   typedef double(*cfunc)(double);
   typedef bool(*domain_func)(double);
 public:
-  virtual bool eval(const args& a_args,value& a_return,
-                    std::string& aError) {
+  virtual bool eval(const args& a_args,value& a_return,std::string& aError) {
     if(a_args.size()!=m_num_args) return false;
     return val_func::eval0(a_args[0],a_return,aError,m_cfunc,m_domain);
   }
@@ -213,8 +205,7 @@ public:
   }
 public:
   val_funcs(const val_funcs& a_from) {
-    for(std::vector<ival_func*>::const_iterator it = a_from.m_funcs.begin();
-        it!=a_from.m_funcs.end();++it) {
+    for(std::vector<ival_func*>::const_iterator it = a_from.m_funcs.begin();it!=a_from.m_funcs.end();++it) {
       m_funcs.push_back((*it)->copy());
     }  
 #ifdef INLIB_MEM
@@ -224,8 +215,7 @@ public:
   val_funcs& operator=(const val_funcs& a_from) {
     if(&a_from==this) return *this;
     clear();
-    for(std::vector<ival_func*>::const_iterator it = a_from.m_funcs.begin();
-        it!=a_from.m_funcs.end();++it) {
+    for(std::vector<ival_func*>::const_iterator it = a_from.m_funcs.begin();it!=a_from.m_funcs.end();++it) {
       m_funcs.push_back((*it)->copy());
     }  
     return *this;

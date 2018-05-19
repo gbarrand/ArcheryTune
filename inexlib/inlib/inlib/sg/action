@@ -43,7 +43,7 @@ protected:
   }
   action& operator=(const action&){return *this;}
 public:
-  std::ostream& out() {return m_out;}
+  std::ostream& out() const {return m_out;}
   //void reset() {
   //}
 protected:

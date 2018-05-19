@@ -428,7 +428,7 @@ inline const char** main_js(unsigned int& a_linen){
   static const char _417[] = "    g_gl.blendFunc(g_gl.SRC_ALPHA,g_gl.ONE_MINUS_SRC_ALPHA);";
   static const char _418[] = "";
   static const char _419[] = "    //WARNING : the below enable/disable corresponds";
-  static const char _420[] = "    //          to defaults in inlib::sg::state.";
+  static const char _420[] = "    //          to defaults in sg::state.";
   static const char _421[] = "    g_gl.clearDepth(1);";
   static const char _422[] = "    g_gl.enable(g_gl.DEPTH_TEST);";
   static const char _423[] = "    g_gl.depthFunc(g_gl.LEQUAL);";
@@ -762,14 +762,14 @@ inline const char** main_js(unsigned int& a_linen){
   static const char _751[] = "    g_gl.pixelStorei(g_gl.UNPACK_FLIP_Y_WEBGL,true);";
   static const char _752[] = "    g_gl.bindTexture(g_gl.TEXTURE_2D,a_texture);";
   static const char _753[] = "    g_gl.texImage2D(g_gl.TEXTURE_2D,0,g_gl.RGBA,g_gl.RGBA,g_gl.UNSIGNED_BYTE,a_image);";
-  static const char _754[] = "    g_gl.texParameteri(g_gl.TEXTURE_2D,g_gl.TEXTURE_MAG_FILTER,g_gl.LINEAR);";
-  static const char _755[] = "    g_gl.texParameteri(g_gl.TEXTURE_2D,g_gl.TEXTURE_MIN_FILTER,g_gl.LINEAR);";
+  static const char _754[] = "    g_gl.texParameteri(g_gl.TEXTURE_2D,g_gl.TEXTURE_MAG_FILTER,g_gl.NEAREST);";
+  static const char _755[] = "    g_gl.texParameteri(g_gl.TEXTURE_2D,g_gl.TEXTURE_MIN_FILTER,g_gl.NEAREST);";
   static const char _756[] = "    g_gl.bindTexture(g_gl.TEXTURE_2D,null);";
   static const char _757[] = "  }";
   static const char _758[] = "*/";
   static const char _759[] = "";
   static const char _760[] = "  function ldtexb(a_texture,a_w,a_h,a_data,a_compression) {";
-  static const char _761[] = "    g_gl.pixelStorei(g_gl.UNPACK_FLIP_Y_WEBGL,true);";
+  static const char _761[] = "  //g_gl.pixelStorei(g_gl.UNPACK_FLIP_Y_WEBGL,true);";
   static const char _762[] = "    g_gl.bindTexture(g_gl.TEXTURE_2D,a_texture);";
   static const char _763[] = "    //console.log(@@double_quote@@debug : compression : @@double_quote@@+a_compression);";
   static const char _764[] = "    if(a_compression==0) {";
@@ -799,29 +799,65 @@ inline const char** main_js(unsigned int& a_linen){
   static const char _788[] = "    } else {";
   static const char _789[] = "      console.log(@@double_quote@@load_texture : unkown compression mode @@double_quote@@+a_compression)";
   static const char _790[] = "    }";
-  static const char _791[] = "    g_gl.texParameteri(g_gl.TEXTURE_2D,g_gl.TEXTURE_MAG_FILTER,g_gl.LINEAR);";
-  static const char _792[] = "    g_gl.texParameteri(g_gl.TEXTURE_2D,g_gl.TEXTURE_MIN_FILTER,g_gl.LINEAR);";
+  static const char _791[] = "    g_gl.texParameteri(g_gl.TEXTURE_2D,g_gl.TEXTURE_MAG_FILTER,g_gl.NEAREST);";
+  static const char _792[] = "    g_gl.texParameteri(g_gl.TEXTURE_2D,g_gl.TEXTURE_MIN_FILTER,g_gl.NEAREST);";
   static const char _793[] = "    g_gl.bindTexture(g_gl.TEXTURE_2D,null);";
   static const char _794[] = "  }";
   static const char _795[] = "";
-  static const char _796[] = "  function ldmatp(a_vals) {";
-  static const char _797[] = "    g_gl.uniformMatrix4fv(g_proj,false,mat4.create(a_vals));";
-  static const char _798[] = "  }";
-  static const char _799[] = "  function ldmatm(a_vals) {";
-  static const char _800[] = "    g_gl.uniformMatrix4fv(g_model,false,mat4.create(a_vals));";
-  static const char _801[] = "  }";
-  static const char _802[] = "  /////////////////////////////////////////////////";
-  static const char _803[] = "  /////////////////////////////////////////////////";
-  static const char _804[] = "  /////////////////////////////////////////////////";
-  static const char _805[] = "";
-  static const char _806[] = "</script>";
-  static const char _807[] = "";
-  static const char _808[] = "</head>";
-  static const char _809[] = "<body onload=@@double_quote@@body_onload();@@double_quote@@ onunload=@@double_quote@@body_onunload()@@double_quote@@ onresize=@@double_quote@@body_onresize()@@double_quote@@";
-  static const char _810[] = "      bgcolor=@@double_quote@@@@bgcolor@@@@double_quote@@ style=@@double_quote@@margin:0px@@double_quote@@>";
-  static const char _811[] = "  <canvas id=@@double_quote@@WebGL_canvas@@double_quote@@ style=@@double_quote@@border:none;@@double_quote@@/>";
-  static const char _812[] = "</body>";
-  static const char _813[] = "</html>";
+  static const char _796[] = "  function ldtexba(a_texture,a_w,a_h,a_data,a_compression) {";
+  static const char _797[] = "  //g_gl.pixelStorei(g_gl.UNPACK_FLIP_Y_WEBGL,true);";
+  static const char _798[] = "    g_gl.bindTexture(g_gl.TEXTURE_2D,a_texture);";
+  static const char _799[] = "    //console.log(@@double_quote@@debug : compression : @@double_quote@@+a_compression);";
+  static const char _800[] = "    if(a_compression==0) {";
+  static const char _801[] = "      // a_data is expected to be a Uint8Array containing the image.";
+  static const char _802[] = "      g_gl.texImage2D(g_gl.TEXTURE_2D,0,g_gl.RGBA,a_w,a_h,0,g_gl.RGBA,g_gl.UNSIGNED_BYTE,a_data);";
+  static const char _803[] = "    } else if(a_compression==1) {";
+  static const char _804[] = "      // a_data is expected to be a base64 string containing the image.";
+  static const char _805[] = "      var _data = base64DecToArr(a_data,0);";
+  static const char _806[] = "      g_gl.texImage2D(g_gl.TEXTURE_2D,0,g_gl.RGBA,a_w,a_h,0,g_gl.RGBA,g_gl.UNSIGNED_BYTE,_data);";
+  static const char _807[] = "      delete _data;";
+  static const char _808[] = "    } else if(a_compression==2) {";
+  static const char _809[] = "      // a_data is expected to be a Uint8Array containing the gzipped image.";
+  static const char _810[] = "      var inflator = new Zlib.Inflate(a_data);";
+  static const char _811[] = "      var _data = inflator.decompress();";
+  static const char _812[] = "      delete inflator;";
+  static const char _813[] = "      g_gl.texImage2D(g_gl.TEXTURE_2D,0,g_gl.RGBA,a_w,a_h,0,g_gl.RGBA,g_gl.UNSIGNED_BYTE,_data);";
+  static const char _814[] = "      delete _data;";
+  static const char _815[] = "    } else if(a_compression==3) {";
+  static const char _816[] = "      // a_data is expected to be a base64 string containing the gzipped image.";
+  static const char _817[] = "      var _cp = base64DecToArr(a_data,0);";
+  static const char _818[] = "      var inflator = new Zlib.Inflate(_cp);";
+  static const char _819[] = "      var _data = inflator.decompress();";
+  static const char _820[] = "      delete inflator;";
+  static const char _821[] = "      delete _cp;";
+  static const char _822[] = "      g_gl.texImage2D(g_gl.TEXTURE_2D,0,g_gl.RGBA,a_w,a_h,0,g_gl.RGBA,g_gl.UNSIGNED_BYTE,_data);";
+  static const char _823[] = "      delete _data;";
+  static const char _824[] = "    } else {";
+  static const char _825[] = "      console.log(@@double_quote@@load_texture : unkown compression mode @@double_quote@@+a_compression)";
+  static const char _826[] = "    }";
+  static const char _827[] = "    g_gl.texParameteri(g_gl.TEXTURE_2D,g_gl.TEXTURE_MAG_FILTER,g_gl.NEAREST);";
+  static const char _828[] = "    g_gl.texParameteri(g_gl.TEXTURE_2D,g_gl.TEXTURE_MIN_FILTER,g_gl.NEAREST);";
+  static const char _829[] = "    g_gl.bindTexture(g_gl.TEXTURE_2D,null);";
+  static const char _830[] = "  }";
+  static const char _831[] = "";
+  static const char _832[] = "  function ldmatp(a_vals) {";
+  static const char _833[] = "    g_gl.uniformMatrix4fv(g_proj,false,mat4.create(a_vals));";
+  static const char _834[] = "  }";
+  static const char _835[] = "  function ldmatm(a_vals) {";
+  static const char _836[] = "    g_gl.uniformMatrix4fv(g_model,false,mat4.create(a_vals));";
+  static const char _837[] = "  }";
+  static const char _838[] = "  /////////////////////////////////////////////////";
+  static const char _839[] = "  /////////////////////////////////////////////////";
+  static const char _840[] = "  /////////////////////////////////////////////////";
+  static const char _841[] = "";
+  static const char _842[] = "</script>";
+  static const char _843[] = "";
+  static const char _844[] = "</head>";
+  static const char _845[] = "<body onload=@@double_quote@@body_onload();@@double_quote@@ onunload=@@double_quote@@body_onunload()@@double_quote@@ onresize=@@double_quote@@body_onresize()@@double_quote@@";
+  static const char _846[] = "      bgcolor=@@double_quote@@@@bgcolor@@@@double_quote@@ style=@@double_quote@@margin:0px@@double_quote@@>";
+  static const char _847[] = "  <canvas id=@@double_quote@@WebGL_canvas@@double_quote@@ style=@@double_quote@@border:none;@@double_quote@@/>";
+  static const char _848[] = "</body>";
+  static const char _849[] = "</html>";
   static const char* _lines[] = {
 _0
 ,_1
@@ -1637,8 +1673,44 @@ _0
 ,_811
 ,_812
 ,_813
+,_814
+,_815
+,_816
+,_817
+,_818
+,_819
+,_820
+,_821
+,_822
+,_823
+,_824
+,_825
+,_826
+,_827
+,_828
+,_829
+,_830
+,_831
+,_832
+,_833
+,_834
+,_835
+,_836
+,_837
+,_838
+,_839
+,_840
+,_841
+,_842
+,_843
+,_844
+,_845
+,_846
+,_847
+,_848
+,_849
 };
- a_linen = 814;
+ a_linen = 850;
  return _lines;
 }
 

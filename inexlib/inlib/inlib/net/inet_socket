@@ -9,7 +9,7 @@
 #include "../sys/sleep"
 #include "../sout"
 
-#ifdef WIN32
+#ifdef _WIN32
 typedef unsigned long in_addr_t;
 #else
 #include <arpa/inet.h>
@@ -26,16 +26,18 @@ typedef unsigned long in_addr_t;
 //#if TARGET_IPHONE_SIMULATOR //Simulator
 //#if TARGET_OS_EMBEDDED      //Device
 
-#if TARGET_OS_EMBEDDED || ANDROID
+#if TARGET_OS_EMBEDDED || defined(ANDROID)
 #include "addresses"
 #endif
 
 namespace inlib {
 namespace net {
 
+inline unsigned int num_try() {return 3;}
+
 inline std::string herror() {
    std::ostringstream strm;
-#ifdef WIN32
+#ifdef _WIN32
    strm << (int)WSAGetLastError();
    return std::string(" error : ")+strm.str()+".";
 #else
@@ -81,7 +83,7 @@ inline bool inet_addr(std::ostream& a_out,
 inline bool inet_host(std::ostream& a_out,std::string& a_host){
 #if TARGET_OS_EMBEDDED
   if(!inlib::net::if_address(a_out,"en0",a_host)) return false;
-#elif ANDROID
+#elif defined(ANDROID)
   //inlib::net::dump_ip_addresses(a_out);    
   if(!inlib::net::if_address(a_out,"eth0",a_host)) return false;
 #else
@@ -91,18 +93,19 @@ inline bool inet_host(std::ostream& a_out,std::string& a_host){
 }
 
 class inet_socket : public base_socket {
+  typedef base_socket parent;
 public: //base_socket        
   virtual void disconnect(){close();}
 public:
   inet_socket(std::ostream& a_out,bool a_verbose = false)
-  :base_socket(a_out,a_verbose)
+  :parent(a_out,a_verbose)
   ,m_after_bind_func(0)
   ,m_after_bind_tag(0)
   ,m_accept_func(0)
   ,m_accept_tag(0)
   ,m_dump_ECONNABORTED(true)
   { 
-#ifdef WIN32
+#ifdef _WIN32
     WSADATA data;
     if (::WSAStartup(MAKEWORD(2,2),&data)!=NO_ERROR) {
       m_out << "inlib::inet_socket::inet_socket :"
@@ -119,15 +122,15 @@ public:
   }
 
   virtual ~inet_socket() {
-    close(); //WIN32 : must be done before the below.
-#ifdef WIN32
-    ::WSACleanup();
+    close();
+#ifdef _WIN32
+    ::WSACleanup(); //must be done after the upper.
 #endif
   }
 
 protected:
   inet_socket(const inet_socket& a_from) 
-  :base_socket(a_from)
+  :parent(a_from)
   ,m_after_bind_func(a_from.m_after_bind_func)
   ,m_after_bind_tag(a_from.m_after_bind_tag)
   ,m_accept_func(a_from.m_accept_func)
@@ -157,7 +160,7 @@ public:
 
   bool bind(const std::string& a_host,unsigned int a_port,
             unsigned int a_max_trial,unsigned int a_secs,bool a_reuse_addr){   
-    if(m_socket!=(-1)) return true; //Done.
+    if(m_socket!=INVALID_SOCKET) return true; //Done.
 
     if(m_verbose) {
       m_out << "inlib::inet_socket:::bind :"
@@ -179,14 +182,17 @@ public:
     //        << std::endl;
     //}
 
-    int fd_socket_waiting;
-
+    SOCKET fd_socket_waiting;
     unsigned int num_trial = 0;
     while(true) {
 
       // make socket
       fd_socket_waiting = ::socket(AF_INET,SOCK_STREAM,0);
+#ifdef _WIN32
+      if(fd_socket_waiting==INVALID_SOCKET) { 
+#else
       if(fd_socket_waiting<0) { 
+#endif
         m_out << "inlib::inet_socket:::bind :"
               << " on host : " << a_host
               << " socket() : " << serror()
@@ -218,12 +224,16 @@ public:
         break;
       }
   
-#ifdef WIN32
+#ifdef _WIN32
 #else
       std::string serror(strerror(errno));
 #endif
 
+#ifdef _WIN32
+      ::closesocket(fd_socket_waiting);
+#else
       ::close(fd_socket_waiting);
+#endif
   
       if(num_trial>=a_max_trial) { 
         m_out << "inlib::inet_socket:::bind :"
@@ -240,7 +250,7 @@ public:
         m_out << "inlib::inet_socket:::bind :"
               << " on host : " << a_host
               << " with port " << a_port
-#ifdef WIN32
+#ifdef _WIN32
               << " bind()"
 #else
               << " bind() : " << serror
@@ -254,7 +264,7 @@ public:
 
     sockaddr_in address;
     ::memset((char*)&address,0,sizeof(address)); 
-#ifdef WIN32
+#ifdef _WIN32
     int
 #else
     socklen_t 
@@ -295,7 +305,11 @@ public:
             << " on host : " << a_host
             << " listen() : " << serror()
             << std::endl;
+#ifdef _WIN32
+      ::closesocket(fd_socket_waiting);
+#else
       ::close(fd_socket_waiting);
+#endif
       return false;
     }
 
@@ -314,8 +328,8 @@ public:
 
   void set_dump_ECONNABORTED(bool a_value) {m_dump_ECONNABORTED = a_value;}
 
-  bool accept(int a_socket,bool a_blocking){
-    if(m_socket!=(-1)) return true; //Done.
+  bool accept(SOCKET a_socket,bool a_blocking){
+    if(m_socket!=INVALID_SOCKET) return true; //Done.
 
     std::string this_host;
     if(!host_name(m_out,this_host)) {
@@ -328,7 +342,7 @@ public:
     if(a_blocking) {
       sockaddr_in address;
       ::memset((char*)&address,0,sizeof(address)); 
-#ifdef WIN32
+#ifdef _WIN32
       int
 #else
       socklen_t
@@ -338,7 +352,7 @@ public:
                          (struct sockaddr*)(&address), 
                          &address_length);
       if(m_socket<0) { 
-#ifdef WIN32
+#ifdef _WIN32
         if(WSAGetLastError()==WSAECONNABORTED) {
 #else
         if(errno==ECONNABORTED) {
@@ -356,7 +370,7 @@ public:
                 << " accept() : " << serror()
                 << std::endl;
         }
-        m_socket = -1;
+        m_socket = INVALID_SOCKET;
         return false;
       }
       if(m_verbose) {
@@ -367,7 +381,7 @@ public:
               << std::endl;
       }
     } else {
-#ifdef WIN32
+#ifdef _WIN32
      {unsigned long val = 1;
       if(::ioctlsocket(a_socket,FIONBIO,&val)!=0) {
         m_out << "inlib::inet_socket:::accept :"
@@ -399,19 +413,20 @@ public:
       while(true) {
         sockaddr_in address;
         ::memset((char*)&address,0,sizeof(address)); 
-#ifdef WIN32
+#ifdef _WIN32
         int
 #else
         socklen_t
 #endif
         address_length = sizeof(address);
-        int retval = ::accept(a_socket, 
+        SOCKET retval = ::accept(a_socket, 
                               (struct sockaddr*)(&address), 
                               &address_length);
-        if(retval<0) {
-#ifdef WIN32
+#ifdef _WIN32
+        if(retval==INVALID_SOCKET) {
           if(WSAGetLastError()==WSAEWOULDBLOCK) {
 #else
+        if(retval<0) {
           if(errno==EWOULDBLOCK) {
 #endif
             if(m_accept_func)  {
@@ -436,16 +451,16 @@ public:
         break;
       }
   
-#ifdef WIN32
+#ifdef _WIN32
      {unsigned long val = 0;
       if(::ioctlsocket(a_socket, FIONBIO, &val)!=0) {
         m_out << "inlib::inet_socket:::accept :"
               << " on host : " << this_host
               << " ioctlsocket FIONBIO failed."
               << std::endl;
-        if(m_socket!=(-1)) {
-          ::close(m_socket);
-          m_socket = -1;
+        if(m_socket!=INVALID_SOCKET) {
+          ::closesocket(m_socket);
+          m_socket = INVALID_SOCKET;
         }
         return false;
       }}
@@ -455,24 +470,24 @@ public:
               << " on host : " << this_host
               << " fcntl F_SETFL (2) failed."
               << std::endl;
-        if(m_socket!=(-1)) {
+        if(m_socket!=INVALID_SOCKET) {
           ::close(m_socket);
-          m_socket = -1;
+          m_socket = INVALID_SOCKET;
         }
         return false;
       }
 #endif
 
-      if(m_socket!=(-1)) {
-#ifdef WIN32
+      if(m_socket!=INVALID_SOCKET) {
+#ifdef _WIN32
        {unsigned long val = 0;
         if(::ioctlsocket(m_socket,FIONBIO,&val)!=0) {
           m_out << "inlib::inet_socket:::accept :"
                 << " on host : " << this_host
                 << " ioctlsocket FIONBIO failed."
                 << std::endl;
-          ::close(m_socket);
-          m_socket = -1;
+          ::closesocket(m_socket);
+          m_socket = INVALID_SOCKET;
           return false;
         }}
 #else
@@ -482,7 +497,7 @@ public:
                 << " fcntl F_SETFL (2) failed."
                 << std::endl;
           ::close(m_socket);
-          m_socket = -1;
+          m_socket = INVALID_SOCKET;
           return false;
         }
 #endif
@@ -491,7 +506,7 @@ public:
       if(!status) return false;
 
       if(m_verbose) {
-        if(m_socket==(-1)) {
+        if(m_socket==INVALID_SOCKET) {
           m_out << "inlib::inet_socket:::accept :"
                 << " on host : " << this_host
                 << " accept exit without a socket."
@@ -513,16 +528,20 @@ public:
                    unsigned int a_max_trial,unsigned int a_secs,
                    bool a_reuse_addr,bool a_blocking){
     if(!bind(a_host,a_port,a_max_trial,a_secs,a_reuse_addr)) return false;
-    int sock = m_socket;
-    m_socket = -1;
+    SOCKET sock = m_socket;
+    m_socket = INVALID_SOCKET;
     bool status = accept(sock,a_blocking);
+#ifdef _WIN32
+    ::closesocket(sock);
+#else
     ::close(sock);
+#endif
     return status;
   }
   
   bool connect(const std::string& a_host,unsigned int a_port,
                unsigned int a_max_trial,unsigned int a_secs){
-    if(m_socket!=(-1)) return true; //Done.
+    if(m_socket!=INVALID_SOCKET) return true; //Done.
   
     std::string this_host;
     if(!host_name(m_out,this_host)) {
@@ -551,12 +570,16 @@ public:
 
       // make socket :
       m_socket = ::socket(AF_INET, SOCK_STREAM,0);
+#ifdef _WIN32
+      if(m_socket==INVALID_SOCKET) { 
+#else
       if(m_socket<0) { 
+#endif
         m_out << "inlib::inet_socket:::connect :"
               << " on host : " << this_host
               << " socket() : " << serror()
               << std::endl;
-        m_socket = -1;
+        m_socket = INVALID_SOCKET;
         return false;
       }
 
@@ -580,7 +603,7 @@ public:
         return true;
       }
 
-#ifdef WIN32
+#ifdef _WIN32
       if(WSAGetLastError()==WSAECONNREFUSED) {
 #else
       if(errno==ECONNREFUSED) {
@@ -595,8 +618,12 @@ public:
                 << std::endl;
         }
   
+#ifdef _WIN32
+        ::closesocket(m_socket);
+#else
         ::close(m_socket);
-        m_socket = -1;
+#endif
+        m_socket = INVALID_SOCKET;
   
         if(num_trial>=a_max_trial) { 
           m_out << "inlib::inet_socket:::connect :"
@@ -617,8 +644,12 @@ public:
               << " with port " << a_port
               << " connect() : " << serror()
               << std::endl;
+#ifdef _WIN32
+        ::closesocket(m_socket);
+#else
         ::close(m_socket);
-        m_socket = -1;
+#endif
+        m_socket = INVALID_SOCKET;
         return false;
       }
     }
@@ -636,5 +667,7 @@ protected:
 };
 
 }}
+
+//inlib_build_use socket
 
 #endif

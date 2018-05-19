@@ -9,8 +9,7 @@
 
 namespace inlib {
 
-inline void mnmx(std::ostream& a_out,inlib::sg::node& a_node,
-                 inlib::vec3f& a_mn,inlib::vec3f& a_mx){
+inline bool mnmx(std::ostream& a_out,sg::node& a_node,vec3f& a_mn,vec3f& a_mx){
   sg::bbox_action action(a_out);
   a_node.bbox(action);
   if(!action.end() || action.box().is_empty()) {
@@ -19,10 +18,11 @@ inline void mnmx(std::ostream& a_out,inlib::sg::node& a_node,
           << std::endl;
     a_mn.set_value(0,0,0);
     a_mx.set_value(0,0,0);
-  } else {
-    a_mn = action.box().mn();
-    a_mx = action.box().mx();
+    return false;
   }
+  a_mn = action.box().mn();
+  a_mx = action.box().mx();
+  return true;
 }
 
 }
@@ -67,7 +67,7 @@ inline bool center_adjust(std::ostream& a_out,
     a_dx = 0;a_dy = 0;a_dz = 0;
     return false;
   }
-  inlib::vec3f c;
+  vec3f c;
   if(!_action.box().center(c)) {
     if(a_verbose) {
       a_out << "inlib::center_adjust :"

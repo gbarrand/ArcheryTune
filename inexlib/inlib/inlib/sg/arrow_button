@@ -25,18 +25,17 @@ public:
   sf<float> wmargin_factor;
   sf<float> hmargin_factor;
 
-  sf_vec<inlib::colorf,float> color;
+  sf_vec<colorf,float> color;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(arm_color)
-      INLIB_ADD_FIELD_DESC(orientation)
-      INLIB_ADD_FIELD_DESC(wmargin_factor)
-      INLIB_ADD_FIELD_DESC(hmargin_factor)
-      INLIB_ADD_FIELD_DESC(color)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::arrow_button)
+    static const desc_fields s_v(parent::node_desc_fields(),5, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(arm_color),
+      INLIB_ARG_FIELD_DESC(orientation),
+      INLIB_ARG_FIELD_DESC(wmargin_factor),
+      INLIB_ARG_FIELD_DESC(hmargin_factor),
+      INLIB_ARG_FIELD_DESC(color)
+    );
     return s_v;
   }
 private:
@@ -81,10 +80,12 @@ public:
       update_sg();
       reset_touched();
     }
+    if(a_action.do_path()) a_action.path_push(this);
     m_back_sep.search(a_action);
     if(a_action.done()) return;
     m_arrow_sep.search(a_action);
     if(a_action.done()) return;
+    if(a_action.do_path()) a_action.path_pop();
   }
   virtual void bbox(bbox_action& a_action) {
     if(touched()) {
@@ -101,7 +102,7 @@ public:
   ,orientation(arrow_up)
   ,wmargin_factor(0.8f)
   ,hmargin_factor(0.8f)
-  ,color(inlib::colorf::black())
+  ,color(colorf_black())
   {
     add_fields();
   }
@@ -129,6 +130,8 @@ public:
 
     return *this;
   }
+public:
+  const separator& container() const {return m_back_sep;} //must be consistent with pick().
 protected:
   void update_sg() {
     parent::update_sg();
@@ -147,13 +150,13 @@ protected:
     m_arrow_sep.add(nm);
 
     vertices* vtxs = new vertices;
-    vtxs->mode = inlib::gl::line_strip();
+    vtxs->mode = gl::line_strip();
     m_arrow_sep.add(vtxs);
 
-    float zfront = 1; //field ?
+    //sf<float> zfront ?
+    float zz = 0.01f;
 
-    float zz = zfront;
-    vtxs->mode = inlib::gl::triangle_fan();
+    vtxs->mode = gl::triangle_fan();
 
     float x_margin = (width-width*wmargin_factor)/2;
     float y_margin = (height-height*hmargin_factor)/2;

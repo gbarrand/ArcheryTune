@@ -20,13 +20,12 @@ public:
   sf<bool> stop_at_first;
   sf<bool> verbose;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields(); 
-      INLIB_ADD_FIELD_DESC(stop_at_first)
-      INLIB_ADD_FIELD_DESC(verbose)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::selection)
+    static const desc_fields s_v(parent::node_desc_fields(),2, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(stop_at_first),
+      INLIB_ARG_FIELD_DESC(verbose)
+    );
     return s_v;
   }
 private:
@@ -48,7 +47,7 @@ public:
 
     const sg::event& evt = a_action.get_event();
 
-    if(const up_event* uevt = safe_cast<sg::event,up_event>(evt)){
+    if(const up_event* uevt = event_cast<sg::event,up_event>(evt)){
       if(m_up_cbks.is_empty()) return;
 
       float z,w;
@@ -61,9 +60,11 @@ public:
         }
         ecbk::exec_event_cbks(m_up_cbks.callbacks(),evt,&a_action,nd,z,w);
         //a_action done decided by cbks.
+      } else {
+        ecbk::exec_event_cbks(m_up_cbks.callbacks(),evt,&a_action,0,0,0); //it is ok.
       }
 
-    } else if(const down_event* devt = safe_cast<sg::event,down_event>(evt)){
+    } else if(const down_event* devt = event_cast<sg::event,down_event>(evt)){
       if(m_down_cbks.is_empty()) return;
 
       float z,w;
@@ -76,9 +77,11 @@ public:
         }
         ecbk::exec_event_cbks(m_down_cbks.callbacks(),evt,&a_action,nd,z,w);
         //a_action done decided by cbks.
+      } else {
+        ecbk::exec_event_cbks(m_down_cbks.callbacks(),evt,&a_action,0,0,0); //it is ok.
       }
 
-    } else if(const move_event* mevt = safe_cast<sg::event,move_event>(evt)){
+    } else if(const move_event* mevt = event_cast<sg::event,move_event>(evt)){
       if(m_move_cbks.is_empty()) return;
 
       float z,w;
@@ -91,6 +94,8 @@ public:
         }
         ecbk::exec_event_cbks(m_move_cbks.callbacks(),evt,&a_action,nd,z,w);
         //a_action done decided by cbks.
+      } else {
+        ecbk::exec_event_cbks(m_move_cbks.callbacks(),evt,&a_action,0,0,0); //it is ok.
       }
 
     }
@@ -144,7 +149,8 @@ public:
   cbks& down_cbks() {return m_down_cbks;}
   cbks& move_cbks() {return m_move_cbks;}
 protected:
-  node* do_pick(event_action& a_action,int a_x,int a_y,float& a_z,float& a_w) {
+  //virtual for wall::sg::selection.
+  virtual node* do_pick(event_action& a_action,int a_x,int a_y,float& a_z,float& a_w) {
 
     float hsize = 2;
     float l = a_x-hsize; //could be negative.
@@ -166,12 +172,13 @@ protected:
                      << " bad pick_action end."
                      << std::endl;
       a_z = 0;
+      a_w = 0;
       return 0;
     } else {
       if(stop_at_first.value()) {
         if(action.node()){
           a_action.save_state(action.saved_state());          
-          //inlib::minimum(action.zs(),a_z);
+          //minimum(action.zs(),a_z);
 
          {const std::vector<float>& zs = action.zs();
           const std::vector<float>& ws = action.ws();
@@ -199,6 +206,7 @@ protected:
                            << std::endl;
           }
           a_z = 0;
+          a_w = 0;
           return 0;
         }
       } else {
@@ -238,6 +246,7 @@ protected:
                            << std::endl;
           }
           a_z = 0;
+          a_w = 0;
           return 0;
         }
       }       

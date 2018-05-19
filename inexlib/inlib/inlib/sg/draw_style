@@ -7,7 +7,7 @@
 #include "node"
 
 #include "lpat"
-#include "sfs"
+#include "sf_enum"
 #include "render_action"
 
 namespace inlib {
@@ -31,17 +31,16 @@ public:
   sf<bool> winding_ccw;
 
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(style)
-      INLIB_ADD_FIELD_DESC(line_width)
-      INLIB_ADD_FIELD_DESC(line_pattern)
-      INLIB_ADD_FIELD_DESC(point_size)
-      INLIB_ADD_FIELD_DESC(cull_face)
-      INLIB_ADD_FIELD_DESC(winding_ccw)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::draw_style)
+    static const desc_fields s_v(parent::node_desc_fields(),6, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(style),
+      INLIB_ARG_FIELD_DESC(line_width),
+      INLIB_ARG_FIELD_DESC(line_pattern),
+      INLIB_ARG_FIELD_DESC(point_size),
+      INLIB_ARG_FIELD_DESC(cull_face),
+      INLIB_ARG_FIELD_DESC(winding_ccw)
+    );
     return s_v;
   }
 private:
@@ -60,8 +59,7 @@ public:
     state.m_line_pattern = line_pattern;
     state.m_point_size = point_size;
     state.m_GL_CULL_FACE = cull_face;
-    state.m_winding =
-      winding_ccw.value()?inlib::sg::winding_ccw:inlib::sg::winding_cw;
+    state.m_winding = winding_ccw.value()?sg::winding_ccw:sg::winding_cw;
 
     if(style.value()==lines) {
       //no LINE_STIPPLE in GLES.

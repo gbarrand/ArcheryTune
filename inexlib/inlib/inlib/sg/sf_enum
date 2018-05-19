@@ -6,18 +6,35 @@
 
 #include "sf"
 
-#include "enums" //hjust,vjust
-
 namespace inlib {
 namespace sg {
 
+class bsf_enum {
+public:
+  INLIB_SCLASS(inlib::sg::bsf_enum);
+  virtual void* cast(const std::string& a_class) const {
+    if(void* p = cmp_cast<bsf_enum>(this,a_class)) {return p;}
+    return 0;
+  }
+  virtual const std::string& s_cls() const {return s_class();}
+public:
+  virtual void set_value(int) = 0;
+public:
+  bsf_enum(){}
+  virtual ~bsf_enum(){}
+public:
+  bsf_enum(const bsf_enum&){}
+  bsf_enum& operator=(const bsf_enum&){return *this;}
+};
+
 template <class T>
-class sf_enum : public bsf<T> {
+class sf_enum : public bsf<T>, public bsf_enum {
   typedef bsf<T> parent;
 public:
   INLIB_T_SCLASS(T,inlib::sg::sf_enum);
   virtual void* cast(const std::string& a_class) const {
-    if(void* p = cmp_cast< sf_enum<T> >(this,a_class)) {return p;}
+   {if(void* p = cmp_cast< sf_enum<T> >(this,a_class)) {return p;}}
+   {if(void* p = bsf_enum::cast(a_class)) {return p;}}
     return parent::cast(a_class);
   }
   virtual const std::string& s_cls() const {return s_class();}
@@ -36,11 +53,13 @@ public:
     return true;
   }
 public:
-  sf_enum():parent(){}
-  sf_enum(const T& a_value):parent(a_value){}
+  virtual void set_value(int a_value) {parent::value(T(a_value));}
+public:
+  sf_enum():parent(),bsf_enum(){}
+  sf_enum(const T& a_value):parent(a_value),bsf_enum(){}
   virtual ~sf_enum(){}
 public:
-  sf_enum(const sf_enum& a_from):parent(a_from){}
+  sf_enum(const sf_enum& a_from):parent(a_from),bsf_enum(a_from){}
   sf_enum& operator=(const sf_enum& a_from){
     parent::operator=(a_from);
     return *this;

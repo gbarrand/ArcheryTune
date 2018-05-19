@@ -5,7 +5,9 @@
 #define inlib_fmanip
 
 #include "file"
-#include "system"
+#include "sep"
+#include "sout"
+#include <ostream>
 
 namespace inlib {
 
@@ -29,14 +31,14 @@ inline bool find_with_dirs(std::ostream& a_out,
 
     if(a_verbose) {
       a_out << "find_with_dirs :"
-            << " look for " << inlib::sout(a_path) << " ..."
+            << " look for " << sout(a_path) << " ..."
             << std::endl;
     }
 
-    if(inlib::file::exists(a_path)) {
+    if(file::exists(a_path)) {
       if(a_verbose) {
         a_out << "find_with_dirs :"
-              << " found " << inlib::sout(a_path) << "."
+              << " found " << sout(a_path) << "."
               << std::endl;
       }
       return true;
@@ -46,23 +48,29 @@ inline bool find_with_dirs(std::ostream& a_out,
 
   if(a_verbose) {
     a_out << "find_with_dirs :"
-          << " " << inlib::sout(a_file) << " not found."
+          << " " << sout(a_file) << " not found."
           << std::endl;
   }
 
   return false;   
 }
 
-inline bool find_with_path(std::ostream& a_out,
-                           const std::string& a_env,
-                           const std::string& a_file,
-                           std::string& a_path,
-                           bool a_verbose = false ) {
+}
+
+#include "system"
+
+namespace inlib {
+
+inline bool find_with_env(std::ostream& a_out,
+                          const std::string& a_env,
+                          const std::string& a_file,
+                          std::string& a_path,
+                          bool a_verbose = false ) {
   std::string PATH;
-  if(!inlib::getenv(a_env,PATH)) {
+  if(!get_env(a_env,PATH)) {
     //look for a a_file in current directory.
     a_path = a_file;
-    if(inlib::file::exists(a_path)) return true;
+    if(file::exists(a_path)) return true;
     a_out << "inlib::find_with_path :"
           << " env variable " << sout(a_env) << " not defined."
           << std::endl;
@@ -71,12 +79,12 @@ inline bool find_with_path(std::ostream& a_out,
   }
   if(a_verbose) {
     a_out << "find_with_path :"
-          << " PATH is " << inlib::sout(PATH)
+          << " PATH is " << sout(PATH)
           << std::endl;
   }
 
   std::vector<std::string> dirs;
-  inlib::words(PATH,psep(),false,dirs); //or true ?
+  words(PATH,psep(),false,dirs); //or true ?
 
   return find_with_dirs(a_out,dirs,a_file,a_path,a_verbose);
 }

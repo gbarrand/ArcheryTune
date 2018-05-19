@@ -27,7 +27,7 @@ public:
   virtual bool beg_node(const node& a_node) {
     if(!m_buffer.write_cstr(a_node.s_cls().c_str())) return false;
     if(!m_buffer.write(a_node.cls_version())) return false;
-    m_infos[a_node.s_cls()] = node_desc(a_node.s_cls(),a_node.cls_version(),a_node.node_fields());
+    m_infos[a_node.s_cls()] = node_desc(a_node.s_cls(),a_node.cls_version(),a_node.node_desc_fields());
     return true;
   }
   virtual bool end_node(const node&) {
@@ -38,7 +38,7 @@ public:
   write_bsg(std::ostream& a_out)
   :write_action(a_out)
   ,m_buffer(a_out,byte_swap())
-  ,m_protocol(2)
+  ,m_protocol(3)
   {}
   virtual ~write_bsg(){}
 protected:
@@ -101,20 +101,21 @@ public:
       inlib_vforcit(field_desc,(*it).second.fields(),it2) {
         infos.push_back((*it2).name()); 
         infos.push_back((*it2).cls());
-       {if(!num2s((*it2).offset(),stmp)) {}
+     //{if(!num2s((*it2).offset(),stmp)) {} //protocol 2
+       {if(!num2s((field_desc::offset_t)0,stmp)) {} //protocol 3 : do not save offset which depends of the compiler.
         infos.push_back(stmp);}
       }
       fd.add(infos);
     }
 
-    uint32 pos_desc = m_buffer.length();
+    size_t pos_desc = m_buffer.length();
     m_buffer.set_at_offset(m_end_header_offset);
-    if(!m_buffer.write(pos_desc)) {
+    if(!m_buffer.write((uint32)pos_desc)) {
       m_buffer.reset_pos();
       m_infos.clear();
       return false;
     }
-    m_buffer.set_at_offset((uint32)pos_desc);
+    m_buffer.set_at_offset(pos_desc);
 
     // write node descs :
     if(!fd.write(m_buffer)) {
@@ -155,10 +156,10 @@ protected:
     // save byte swapping at production :
     if(!a_buffer.write(a_buffer.byte_swap())) return false;
     // save endianity at production :
-    if(!a_buffer.write(inlib::is_little_endian())) return false;
+    if(!a_buffer.write(is_little_endian())) return false;
 
     // write inlib version :
-    if(!a_buffer.write(inlib::version())) return false;
+    if(!a_buffer.write(version())) return false;
   
     // write protocol version :
     if(!a_buffer.write(a_protocol)) return false;
@@ -173,7 +174,7 @@ protected:
   io::bwbuf m_buffer;
   std::map<std::string,node_desc> m_infos;
   unsigned int m_protocol;
-  uint32 m_end_header_offset;
+  size_t m_end_header_offset;
 };
 
 }}

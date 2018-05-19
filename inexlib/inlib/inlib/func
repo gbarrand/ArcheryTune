@@ -9,6 +9,7 @@
 #include "mathd"
 
 #include <cmath>
+#include <cstddef>
 #include <vector>
 
 namespace inlib {
@@ -190,8 +191,8 @@ public:
   double value(double a_x) const {
     double _value = 0;
     double xxx = 1;
-    unsigned int pn = m_params.size();
-    for(unsigned int i=0;i<pn;i++) {
+    size_t pn = m_params.size();
+    for(size_t i=0;i<pn;i++) {
       _value += m_params[i] * xxx;
       xxx = xxx * a_x;
     }
@@ -201,11 +202,11 @@ public:
   void set(const std::vector<double>& a_params){m_params = a_params;}
   void set(const double a_params[]){
     //WARNING : no check done on a_params size.
-    unsigned int pn = m_params.size();
-    for(unsigned int i=0;i<pn;i++) m_params[i] = a_params[i];
+    size_t pn = m_params.size();
+    for(size_t i=0;i<pn;i++) m_params[i] = a_params[i];
   }
   const std::vector<double>& parameters() const {return m_params;}
-  void set_parameter(unsigned int a_index,double a_value){
+  void set_parameter(size_t a_index,double a_value){
     if(a_index>=m_params.size()) return;
     m_params[a_index] = a_value;
   }
@@ -237,7 +238,7 @@ public:
     // From Wikipedia.
     double b = m_width/2.;
     double _value = (a_x - m_center)/b;
-    return m_height/((_value * _value + 1)*b*inlib::pi());
+    return m_height/((_value * _value + 1)*b*pi());
   }
 public:  
   void set(double a_height,double a_center,double a_width){
@@ -364,7 +365,7 @@ public:
     return true;
   }
 
-  bool set(unsigned int a_index,const point& a_point){
+  bool set(size_t a_index,const point& a_point){
     if(a_index>=m_points.size()) return false;
     m_points[a_index] = a_point;
     return true;

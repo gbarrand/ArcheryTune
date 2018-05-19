@@ -26,7 +26,7 @@ public:
   virtual const std::string& s_cls() const {return s_class();}
 public:
   virtual bool write(io::iwbuf& a_buffer) {
-    img<T>& im = parent::m_value;
+    const img<T>& im = parent::m_value;
     return a_buffer.write_img(im.width(),im.height(),im.bpp(),im.buffer());
   }
   virtual bool read(io::irbuf& a_buffer) {

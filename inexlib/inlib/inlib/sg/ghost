@@ -23,13 +23,12 @@ public:
   sf<float> width;
   sf<float> height;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(width)
-      INLIB_ADD_FIELD_DESC(height)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::ghost)
+    static const desc_fields s_v(parent::node_desc_fields(),2, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(width),
+      INLIB_ARG_FIELD_DESC(height)
+    );
     return s_v;
   }
 private:
@@ -63,7 +62,7 @@ public:
     xyzs[10] =  h2;
     xyzs[11] =  0;
 
-    a_action.add__primitive(*this,inlib::gl::triangle_fan(),12,xyzs,true);
+    a_action.add__primitive(*this,gl::triangle_fan(),12,xyzs,true);
   }
 public:
   ghost()

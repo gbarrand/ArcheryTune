@@ -25,15 +25,14 @@ public:
   sf<float> text_hmargin_factor;
   sf_enum<layout_policy> item_layout;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(items)
-      INLIB_ADD_FIELD_DESC(text_wmargin_factor)
-      INLIB_ADD_FIELD_DESC(text_hmargin_factor)
-      INLIB_ADD_FIELD_DESC(item_layout)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::list)
+    static const desc_fields s_v(parent::node_desc_fields(),4, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(items),
+      INLIB_ARG_FIELD_DESC(text_wmargin_factor),
+      INLIB_ARG_FIELD_DESC(text_hmargin_factor),
+      INLIB_ARG_FIELD_DESC(item_layout)
+    );
     return s_v;
   }
 private:
@@ -95,6 +94,23 @@ public:
            bcbk* a_cbk,
            bool a_dir = false) {
     items.add(list_item(a_label,a_img,a_cbk,a_dir));
+  }
+
+  bool add_at_top(const std::string& a_label,
+                  bcbk* a_cbk,  //we take ownerhsip
+                  bool a_dir = false) {
+    if(items.empty()) {delete a_cbk;return false;}	       
+    items.insert(items.values().begin(),list_item(a_label,a_cbk,a_dir));
+    return true;
+  }
+
+  bool add_at_top(const std::string& a_label,
+                  const img_byte& a_img,
+                  bcbk* a_cbk,  //we take ownerhsip
+                  bool a_dir = false) {
+    if(items.empty()) {delete a_cbk;return false;}	       
+    items.insert(items.values().begin(),list_item(a_label,a_img,a_cbk,a_dir));
+    return true;
   }
 
   bool add_before(const std::string& a_item,
@@ -239,7 +255,7 @@ public:
   }
 
 public: //for ArcheryTune.
-  virtual unsigned int number_of_items() const {return items.values().size();}
+  virtual unsigned int number_of_items() const {return (unsigned int)items.values().size();}
 protected:
 
   virtual node* create_item(std::ostream&,unsigned int a_index) {
@@ -251,7 +267,8 @@ protected:
       b->img = item.img();
 
       b->text().strings = item.strings();
-      b->text().font = gui_font();
+      b->text().font = font;
+      b->text().font_modeling = font_modeling;
 
       b->color = back_color;
       b->back_area::color = back_color;
@@ -278,7 +295,8 @@ protected:
       text_button* b = new text_button(m_ttf);
 
       b->strings = item.strings();
-      b->font = gui_font();
+      b->font = font;
+      b->font_modeling = font_modeling;
 
       if(item_layout.value()==layout_text_at_left_of_image){
         b->hjust = left;
@@ -315,7 +333,8 @@ protected:
     text_button* b = new text_button(m_ttf);
 
     b->set_label(cancel_label.value());
-    b->font = gui_font();
+    b->font = font;
+    b->font_modeling = font_modeling;
 
     b->color = front_color;
     b->back_area::color = back_color;
@@ -343,11 +362,13 @@ protected:
     text* b = new text(m_ttf);
     b->width = wtext;
     b->height = htext;
-    b->back_area::color = back_color;
+  //b->back_area::color = back_color;
+    b->back_area::color = label_back_color;
     b->back_area::border_color = border_color;
     b->confine = label_confine;
     b->color = front_color;
-    b->font = gui_font();
+    b->font = font;
+    b->font_modeling = font_modeling;
     b->wmargin_factor = text_wmargin_factor;
     b->hmargin_factor = text_hmargin_factor;
 

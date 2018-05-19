@@ -19,8 +19,7 @@ namespace inlib {
 
 class valop2sg : public virtual valop_visitor {
 public:
-  virtual bool binary(unsigned int a_type,
-                      valop& a_1,valop& a_2) {
+  virtual bool binary(unsigned int a_type,const valop& a_1,const valop& a_2) {
     sg::separator* sep = new sg::separator;
 
     sg::separator* sep1 = new sg::separator;
@@ -172,7 +171,7 @@ public:
     return true;
   }
 
-  virtual bool unary(unsigned int a_type,valop& a_1) {
+  virtual bool unary(unsigned int a_type,const valop& a_1) {
     if(a_type==valop::MINUS) {
       sg::separator* sep = new sg::separator;
 
@@ -280,7 +279,7 @@ public:
     return true;
   }
 
-  virtual bool func_1(const valop& a_f,valop& a_1) {
+  virtual bool func_1(const valop& a_f,const valop& a_1) {
     if(rcmp(a_f.m_function->name(),s_sqrt())) {
 
       sg::separator* sep = new sg::separator;
@@ -413,8 +412,7 @@ public:
       return true;
     }
   }
-  virtual bool func_2(const valop& a_f,
-                      valop& a_1,valop& a_2) {
+  virtual bool func_2(const valop& a_f,const valop& a_1,const valop& a_2) {
     if(rcmp(a_f.m_function->name(),s_pow())) {
 
       sg::separator* sep = new sg::separator;
@@ -576,26 +574,16 @@ public:
       return true;
     }
   }
-  virtual bool func_3(const valop&,
-                      valop&,valop&,
-                      valop&) {
+  virtual bool func_3(const valop&,const valop&,const valop&,const valop&) {
     return false;
   }
-  virtual bool func_4(const valop&,
-                      valop&,valop&,
-                      valop&,valop&) {
+  virtual bool func_4(const valop&,const valop&,const valop&,const valop&,const valop&) {
     return false;
   }
-  virtual bool func_5(const valop&,
-                      valop&,valop&,
-                      valop&,valop&,
-                      valop&) {
+  virtual bool func_5(const valop&,const valop&,const valop&,const valop&,const valop&,const valop&) {
     return false;
   }
-  virtual bool func_6(const valop&,
-                      valop&,valop&,
-                      valop&,valop&,
-                      valop&,valop&) {
+  virtual bool func_6(const valop&,const valop&,const valop&,const valop&,const valop&,const valop&,const valop&) {
     return false;
   }
 public:
@@ -699,9 +687,9 @@ protected:
   }
 
   void unichar2sg(unichar a_unichar,sg::base_freetype& a_node){
-
-    a_node.modeling.value(m_wf?sg::font_outline:sg::font_filled);
-    a_node.font.value(sg::font_stixgeneral_otf());
+    if(m_wf) a_node.modeling = sg::font_outline;  //else font_filled, font_pixmap.
+    
+    a_node.font = sg::font_stixgeneral_otf();
 
     std::vector<unichar> line;
     line.push_back(a_unichar);
@@ -710,8 +698,9 @@ protected:
   }
 
   void s2sg(const std::string& a_s,sg::base_freetype& a_node){
-    a_node.modeling.value(m_wf?sg::font_outline:sg::font_filled);
-    a_node.font.value(sg::font_stixgeneral_otf());
+    if(m_wf) a_node.modeling = sg::font_outline;  //else font_filled, font_pixmap.
+
+    a_node.font = sg::font_stixgeneral_otf();
 
     std::vector<unichar> line;
     inlib_sforcit(a_s,it) line.push_back(char2stix(*it));

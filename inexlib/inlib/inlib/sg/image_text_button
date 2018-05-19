@@ -16,12 +16,11 @@ class image_text_button : public image_button {
 public:
   sf_enum<layout_policy> layout;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(layout)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::image_text_button)
+    static const desc_fields s_v(parent::node_desc_fields(),1, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(layout)
+    );
     return s_v;
   }
 private:
@@ -83,7 +82,14 @@ protected:
     if(height.value()<=0) return;
     if(m_text.is_empty()) return;
 
+    //sf<float> zfront ?
+    float zz = parent::back_visible.value()?0.01f:0;
+
     if(img.value().is_empty()) {
+
+      //matrix* tsf = new matrix;
+      //tsf->set_translate(0,0,zz);
+      //m_sep.add(tsf);
 
       m_text.width = width * 0.9f;
       m_text.height = height * hmargin_factor;
@@ -97,7 +103,7 @@ protected:
         float himg = height * hmargin_factor; //image height
         float htext = (height-himg)*0.5f;
         matrix* tsf = new matrix;
-        tsf->set_translate(0,-height*0.5f+htext*0.5f,0.2f);
+        tsf->set_translate(0,-height*0.5f+htext*0.5f,zz);
         m_sep.add(tsf);
         m_text.height = htext;
         m_text.hmargin_factor = 0.95f;
@@ -128,7 +134,7 @@ protected:
         float x = -width*0.5f+wtext*0.5f+wmarg;
 
         matrix* tsf = new matrix;
-        tsf->set_translate(x,0,0.2f);
+        tsf->set_translate(x,0,zz);
         m_sep.add(tsf);
       }
     }

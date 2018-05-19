@@ -42,6 +42,48 @@ protected:
   class point_writer : public virtual writer {
   public:
     virtual void write(ZPos a_x,ZPos a_y,ZZ a_z) {
+      if(m_size>1) {
+        ZPos x,y;
+        for(int i=-int(m_size);i<=int(m_size);i++) {
+          x = a_x + i;
+          for(int j=-int(m_size);j<=int(m_size);j++) {
+            y = a_y + j;
+            _write(x,y,a_z);
+          }
+        }
+      } else {
+        _write(a_x,a_y,a_z);
+      }
+    }
+  public:
+    point_writer(ZPixel a_pixel,buffer& a_buffer,unsigned int a_size)
+    :writer(a_pixel)
+    ,m_buffer(a_buffer)
+    ,m_size(a_size)
+    {}
+    virtual ~point_writer(){}
+  public:
+    point_writer(const point_writer& a_from)
+    :writer(a_from)
+    ,m_buffer(a_from.m_buffer)
+    ,m_size(a_from.m_size)
+    {}
+    point_writer& operator=(const point_writer& a_from){
+      writer::operator=(a_from);
+      m_size = a_from.m_size;
+      return *this;
+    }
+  public:
+    bool get_pixel(ZPos a_x,ZPos a_y,ZZ /*a_z*/,ZPixel& a_pixel) const {
+      if((a_x<m_buffer.m_begX) || (a_x>m_buffer.m_endX)) return false;
+      if((a_y<m_buffer.m_begY) || (a_y>m_buffer.m_endY)) return false;
+      unsigned long offset = a_y * m_buffer.m_zbw + a_x;
+      ZPixel* zimage = m_buffer.m_zimage  + offset;
+      a_pixel = *zimage;
+      return true;
+    }
+  protected:
+    void _write(ZPos a_x,ZPos a_y,ZZ a_z) {
       if((a_x<m_buffer.m_begX) || (a_x>m_buffer.m_endX)) return;
       if((a_y<m_buffer.m_begY) || (a_y>m_buffer.m_endY)) return;
 
@@ -61,23 +103,9 @@ protected:
       *zbuff = zpoint;
       *zimage = m_pixel;
     }
-  public:
-    point_writer(ZPixel a_pixel,buffer& a_buffer)
-    :writer(a_pixel)
-    ,m_buffer(a_buffer)
-    {}
-    virtual ~point_writer(){}
-  public:
-    point_writer(const point_writer& a_from)
-    :writer(a_from)
-    ,m_buffer(a_from.m_buffer)
-    {}
-    point_writer& operator=(const point_writer& a_from){
-      writer::operator=(a_from);
-      return *this;
-    }
   protected:
     buffer& m_buffer;
+    unsigned int m_size;
   };
 
 /*
@@ -229,9 +257,9 @@ public:
     }
   }
 
-  ZPixel get_pixel(ZPos a_x,ZPos a_y) const {
-    return *(m_zimage + a_y * m_zbw + a_x);
-  }
+  //ZPixel get_pixel(ZPos a_x,ZPos a_y) const {
+  //  return *(m_zimage + a_y * m_zbw + a_x);
+  //}
 
   bool get_clipped_pixel(ZPos a_x,ZPos a_y,ZPixel& a_pixel) const {
     if((a_x<m_begX) || (a_x>m_endX))  return false;
@@ -241,8 +269,7 @@ public:
   }
 
 public:
-  void set_clip_region(ZPos a_x,ZPos a_y,
-                       unsigned int a_width,unsigned int a_height){
+  void set_clip_region(ZPos a_x,ZPos a_y,unsigned int a_width,unsigned int a_height){
     // if a_width or a_height is zero, clip region is empty.
 
     m_begX      = a_x;
@@ -256,32 +283,37 @@ public:
     if(m_endY>ZPos(m_zbh-1)) m_endY = m_zbh-1;
   }
 
-  void draw_point(const point& a_p,ZPixel a_pixel){
-    point_writer pw(a_pixel,*this);
+  void draw_point(const point& a_p,ZPixel a_pixel,unsigned int a_size){
+    point_writer pw(a_pixel,*this,a_size);
     pw.write(a_p.x,a_p.y,a_p.z);
   }
 
-  void draw_line(const point& a_beg,const point& a_end,ZPixel a_pixel){
-    point_writer pw(a_pixel,*this);
+  bool get_pixel(const point& a_p,ZPixel& a_pixel){
+    point_writer pw(a_pixel,*this,1);
+    return pw.get_pixel(a_p.x,a_p.y,a_p.z,a_pixel);
+  }
+
+  void draw_line(const point& a_beg,const point& a_end,ZPixel a_pixel,unsigned int a_size){
+    point_writer pw(a_pixel,*this,a_size);
     WriteLine(a_beg,a_end,pw);
   }
 
-  void draw_lines(int a_number,const point* a_list,ZPixel a_pixel){
-    point_writer pw(a_pixel,*this);
+  void draw_lines(int a_number,const point* a_list,ZPixel a_pixel,unsigned int a_size){
+    point_writer pw(a_pixel,*this,a_size);
     for(int count=1;count<a_number;count++) {
       WriteLine(a_list[count-1],a_list[count],pw);
     }
   }
 
-  void draw_segments(int a_number,const point* a_list,ZPixel a_pixel){
-    point_writer pw(a_pixel,*this);
+  void draw_segments(int a_number,const point* a_list,ZPixel a_pixel,unsigned int a_size){
+    point_writer pw(a_pixel,*this,a_size);
     int segment_number = a_number/2;
     for(int count=0;count<segment_number;count++) {
       WriteLine(a_list[2*count],a_list[2*count+1],pw);
     }
   }
-  void draw_markers(int a_number,const point* a_list,ZPixel a_pixel){
-    point_writer pw(a_pixel,*this);
+  void draw_markers(int a_number,const point* a_list,ZPixel a_pixel,unsigned int a_size){
+    point_writer pw(a_pixel,*this,a_size);
     for(int count=0;count<a_number;count++){
       const point& p = a_list[count];
       pw.write(p.x,p.y,p.z);

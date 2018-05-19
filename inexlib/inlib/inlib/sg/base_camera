@@ -13,7 +13,10 @@
 #include "render_action"
 #include "pick_action"
 #include "event_action"
+#include "visible_action"
 #include "enums"
+
+#include "../mathf" //astro
 
 namespace inlib {
 namespace sg {
@@ -35,19 +38,18 @@ public:
   sf<float> ds;
   sf<float> focal;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(znear)
-      INLIB_ADD_FIELD_DESC(zfar)
-      INLIB_ADD_FIELD_DESC(position)
-      INLIB_ADD_FIELD_DESC(orientation)
-      INLIB_ADD_FIELD_DESC(dx)
-      INLIB_ADD_FIELD_DESC(da)
-      INLIB_ADD_FIELD_DESC(ds)
-      INLIB_ADD_FIELD_DESC(focal)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::base_camera)
+    static const desc_fields s_v(parent::node_desc_fields(),8, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(znear),
+      INLIB_ARG_FIELD_DESC(zfar),
+      INLIB_ARG_FIELD_DESC(position),
+      INLIB_ARG_FIELD_DESC(orientation),
+      INLIB_ARG_FIELD_DESC(dx),
+      INLIB_ARG_FIELD_DESC(da),
+      INLIB_ARG_FIELD_DESC(ds),
+      INLIB_ARG_FIELD_DESC(focal)
+    );
     return s_v;
   }
 private:
@@ -85,6 +87,11 @@ public:
   }
   virtual void get_matrix(get_matrix_action& a_action){
     _mult_matrix(a_action);
+    set_state(a_action);
+  }
+  virtual void is_visible(visible_action& a_action){
+    _mult_matrix(a_action);
+    set_state(a_action);
   }
 protected:
   base_camera()
@@ -153,38 +160,42 @@ protected: //operators:
   //}
 public:
   void direction(vec3f& a_dir) const {
-    orientation.value().mult_vec(vec3f(0,0,-1),a_dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),a_dir);
   }
 
-  void rotate_around_direction(float a_delta){
+  void rotate_around_direction(float a_delta) { //used in exlib/examples/iOS/sg.
     vec3f dir;
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
-    //WIN32 : does not compile : orientation = rotf(dir,a_delta) * orientation;
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
+    //_MSC_VER : does not compile : orientation = rotf(dir,a_delta) * orientation;
     orientation.value(rotf(dir,a_delta) * orientation.value());
   }
+
   void rotate_around_up(float a_delta){
     vec3f up;
-    orientation.value().mult_vec(vec3f(0,1,0),up);
-    orientation.value(rotf(up,a_delta) * orientation.value());
+    orientation.value().mul_vec(vec3f(0,1,0),up);
+  //orientation.value(rotf(up,a_delta) * orientation.value());
+    // must be the below so that rot-cam works for exlib/cbk/[astro,cfitsio] astro setup.
+    // (astro setup change camera orientation).
+    orientation.value(orientation.value() * rotf(up,a_delta));
   }
 
   void rotate_around_y_at_focal(float a_delta){
     //from coin SoGuiExaminerViewerP::rotYWheelMotion.
     vec3f dir;
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
     vec3f focalpoint = position.value() + focal * dir;
     orientation.value(rotf(vec3f(0,1,0),a_delta) * orientation.value());
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
     position = focalpoint - focal * dir;
   }
 
   void rotate_around_x_at_focal(float a_delta){
     //from coin SoGuiExaminerViewerP::rotXWheelMotion.
     vec3f dir;
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
     vec3f focalpoint = position.value() + focal * dir;
     orientation.value(rotf(vec3f(1,0,0),a_delta) * orientation.value());
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
     position = focalpoint - focal * dir;
   }
 
@@ -195,23 +206,22 @@ public:
     //       in projection matrix.
 
    {vec3f dir;
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
     vec3f up;
-    orientation.value().mult_vec(vec3f(0,1,0),up);
-    vec3f side = dir.cross(up);
+    orientation.value().mul_vec(vec3f(0,1,0),up);
+    vec3f side;dir.cross(up,side);
     vec3f v = side * (side.dot(a_dir)) + dir * (dir.dot(a_dir));    
-    if(v.normalize())
-      orientation.value(orientation.value()*rotf(dir,v));}
+    if(v.normalize()) orientation.value(orientation.value()*rotf(dir,v));}
 
     //rotate around dir^up so that a_dir matches dir.
    {vec3f dir;
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
     orientation.value(orientation.value()*rotf(dir,a_dir));}
 
 /*
     //check that dir is on a_dir :
    {vec3f dir;
-    orientation.value().mult_vec(vec3f(0,0,-1),dir); 
+    orientation.value().mul_vec(vec3f(0,0,-1),dir); 
     float cos_angle; //it should be 1
     if(!dir.cos_angle(a_dir,cos_angle)) {
       ::printf("debug : can't get angle\n");
@@ -225,10 +235,10 @@ public:
     //translate in view plane so that (a_x,a_y,a_z) is on direction.
 
     vec3f dir;
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
     vec3f up;
-    orientation.value().mult_vec(vec3f(0,1,0),up);
-    vec3f side = dir.cross(up);
+    orientation.value().mul_vec(vec3f(0,1,0),up);
+    vec3f side;dir.cross(up,side);
 
     vec3f d(a_x,a_y,a_z);
     d.subtract(position.value());
@@ -239,24 +249,24 @@ public:
 
   void translate_along_side(float a_delta){
     vec3f dir;
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
     vec3f up;
-    orientation.value().mult_vec(vec3f(0,1,0),up);
-    vec3f side = dir.cross(up);
+    orientation.value().mul_vec(vec3f(0,1,0),up);
+    vec3f side;dir.cross(up,side);
     vec3f pos = position.value() + side * a_delta;
     position.value(pos);
   }
   void translate_along_up(float a_delta){
     vec3f dir;
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
     vec3f up;
-    orientation.value().mult_vec(vec3f(0,1,0),up);
+    orientation.value().mul_vec(vec3f(0,1,0),up);
     vec3f pos = position.value() + up * a_delta;
     position.value(pos);
   }
   void translate_along_dir(float a_delta){
     vec3f dir;
-    orientation.value().mult_vec(vec3f(0,0,-1),dir);
+    orientation.value().mul_vec(vec3f(0,0,-1),dir);
     vec3f pos = position.value() + dir * a_delta;
     position.value(pos);
   }
@@ -282,6 +292,35 @@ public:
     return true;
   }
 
+  void astro_orientation(float a_ra,float a_dec/*,const vec3f&  a_center*/) {
+    // a_ra, a_dec are in decimal degrees.
+
+    // Camera default point toward -z with up along +y and +x at right.
+
+    // Arrange so that camera points toward x with up along +z :
+    rotf r(vec3f::s_y(),-fhalf_pi());
+    r *= rotf(vec3f::s_x(),fhalf_pi());    
+    // Now -y is at right.
+
+    // Then rotate it so that it points toward given (ra,dec) by keeping up upward +z direction.
+    r *= rotf(vec3f::s_y(),-a_dec*fdeg2rad());
+    r *= rotf(vec3f::s_z(),a_ra*fdeg2rad());
+    orientation = r;
+
+/*
+    position = a_center*0.99f;
+    znear = 0.1f;
+    zfar = 200.0f;
+    focal = (a_center-position).length();
+*/
+/*
+    position = vec3f(0,0,0);
+    znear = 1.0f;
+    zfar = 2000.0f; //2*sky_radius.
+    focal = a_center.length();
+    da = 0.017f/100; //1/100 of a degree
+*/
+  }
 protected:
   void update_sg(std::ostream& a_out) {
 
@@ -334,17 +373,18 @@ protected:
     _state.m_camera_ortho = is_type_ortho();
     _state.m_camera_znear = znear;
     _state.m_camera_zfar = zfar;
-    _state.m_camera_position = position.value(); //WIN32 wants value().
+    _state.m_camera_position = position.value();
     _state.m_camera_orientation = orientation.value();
     //_state.m_camera_near_height = near_height();
     _state.m_camera_lrbt = m_lrbt.value();
     _state.m_proj = a_action.projection_matrix();
   }
 
-  static const vec4<float>& id_orientation() {
-    static const vec4<float> s_v(0,0,0,1,false);
-    return s_v;
-  }
+#if defined(INLIB_MEM) && !defined(INLIB_MEM_ATEXIT)
+  static const vec4<float>& id_orientation() {static const vec4<float> s_v(0,0,0,1,false);return s_v;}
+#else
+  static const vec4<float>& id_orientation() {static const vec4<float> s_v(0,0,0,1);return s_v;}
+#endif
 
 protected:
   //OPTIMIZATION :

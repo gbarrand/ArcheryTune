@@ -5,6 +5,7 @@
 #define inlib_sg_path
 
 #include "node"
+#include "noderef"
 #include "../pointer"
 
 namespace inlib {
@@ -36,26 +37,40 @@ inline bool remove_tail(path_t& a_path) {
 
 template <class CONTAINER>
 inline CONTAINER* container(const path_t& a_path) {
-  if(a_path.size()<=1) return 0;
+  if(a_path.size()<2) return 0;
   node* parent = a_path[a_path.size()-2];
+  return safe_cast<node,CONTAINER>(*parent);      
+}
+
+template <class CONTAINER>
+inline CONTAINER* container_container(const path_t& a_path) {
+  if(a_path.size()<3) return 0;
+  node* parent = a_path[a_path.size()-3];
   return safe_cast<node,CONTAINER>(*parent);      
 }
 
 inline void dump(std::ostream& a_out,const path_t& a_path) {
   a_out << "inlib::sg::dump : path size " << a_path.size() << std::endl;
+  std::string s;
   path_t::const_iterator it;
   for(it=a_path.begin();it!=a_path.end();++it){
-    a_out << " " << p2s(*it) << " " << (*it)->s_cls() << std::endl;
+    if(!p2s(*it,s)) {}
+    a_out << " " << s << " " << (*it)->s_cls();
+    if(noderef* _ref = safe_cast<node,noderef>(*(*it))) {
+      if(!p2s(&(_ref->node()),s)) {}
+      a_out << ", " << s << " " << _ref->node().s_cls();
+    }
+    a_out << std::endl;
   }
 }
 
 template <class WHAT,class CONTAINER>
-inline bool rfind(const path_t& a_path,const node* a_from,
+inline bool rfind(const path_t& a_path,const node& a_from,
                   CONTAINER*& a_container,WHAT*& a_what,
                   int& a_container_index){
-  node* from = (node*)a_from;
+  node* from = (node*)&a_from;
   path_t::size_type sz = a_path.size();    
-  for(unsigned int index=1;index<sz;index++) {
+  for(size_t index=1;index<sz;index++) {
     node* _node = a_path[sz-index-1];
     a_container = safe_cast<node,CONTAINER>(*_node);      
     if(a_container) {            
@@ -66,7 +81,7 @@ inline bool rfind(const path_t& a_path,const node* a_from,
       void* p = a_container->rsearch_from(from,WHAT::s_class(),false);
       if(p) {
         a_what = (WHAT*)p;
-        a_container_index = sz-index-1;
+        a_container_index = int(sz-index-1);
         return true;
       }
 
@@ -82,19 +97,19 @@ inline bool rfind(const path_t& a_path,const node* a_from,
 }
 
 template <class WHAT,class CONTAINER>
-inline bool find_top(const path_t& a_path,const node* a_from,
+inline bool find_top(const path_t& a_path,const node& a_from,
                      CONTAINER*& a_container,WHAT*& a_what,
                      int& a_container_index){
   a_what = 0;
   a_container = 0;
   a_container_index = -1;
   path_t _path = a_path;
-  node* from = (node*)a_from;
+  node* from = (node*)&a_from;
   while(true) {
     CONTAINER* container;
     WHAT* what;
     int idx; //index in path of container.
-    if(!sg::rfind<WHAT,CONTAINER>(_path,from,container,what,idx)) {
+    if(!sg::rfind<WHAT,CONTAINER>(_path,*from,container,what,idx)) {
       break;
     }
     a_container = container;

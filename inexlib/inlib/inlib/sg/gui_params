@@ -4,7 +4,7 @@
 #ifndef inlib_sg_gui_params
 #define inlib_sg_gui_params
 
-#include "../colorf"
+#include "../colorfs"
 #include "../rcmp"
 #include "../tos_deprec"
 #include "../entries_color"
@@ -12,6 +12,7 @@
 #include "../sqrot"
 #include "../num2s"
 #include "enum2s"
+#include "strings"
 
 namespace inlib {
 namespace sg {
@@ -24,35 +25,28 @@ public:
   INLIB_CLASS_STRING(sliders_l)
 
   // params names :
-  static const std::string& s_scene_screen_color() {
-    //static const std::string s_v("scene_screen_color");
-    static const std::string s_v("background");
-    return s_v;
-  }
+  INLIB_CLASS_STRING(vr_mode)
+  INLIB_CLASS_STRING_VALUE(auto_hide_scene,ui_hide_scene)
+
+  INLIB_CLASS_STRING_VALUE(scene_screen_color,background)
   INLIB_CLASS_STRING(gui_screen_color)
+  INLIB_CLASS_STRING(gui_font)
+  INLIB_CLASS_STRING(gui_font_modeling)
+  
   INLIB_CLASS_STRING(sliders_pos)
   INLIB_CLASS_STRING(list_visible_items)
   INLIB_CLASS_STRING(corner_radius)
 
-  static const std::string& s_auto_hide_scene() {
-    static const std::string s_v("ui_hide_scene");
-    return s_v;
-  }
-  static const std::string& s_image_buttons() {
-    //static const std::string s_v("image_buttons");
-    static const std::string s_v("icons");
-    return s_v;
-  }
+  INLIB_CLASS_STRING_VALUE(image_buttons,icons)
   INLIB_CLASS_STRING(plane_viewer)
   INLIB_CLASS_STRING(touch_move)
   INLIB_CLASS_STRING(light_on)
   INLIB_CLASS_STRING(solid)
+  INLIB_CLASS_STRING(reduced_wire_frame)
+  INLIB_CLASS_STRING(max_depth)
   INLIB_CLASS_STRING(use_gsto)
 
-  static const std::string& s_image_expand() {
-    static const std::string s_v("tex_expand");
-    return s_v;
-  }
+  INLIB_CLASS_STRING_VALUE(image_expand,tex_expand)
   INLIB_CLASS_STRING(node_height)
   INLIB_CLASS_STRING(node_color)
   INLIB_CLASS_STRING(time_interval)
@@ -66,57 +60,21 @@ public:
   INLIB_CLASS_STRING(90)
   INLIB_CLASS_STRING(anim_shift)
 
-  static const std::string& s_anim_around_focal() {
-    static const std::string s_v("anim around focal");
-    return s_v;
-  }
+  INLIB_CLASS_STRING_SVALUE(anim_around_focal,"anim around focal")
   INLIB_CLASS_STRING(viewing)
 
   // for rwc of camera :
-  static const std::string& s_cam_x() {
-    static const std::string s_v("x");
-    return s_v;
-  }
-  static const std::string& s_cam_y() {
-    static const std::string s_v("y");
-    return s_v;
-  }
-  static const std::string& s_cam_z() {
-    static const std::string s_v("z");
-    return s_v;
-  }
-  static const std::string& s_cam_near() {
-    static const std::string s_v("near");
-    return s_v;
-  }
-  static const std::string& s_cam_far() {
-    static const std::string s_v("far");
-    return s_v;
-  }
-  static const std::string& s_cam_focal() {
-    static const std::string s_v("focal");
-    return s_v;
-  }
-  static const std::string& s_cam_dx() {
-    static const std::string s_v("dx");
-    return s_v;
-  }
-  static const std::string& s_cam_da() {
-    static const std::string s_v("da");
-    return s_v;
-  }
-  static const std::string& s_cam_ds() {
-    static const std::string s_v("ds");
-    return s_v;
-  }
-  static const std::string& s_cam_zof() {
-    static const std::string s_v("zoom out factor");
-    return s_v;
-  }
-  static const std::string& s_cam_orientation() {
-    static const std::string s_v("orientation");
-    return s_v;
-  }
+  INLIB_CLASS_STRING_VALUE(cam_x,x)
+  INLIB_CLASS_STRING_VALUE(cam_y,y)
+  INLIB_CLASS_STRING_VALUE(cam_z,z)
+  INLIB_CLASS_STRING_VALUE(cam_near,near)
+  INLIB_CLASS_STRING_VALUE(cam_far,far)
+  INLIB_CLASS_STRING_VALUE(cam_focal,focal)
+  INLIB_CLASS_STRING_VALUE(cam_dx,dx)
+  INLIB_CLASS_STRING_VALUE(cam_da,da)
+  INLIB_CLASS_STRING_VALUE(cam_ds,ds)
+  INLIB_CLASS_STRING_SVALUE(cam_zof,"zoom out factor")
+  INLIB_CLASS_STRING_VALUE(cam_orientation,orientation)
 
   INLIB_CLASS_STRING(camera_tiled)
   INLIB_CLASS_STRING(plot_col)
@@ -131,13 +89,20 @@ public:
 
 public:
   gui_params()
-  :m_scene_screen_color(colorf::white())
-  ,m_gui_screen_color(colorf::white())
+  :m_vr_mode(false)
+  ,m_auto_hide_scene(true)
+
+  ,m_scene_screen_color(colorf_white())
+  ,m_gui_screen_color(colorf_white())
+//,m_gui_font(font_arialbd_ttf())         //antialiasing problem.
+//,m_gui_font(font_courbd_ttf())          //beurk
+//,m_gui_font(font_lucidagrandebd_ttf())  //Apple.
+  ,m_gui_font(font_helveticabd_ttf())     //I find this one nicer.
+  ,m_gui_font_modeling(font_pixmap)
   ,m_console_scale(1)
   ,m_console_width(0.3F)   //percent of gui width
   ,m_console_height(0.05F) //percent of gui height
 
-  ,m_auto_hide_scene(true)
   ,m_image_buttons(false)
   ,m_plane_viewer(true)
   ,m_touch_move(true)
@@ -147,6 +112,8 @@ public:
 
   ,m_light_on(false)
   ,m_solid(false)
+  ,m_reduced_wire_frame(true)
+  ,m_max_depth(9999)
   ,m_use_gsto(false)
   ,m_gsto_mode(s_gsto_memory())
   ,m_image_expand(true)
@@ -184,7 +151,10 @@ public:
   virtual ~gui_params(){}
 public:
   gui_params(const gui_params& a_from)
-  :m_scene_screen_color(a_from.m_scene_screen_color)
+  :m_vr_mode(a_from.m_vr_mode)
+  ,m_auto_hide_scene(a_from.m_auto_hide_scene)
+
+  ,m_scene_screen_color(a_from.m_scene_screen_color)
   ,m_gui_screen_color(a_from.m_gui_screen_color)
   ,m_gui_back_color(a_from.m_gui_back_color)
   ,m_gui_front_color(a_from.m_gui_front_color)
@@ -199,12 +169,13 @@ public:
   ,m_gui_warn_front_color(a_from.m_gui_warn_front_color)
   ,m_gui_warn_border_color(a_from.m_gui_warn_border_color)
   ,m_gui_label_back_color(a_from.m_gui_label_back_color)
-
+  ,m_gui_font(a_from.m_gui_font)
+  ,m_gui_font_modeling(a_from.m_gui_font_modeling)
+  
   ,m_console_scale(a_from.m_console_scale)
   ,m_console_width(a_from.m_console_width)
   ,m_console_height(a_from.m_console_height)
 
-  ,m_auto_hide_scene(a_from.m_auto_hide_scene)
   ,m_image_buttons(a_from.m_image_buttons)
   ,m_plane_viewer(a_from.m_plane_viewer)
   ,m_touch_move(a_from.m_touch_move)
@@ -215,6 +186,8 @@ public:
 
   ,m_light_on(a_from.m_light_on)
   ,m_solid(a_from.m_solid)
+  ,m_reduced_wire_frame(a_from.m_reduced_wire_frame)
+  ,m_max_depth(a_from.m_max_depth)
   ,m_use_gsto(a_from.m_use_gsto)
   ,m_gsto_mode(a_from.m_gsto_mode)
   ,m_image_expand(a_from.m_image_expand)
@@ -248,6 +221,9 @@ public:
   ,m_plot_row(a_from.m_plot_row)
   {}
   gui_params& operator=(const gui_params& a_from) {
+    m_vr_mode = a_from.m_vr_mode;
+    m_auto_hide_scene = a_from.m_auto_hide_scene;
+
     m_scene_screen_color = a_from.m_scene_screen_color;
     m_gui_screen_color = a_from.m_gui_screen_color;
     m_gui_back_color = a_from.m_gui_back_color;
@@ -263,12 +239,13 @@ public:
     m_gui_warn_front_color = a_from.m_gui_warn_front_color;
     m_gui_warn_border_color = a_from.m_gui_warn_border_color;
     m_gui_label_back_color = a_from.m_gui_label_back_color;
+    m_gui_font = a_from.m_gui_font;
+    m_gui_font_modeling = a_from.m_gui_font_modeling;
 
     m_console_scale = a_from.m_console_scale;
     m_console_width = a_from.m_console_width;
     m_console_height = a_from.m_console_height;
 
-    m_auto_hide_scene = a_from.m_auto_hide_scene;
     m_image_buttons = a_from.m_image_buttons;
     m_plane_viewer = a_from.m_plane_viewer;
     m_touch_move = a_from.m_touch_move;
@@ -278,8 +255,10 @@ public:
     m_corner_radius = a_from.m_corner_radius;
 
     m_light_on = a_from.m_light_on;
-    m_solid = a_from.m_solid;
+    m_solid = a_from.m_solid; 
     m_use_gsto = a_from.m_use_gsto;
+    m_reduced_wire_frame = a_from.m_reduced_wire_frame;
+    m_max_depth = a_from.m_max_depth;
     m_gsto_mode = a_from.m_gsto_mode;
     m_image_expand = a_from.m_image_expand;
     m_node_height = a_from.m_node_height;
@@ -318,13 +297,17 @@ public:
 
   static void names(std::vector<std::string>& a_args) {
     a_args.clear();
+    a_args.push_back(s_vr_mode());
+    a_args.push_back(s_auto_hide_scene());
+
     a_args.push_back(s_scene_screen_color());
     a_args.push_back(s_gui_screen_color());
+    a_args.push_back(s_gui_font());
+    a_args.push_back(s_gui_font_modeling());
     a_args.push_back(s_console_scale());
     a_args.push_back(s_console_width());
     a_args.push_back(s_console_height());
 
-    a_args.push_back(s_auto_hide_scene());
     a_args.push_back(s_image_buttons());
     a_args.push_back(s_plane_viewer());
     a_args.push_back(s_touch_move());
@@ -335,6 +318,8 @@ public:
 
     a_args.push_back(s_light_on());
     a_args.push_back(s_solid());
+    a_args.push_back(s_reduced_wire_frame());
+    a_args.push_back(s_max_depth());
     a_args.push_back(s_image_expand());
     a_args.push_back(s_node_height());
     a_args.push_back(s_node_color());
@@ -372,17 +357,22 @@ public:
     // used in wall/screen_dispatch.
     a_args.clear();
 
+    a_args.push_back(arg(s_vr_mode(),tos(m_vr_mode)));
+    a_args.push_back(arg(s_auto_hide_scene(),tos(m_auto_hide_scene)));
+
     std::string stmp;
     if(!nums2s<colorf>(m_scene_screen_color,stmp," ")){}
     a_args.push_back(arg(s_scene_screen_color(),stmp));
     if(!nums2s<colorf>(m_gui_screen_color,stmp," ")){}
     a_args.push_back(arg(s_gui_screen_color(),stmp));
+    
+    a_args.push_back(arg(s_gui_font(),m_gui_font));
+    a_args.push_back(arg(s_gui_font_modeling(),tos(m_gui_font_modeling)));
 
     a_args.push_back(arg(s_console_scale(),tos(m_console_scale)));
     a_args.push_back(arg(s_console_width(),tos(m_console_width)));
     a_args.push_back(arg(s_console_height(),tos(m_console_height)));
 
-    a_args.push_back(arg(s_auto_hide_scene(),tos(m_auto_hide_scene)));
     a_args.push_back(arg(s_image_buttons(),tos(m_image_buttons)));
     a_args.push_back(arg(s_plane_viewer(),tos(m_plane_viewer)));
     a_args.push_back(arg(s_touch_move(),tos(m_touch_move)));
@@ -393,6 +383,8 @@ public:
 
     a_args.push_back(arg(s_light_on(),tos(m_light_on)));
     a_args.push_back(arg(s_solid(),tos(m_solid)));
+    a_args.push_back(arg(s_reduced_wire_frame(),tos(m_reduced_wire_frame)));
+    a_args.push_back(arg(s_max_depth(),tos(m_max_depth)));
     a_args.push_back(arg(s_image_expand(),tos(m_image_expand)));
     a_args.push_back(arg(s_node_height(),tos(m_node_height)));
     a_args.push_back(arg(s_node_color(),m_node_color));
@@ -435,7 +427,16 @@ public:
     for(unsigned int index=0;index<a_args.size();index++) {
       const std::string& lab = a_args[index].first;
       const std::string& val = a_args[index].second;
-      if(rcmp(lab,s_scene_screen_color())) {
+
+      if(rcmp(lab,s_vr_mode())) {
+        bool changed;
+        if(!to<bool>(m_vr_mode,val,changed)) status = false;
+
+      } else if(rcmp(lab,s_auto_hide_scene())) {
+        bool changed;
+        if(!to<bool>(m_auto_hide_scene,val,changed)) status = false;
+
+      } else if(rcmp(lab,s_scene_screen_color())) {
         float r,g,b,a;
         if(!entries_color(val,r,g,b,a)) {
           status = false;
@@ -451,6 +452,16 @@ public:
           m_gui_screen_color = colorf(r,g,b,a);
         }
 
+      } else if(rcmp(lab,s_gui_font())) {
+        //FIXME : should check that val is a font name.
+        m_gui_font = val;
+
+      } else if(rcmp(lab,s_gui_font_modeling())) {
+             if(val==s_font_outline()) m_gui_font_modeling = font_outline;
+        else if(val==s_font_filled())  m_gui_font_modeling = font_filled;
+        else if(val==s_font_pixmap())  m_gui_font_modeling = font_pixmap;
+        else {status = false;}
+
       } else if(rcmp(lab,s_console_scale())) {
         bool changed;
         if(!to<float>(m_console_scale,val,changed)) status = false;     
@@ -462,10 +473,6 @@ public:
       } else if(rcmp(lab,s_console_height())) {
         bool changed;
         if(!to<float>(m_console_height,val,changed)) status = false;
-
-      } else if(rcmp(lab,s_auto_hide_scene())) {
-        bool changed;
-        if(!to<bool>(m_auto_hide_scene,val,changed)) status = false;
 
       } else if(rcmp(lab,s_image_buttons())) {
         bool changed;
@@ -484,8 +491,7 @@ public:
 
       } else if(rcmp(lab,s_list_visible_items())) {
         bool changed;
-        if(!to<unsigned int>
-              (m_list_visible_items,val,changed)) status = false;     
+        if(!to<unsigned int>(m_list_visible_items,val,changed)) status = false;     
 
       } else if(rcmp(lab,s_corner_radius())) {
         bool changed;
@@ -498,6 +504,14 @@ public:
       } else if(rcmp(lab,s_solid())) {
         bool changed;
         if(!to<bool>(m_solid,val,changed)) status = false;     
+
+      } else if(rcmp(lab,s_reduced_wire_frame())) {
+        bool changed;
+        if(!to<bool>(m_reduced_wire_frame,val,changed)) status = false;     
+
+      } else if(rcmp(lab,s_max_depth())) {
+        bool changed;
+        if(!to<unsigned int>(m_max_depth,val,changed)) status = false;     
 
       } else if(rcmp(lab,s_image_expand())) {
         bool changed;
@@ -584,7 +598,7 @@ public:
         if(!to<float>(m_cam_zof,val,changed)) status = false;
 
       } else if(rcmp(lab,s_cam_orientation())) {
-        if(!sqrot<float>(val,m_cam_orientation)) status = false;
+        if(!sqrot<vec3f,vec4f>(val,m_cam_orientation,::sinf,::cosf)) status = false;
 
       // wall :
       } else if(rcmp(lab,s_camera_tiled())) {
@@ -620,24 +634,26 @@ public:
   void set_gui_original() {
     //first ioda style !
 
-    m_gui_screen_color = colorf::white();
-    m_gui_back_color = colorf::orange();
-    m_gui_front_color = colorf::black();
+    m_gui_screen_color = colorf_white();
+    m_gui_font = font_hershey();
+    m_gui_font_modeling = font_outline;
+    m_gui_back_color = colorf_orange();
+    m_gui_front_color = colorf_black();
     m_gui_dir_color = colorf(0.95f,0.95f,0.95f);
-    m_gui_border_color = colorf::black();
-    m_gui_arm_color = colorf::yellow();
+    m_gui_border_color = colorf_black();
+    m_gui_arm_color = colorf_yellow();
 
-    m_gui_warn_back_color = colorf::salmon();
-    m_gui_warn_ok_color = colorf::palegreen();
-    m_gui_warn_front_color = colorf::black();
-    m_gui_warn_border_color = colorf::black();
+    m_gui_warn_back_color = colorf_salmon();
+    m_gui_warn_ok_color = colorf_palegreen();
+    m_gui_warn_front_color = colorf_black();
+    m_gui_warn_border_color = colorf_black();
 
     m_gui_text_back_color = colorf(0.95f,0.95f,0.95f);
-    m_gui_text_front_color = colorf::black();
-    m_gui_text_border_color = colorf::black();
+    m_gui_text_front_color = colorf_black();
+    m_gui_text_border_color = colorf_black();
 
     m_list_visible_items = 5;
-    m_gui_label_back_color = colorf::orange();
+    m_gui_label_back_color = colorf_orange();
     m_image_buttons = false;
     m_list_item_layout.clear();
     m_corner_radius = 0;
@@ -649,18 +665,20 @@ public:
     // similar to ioda.style/gui_Apple_black_on_white.
 
     m_gui_screen_color = colorf(0.9f,0.9f,0.9f);
-    m_gui_back_color = colorf::white();
-    m_gui_front_color = colorf::black();
+    m_gui_font = font_hershey();
+    m_gui_font_modeling = font_outline;
+    m_gui_back_color = colorf_white();
+    m_gui_front_color = colorf_black();
     m_gui_dir_color = colorf(0.95f,0.95f,0.95f);
-    m_gui_border_color = colorf::black();
+    m_gui_border_color = colorf_black();
     m_gui_arm_color = colorf(0.6f,0.8f,1);
-    m_gui_warn_back_color = colorf::salmon();
-    m_gui_warn_ok_color = colorf::palegreen();
-    m_gui_warn_front_color = colorf::black();
-    m_gui_warn_border_color = colorf::black();
-    m_gui_text_back_color = colorf::white();
-    m_gui_text_front_color = colorf::black();
-    m_gui_text_border_color = colorf::black();
+    m_gui_warn_back_color = colorf_salmon();
+    m_gui_warn_ok_color = colorf_palegreen();
+    m_gui_warn_front_color = colorf_black();
+    m_gui_warn_border_color = colorf_black();
+    m_gui_text_back_color = colorf_white();
+    m_gui_text_front_color = colorf_black();
+    m_gui_text_border_color = colorf_black();
     m_list_visible_items = 7;
     m_gui_label_back_color = colorf(0.97f,0.97f,0.97f);
     m_image_buttons = false;
@@ -672,18 +690,20 @@ public:
     // used (for exa in exlib/geant4/viewer) in case of having no style file.
 
     m_gui_screen_color = colorf(0.9f,0.9f,0.9f);
-    m_gui_back_color = colorf::white();
-    m_gui_front_color = colorf::black();
+    m_gui_font = font_helveticabd_ttf();
+    m_gui_font_modeling = font_pixmap;
+    m_gui_back_color = colorf_white();
+    m_gui_front_color = colorf_black();
     m_gui_dir_color = colorf(0.95f,0.95f,0.95f);
-    m_gui_border_color = colorf::black();
+    m_gui_border_color = colorf_black();
     m_gui_arm_color = colorf(0.6f,0.8f,1);
-    m_gui_warn_back_color = colorf::salmon();
-    m_gui_warn_ok_color = colorf::palegreen();
-    m_gui_warn_front_color = colorf::black();
-    m_gui_warn_border_color = colorf::black();
-    m_gui_text_back_color = colorf::white();
-    m_gui_text_front_color = colorf::black();
-    m_gui_text_border_color = colorf::black();
+    m_gui_warn_back_color = colorf_salmon();
+    m_gui_warn_ok_color = colorf_palegreen();
+    m_gui_warn_front_color = colorf_black();
+    m_gui_warn_border_color = colorf_black();
+    m_gui_text_back_color = colorf_white();
+    m_gui_text_front_color = colorf_black();
+    m_gui_text_border_color = colorf_black();
     m_list_visible_items = 7;
     m_gui_label_back_color = colorf(0.97f,0.97f,0.97f);
     m_image_buttons = false;
@@ -691,6 +711,9 @@ public:
     m_corner_radius = 0;
   }
 public:
+  // general :
+  bool m_vr_mode;
+  bool m_auto_hide_scene;
   // gui :
   colorf m_scene_screen_color;
   colorf m_gui_screen_color;
@@ -707,11 +730,12 @@ public:
   colorf m_gui_warn_front_color;
   colorf m_gui_warn_border_color;
   colorf m_gui_label_back_color;
+  std::string m_gui_font;
+  font_modeling m_gui_font_modeling;
   float m_console_scale;
   float m_console_width;
   float m_console_height;
 
-  bool m_auto_hide_scene;
   bool m_image_buttons;
   bool m_plane_viewer;
   bool m_touch_move;
@@ -723,6 +747,8 @@ public:
   // scene :
   bool m_light_on;
   bool m_solid;
+  bool m_reduced_wire_frame;
+  unsigned int m_max_depth;
   bool m_use_gsto;
 
   std::string m_gsto_mode;

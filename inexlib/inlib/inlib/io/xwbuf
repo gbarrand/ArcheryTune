@@ -94,7 +94,7 @@ public: //iwbuf
   virtual bool write(bool a_v) {
     if(!_write_cstr("<bool v=\"")) return false;
     if((m_pos+MAX_SPRINTF_SIZE())>m_max) {
-      if(!expand(inlib::mx<uint32>(2*m_size,m_size+MAX_SPRINTF_SIZE()))) 
+      if(!expand(mx<size_t>(2*m_size,m_size+MAX_SPRINTF_SIZE()))) 
         return false;
     }
     if(!m_buffer) return false;
@@ -210,9 +210,9 @@ public: //iwbuf
   }
 public:
   virtual const char* buf() const {return m_buffer;}
-  virtual uint32 length() const {return m_pos-m_buffer;}
+  virtual size_t length() const {return m_pos-m_buffer;}
 public:
-  xwbuf(std::ostream& a_out,uint32 a_size = 1024)
+  xwbuf(std::ostream& a_out,size_t a_size = 1024)
   :m_out(a_out)
   ,m_size(0)
   ,m_buffer(0)
@@ -256,7 +256,7 @@ protected:
   bool _write_cstr(const char* a_cstr) {
     size_t sz = ::strlen(a_cstr);
     if((m_pos+sz)>m_max)
-      if(!expand(inlib::mx<uint32>(2*m_size,m_size+sz))) return false;
+      if(!expand(mx<size_t>(2*m_size,m_size+sz))) return false;
     if(!m_buffer) return false;
     ::memcpy(m_pos,a_cstr,sz);
     m_pos += sz;
@@ -266,7 +266,7 @@ protected:
   bool _write_xml_cstr(const char* a_cstr) {
     size_t sz = ::strlen(a_cstr);
     if((m_pos+sz)>m_max)
-      if(!expand(inlib::mx<uint32>(2*m_size,m_size+sz))) return false;
+      if(!expand(mx<size_t>(2*m_size,m_size+sz))) return false;
     if(!m_buffer) return false;
 
     char* pos = (char*)a_cstr;
@@ -317,7 +317,7 @@ protected:
   template <class ta_type>
   bool _write(const ta_type& a_v,const char* a_format) {
     if((m_pos+MAX_SPRINTF_SIZE())>m_max) {
-      if(!expand(inlib::mx<uint32>(2*m_size,m_size+MAX_SPRINTF_SIZE())))
+      if(!expand(mx<size_t>(2*m_size,m_size+MAX_SPRINTF_SIZE())))
         return false;
     }
     if(!m_buffer) return false;
@@ -410,8 +410,8 @@ protected:
     return s_v;    
   }
 
-  bool expand(uint32 a_new_size) {
-    unsigned long len = m_pos-m_buffer;
+  bool expand(size_t a_new_size) {
+    size_t len = m_pos-m_buffer;
     if(!realloc<char>(m_buffer,a_new_size,m_size)) {
       m_out << "inlib::io::xwbuf::expand :"
             << " can't realloc " << a_new_size << " bytes."
@@ -428,7 +428,7 @@ protected:
   }
 protected:
   std::ostream& m_out;
-  uint32 m_size;
+  size_t m_size;
   char* m_buffer;
   char* m_max;
   char* m_pos;

@@ -8,9 +8,7 @@
 
 namespace inlib {
 
-inline bool is_beg(const std::string& a_s,
-                   const std::string& a_b,
-                   bool a_forward = true){
+inline bool is_beg(const std::string& a_s,const std::string& a_b,bool a_forward = true){
   //look if a_s begin with a_b.
   std::string::size_type ls = a_s.size();
   std::string::size_type lb = a_b.size();

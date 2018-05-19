@@ -58,6 +58,20 @@ public: //node
   virtual node* copy() const {return new camera_anim(*this);}
   virtual const std::string& s_cls() const {return s_class();}
 public:
+  virtual void begin_anim() {
+    if((m_what==move_zoom_in_out)||(m_what==move_zoom_in_out_rot)) {
+      delete m_zoom_save;
+      m_zoom_save = (CAMERA*)CAMERA::copy();
+    }
+    base_anim::begin_anim();
+  }
+  virtual void end_anim() {
+    if((m_what==move_zoom_in_out)||(m_what==move_zoom_in_out_rot)) {
+      delete m_zoom_save;
+      m_zoom_save = 0;
+    }
+    base_anim::end_anim();
+  }
   virtual bool action(std::ostream&,const atime& a_now) {
     //float t = float(atime::diff(a_now,m_start).value());
     //float tp = float(atime::diff(m_prev,m_start).value());
@@ -98,37 +112,55 @@ public:
       CAMERA::rotate_around_y_at_focal(_da);
 
     } else if(m_what==move_zoom_in_out) {
-      float t = float(atime::diff(a_now,m_start).value());
+      float t = float(atime::diff(a_now,m_start).value());      //secs
       //float tp = float(atime::diff(m_prev,m_start).value());
 
-      float cycle = m_cycle?float(m_cycle):10;
-      float omega = ftwo_pi()/cycle;
+      float cycle = m_cycle?float(m_cycle):10.0f; //secs
+      float anim_rate = 1.0f/60.f; 
 
-      _ds = 1.0f - (1.0f-_ds) * (2.0f * (steps(omega*t)-0.5f));
+      float r = t-int(t/cycle)*cycle; //[0,cycle]
 
-      CAMERA::zoom(_ds);
+      float zoom_factor;
+      if(r<(0.5f*cycle)) { //start with a zoom in :
+        unsigned int n = (unsigned int)(r/anim_rate);
+        zoom_factor = fpow(_ds,float(n)); //zoom in.
+      } else { //have to zoom out from the end of the previous zoom in :
+        //unsigned int n_end_zin = (0.5f*cycle)/anim_rate;
+        //unsigned int n = (r-0.5f*cycle)/anim_rate;
+        //zoom_factor = fpow(_ds,n_end_zin)*fpow(1.0f/_ds,n);
+        unsigned int n = (unsigned int)((cycle-r)/anim_rate);
+        zoom_factor = fpow(_ds,float(n));
+      }
+
+      CAMERA::operator=(*m_zoom_save); //restore begin_anim() camera. It will copy fields.
+      CAMERA::zoom(zoom_factor);
 
     } else if(m_what==move_zoom_in_out_rot) {
       float t = float(atime::diff(a_now,m_start).value());
       float tp = float(atime::diff(m_prev,m_start).value());
 
-      float f3_pi = 3.0f*fpi();
+      float cycle = m_cycle?float(m_cycle):10.0f; //secs
+      float anim_rate = 1.0f/60.f; 
 
-      float cycle = m_cycle?float(m_cycle):10;
-      float omega = f3_pi/cycle;
+      float r = t-int(t/cycle)*cycle; //[0,cycle]
 
-      float angle = omega*t;
-      int n = int(angle/f3_pi);
-      float r = angle-n*f3_pi;
-
-      if(r<fpi()) {
-        CAMERA::zoom(_ds);
-      } else if( (fpi()<=r) && (r<ftwo_pi()) ) {
-        CAMERA::zoom(1.0f/_ds);
+      if(r<(0.3f*cycle)) { //start with a zoom in :
+        unsigned int n = (unsigned int)(r/anim_rate);
+        float zoom_factor = fpow(_ds,float(n)); //zoom in.
+        CAMERA::operator=(*m_zoom_save); //restore begin_anim() camera. It will copy fields.
+        CAMERA::zoom(zoom_factor);
+      } else if(r<(0.6f*cycle)) { //have to zoom out from the end of the previous zoom in :
+        //unsigned int n_end_zin = (0.3f*cycle)/anim_rate;
+        //unsigned int n = (r-0.3f*cycle)/anim_rate;
+        //zoom_factor = fpow(_ds,n_end_zin)*fpow(1.0f/_ds,n);
+        unsigned int n = (unsigned int)((0.6f*cycle-r)/anim_rate);
+        float zoom_factor = fpow(_ds,float(n));
+        CAMERA::operator=(*m_zoom_save); //restore begin_anim() camera. It will copy fields.
+        CAMERA::zoom(zoom_factor);
       } else {
-        // 10/3 s -> fhalf_pi()
         _da = (t-tp)*3*fhalf_pi()/cycle;        
         CAMERA::rotate_around_y_at_focal(-_da);
+        m_zoom_save->rotate_around_y_at_focal(-_da);
       }
 
     } else if(m_what==move_curve) {
@@ -150,9 +182,8 @@ public:
         CAMERA::orientation.value().set_value(vec3f(0,0,-1),tan);
 
         vec3f up;
-        CAMERA::orientation.value().mult_vec(vec3f(0,1,0),up);
-        CAMERA::orientation.value
-          (CAMERA::orientation.value()*rotf(up,nor));
+        CAMERA::orientation.value().mul_vec(vec3f(0,1,0),up);
+        CAMERA::orientation.value(CAMERA::orientation.value()*rotf(up,nor));
       }
 
     }
@@ -171,22 +202,25 @@ public:
   ,CAMERA()
   ,m_what(a_what)
   ,m_cycle(a_cycle)
+  ,m_zoom_save(0)
   {
     m_start_pos = CAMERA::position.value();
     m_start_rot = CAMERA::orientation.value();
   }
-  camera_anim(CAMERA& a_camera,
-              const atime& a_start,float,int a_what,unsigned int a_cycle)
+  camera_anim(CAMERA& a_camera,const atime& a_start,float,int a_what,unsigned int a_cycle)
   :base_anim(a_start)
   ,base_cam_anim()
   ,CAMERA(a_camera)
   ,m_what(a_what)
   ,m_cycle(a_cycle)
+  ,m_zoom_save(0)
   {
     m_start_pos = CAMERA::position.value();
     m_start_rot = CAMERA::orientation.value();
   }
-  virtual ~camera_anim(){}
+  virtual ~camera_anim(){
+    delete m_zoom_save;
+  }
 public:
   camera_anim(const camera_anim& a_from)
   :base_anim(a_from)
@@ -196,6 +230,7 @@ public:
   ,m_cycle(a_from.m_cycle)
   ,m_start_pos(a_from.m_start_pos)
   ,m_start_rot(a_from.m_start_rot)
+  ,m_zoom_save(0)
   {}
   camera_anim& operator=(const camera_anim& a_from){
     base_anim::operator=(a_from);
@@ -205,23 +240,18 @@ public:
     m_cycle = a_from.m_cycle;
     m_start_pos = a_from.m_start_pos;
     m_start_rot = a_from.m_start_rot;
+    delete m_zoom_save;
+    m_zoom_save = 0;
     return *this;
   }
 //public:
 //  CAMERA* copy_not_anim() const {return new CAMERA(*this);}
 protected:
-  static float steps(float a_x) {
-    if(a_x<0) return 0;
-    int n = int(a_x/ftwo_pi());	
-    float r = a_x-n*ftwo_pi();
-    if(r<fpi()) return 1;
-    return 0;
-  }
-protected:
   int m_what;
   unsigned int m_cycle; //secs
   vec3f m_start_pos;
   rotf m_start_rot;
+  CAMERA* m_zoom_save; //zoom_in_out
 };
 
 }}
@@ -237,7 +267,7 @@ protected:
       float omega = ftwo_pi()/10.0f;
 
       vec3f dir;
-      CAMERA::orientation.value().mult_vec(vec3f(0,0,-1),dir);
+      CAMERA::orientation.value().mul_vec(vec3f(0,0,-1),dir);
 
       float travel = CAMERA::focal.value()*0.95f;
 

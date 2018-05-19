@@ -16,8 +16,7 @@ namespace sg {
 class list_item {
 public:
   list_item():m_img(){}
-  list_item(const std::vector<std::string>& a_strings,
-            bcbk* a_cbk,bool a_dir = false)
+  list_item(const std::vector<std::string>& a_strings,bcbk* a_cbk,bool a_dir = false)
   :m_strings(a_strings)
   ,m_dir(a_dir)
   ,m_img()

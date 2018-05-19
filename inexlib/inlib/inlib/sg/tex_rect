@@ -9,15 +9,16 @@
 //#define INLIB_SG_TEX_RECT_DEBUG
 
 #include "node"
-#include "sfs"
 #include "render_action"
 #include "pick_action"
 #include "bbox_action"
 #include "event_action"
-#include "gl_manager"
-#include "../pointer"
+#include "render_manager"
 #include "gstos"
 #include "base_tex"
+
+#include "../pointer"
+#include "../num2s"
 
 namespace inlib {
 namespace sg {
@@ -34,17 +35,16 @@ public:
   sf<bool> show_border;
   sf<float> height;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(img)
-      INLIB_ADD_FIELD_DESC(back_color)
-      INLIB_ADD_FIELD_DESC(expand)
-      INLIB_ADD_FIELD_DESC(limit)
-      INLIB_ADD_FIELD_DESC(show_border)
-      INLIB_ADD_FIELD_DESC(height)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::tex_rect)
+    static const desc_fields s_v(parent::node_desc_fields(),6, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(img),
+      INLIB_ARG_FIELD_DESC(back_color),
+      INLIB_ARG_FIELD_DESC(expand),
+      INLIB_ARG_FIELD_DESC(limit),
+      INLIB_ARG_FIELD_DESC(show_border),
+      INLIB_ARG_FIELD_DESC(height)
+    );
     return s_v;
   }
 private:
@@ -83,7 +83,7 @@ public:
     a_action.out() << "inlib::tex_rect::render : have a m_img. get_tex_id ..." << std::endl;
 #endif
 
-    unsigned int _id = get_tex_id(a_action.out(),a_action.gl_manager(),m_img);
+    unsigned int _id = get_tex_id(a_action.out(),a_action.render_manager(),m_img,nearest.value());
 
 #ifdef INLIB_SG_TEX_RECT_DEBUG
     a_action.out() << "inlib::tex_rect::render : get_tex_id : " << _id << "." << std::endl;
@@ -94,17 +94,19 @@ public:
     //image must be 2^n,2^m in size !
     // exa : 128x64
 
+    f12 xyzs;
+
     if(show_border.value()) {
 #ifdef INLIB_SG_TEX_RECT_DEBUG
       a_action.out() << "inlib::tex_rect::render : show_border." << std::endl;
 #endif
-      floatp box,nms;
-      _front(box,nms,0.01f);
+      f12 nms;
+      _front(xyzs,nms,0.01f);
 
       a_action.color4f(1,0,0,1);
       a_action.line_width(4);
 
-      a_action.draw_vertex_array(gl::line_loop(),12,box);
+      a_action.draw_vertex_array(gl::line_loop(),12,xyzs);
 
       //pushes back the filled polygons to avoid z-fighting with lines
       a_action.set_polygon_offset(true);
@@ -119,7 +121,7 @@ public:
 
     //draw a back face pointing toward negative z :
    {a_action.color4f(back_color.value());
-    floatp tris,nms;
+    f18 tris,nms;
     _tris(tris,nms);
     a_action.draw_vertex_normal_array(gl::triangles(),18,tris,nms);
     a_action.color4f(state.m_color);}
@@ -128,11 +130,11 @@ public:
 #ifdef INLIB_SG_TEX_RECT_DEBUG
       a_action.out() << "inlib::tex_rect::render : draw_vertex_normal_array_texture." << std::endl;
 #endif
-      floatp box,nms;
-      _front(box,nms);
+      f12 nms;
+      _front(xyzs,nms);
       float tcs[8];
       set_tcs(tcs);
-      a_action.draw_vertex_normal_array_texture(gl::triangle_fan(),12,box,nms,_id,tcs);
+      a_action.draw_vertex_normal_array_texture(gl::triangle_fan(),12,xyzs,nms,_id,tcs);
     }
     a_action.set_polygon_offset(state.m_GL_POLYGON_OFFSET_FILL);
   }
@@ -142,7 +144,7 @@ public:
       reset_touched();
     }
     if(m_img.is_empty()) return;
-    floatp xyzs,nms;
+    f12 xyzs,nms;
     _front(xyzs,nms);
     a_action.add__primitive(*this,gl::triangle_fan(),12,xyzs,true);
   }
@@ -153,11 +155,44 @@ public:
       reset_touched();
     }
     if(m_img.is_empty()) return;
-    floatp xyzs,nms;
+    f12 xyzs,nms;
     _front(xyzs,nms);
     a_action.add_points(12,xyzs);
   }
+public:
+  virtual bool intersect_value(std::ostream&,intersect_type,const line<vec3f>& a_line,std::string& a_s) const {
+    // a_line is in local world coordinate.
 
+    const img_byte& _img = img.value();
+    if(_img.is_empty()) {a_s.clear();return false;}
+
+    float aspect = float(_img.width())/float(_img.height());
+    float h2 = height.value()*0.5f;
+    float w2 = aspect*h2;
+
+    plane<vec3f> plane(vec3f(w2,h2,0),vec3f(-w2,h2,0),vec3f(-w2,-h2,0));
+    vec3f p;
+    if(!plane.intersect(a_line,p)) {a_s.clear();return false;}
+
+    float imw = (float)_img.width();
+    float imh = (float)_img.height();
+
+    //image coordinates :
+    int ix = int((imw*p.x()/w2+imw)*0.5f);
+    int iy = int((imh*p.y()/h2+imh)*0.5f);
+
+    //rgb of pixel :
+    std::vector<unsigned char> pixel;            
+    if((ix<0)||(iy<0)||!_img.pixel(ix,iy,pixel)) {a_s.clear();return false;}
+
+    a_s.clear();
+    for(unsigned int ipix=0;ipix<pixel.size();ipix++) {
+      if(ipix) a_s += " ";
+      if(!numas<float>(float(pixel[ipix])/255.0f,a_s)){}
+    }
+
+    return true;
+  }
 public:
   tex_rect()
   :parent()
@@ -199,16 +234,19 @@ public:
   }
 
 protected:
-  virtual void update_sg(std::ostream& a_out) {
-    //NOTE : virtual for diaporama node.
-    clean_gstos(); //must reset for all gl_manager.
+  //virtual //NOTE : virtual for diaporama node. (but warning with clang -g4flags).
+  void update_sg(std::ostream& a_out) { 
+    clean_gstos(); //must reset for all render_manager.
+    if(height.value()<=0) {
+      m_img.make_empty();
+      return;
+    }
     base_tex::_update_sg_(a_out);
   }
 protected:
-  void _front(float*& a_front,float*& a_nms,float a_epsil = 0.0f) { //[12]
-    static float front[12]; //WARNING : writable static.
-    static float nms[12];  
 
+  typedef float f12[12];
+  void _front(f12& front,f12& nms,float a_epsil = 0.0f) { //[12]
     float aspect = float(img.value().width())/float(img.value().height());
     float h2 = height*0.5f;
     float w2 = aspect*h2;
@@ -247,14 +285,9 @@ protected:
     nms[9] = 0;
     nms[10] = 0;
     nms[11] = 1;
-
-    a_front  = front;
-    a_nms = nms;
   }
 
-  void _back(float*& a_back) { //[12]
-    static float back[12];
-
+  void _back(f12& back) { //[12]
     float aspect = float(img.value().width())/float(img.value().height());
     float h2 = height*0.5f;
     float w2 = aspect*h2;
@@ -264,19 +297,12 @@ protected:
     back[3] = -w2;back[ 4] = -h2;back[ 5] = d2;
     back[6] = -w2;back[ 7] =  h2;back[ 8] = d2;
     back[9] =  w2;back[10] =  h2;back[11] = d2;
-
-    a_back  = back;
   }
 
-  typedef float* floatp;
-
-  void _tris(float*& a_tris,float*& a_nms){ //[18]
-
-    floatp back;
+  typedef float f18[18];
+  void _tris(f18& tris,f18& nms){
+    f12 back;
     _back(back);
-
-    static float tris[18];
-    static float nms[18];  
 
     tris[0] = back[0];
     tris[1] = back[1];
@@ -326,9 +352,6 @@ protected:
     nms[15] = 0;
     nms[16] = 0;
     nms[17] = -1;
-
-    a_tris = tris;
-    a_nms = nms;
   }
 };
 

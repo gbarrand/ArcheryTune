@@ -56,18 +56,13 @@ public:
   void stop() {m_stopped = true;}
   void start() {m_stopped = false;}
   bool stopped() const {return m_stopped;}
-/*
-  void set_start(const atime& a_v) {
-    m_start = a_v;
-    m_prev = m_start;
-  }
-*/
+  void set_start(const atime& a_v) {m_start = a_v;m_prev = m_start;} //used in exa/spinor_pauli.
 protected:
   void do_event(event_action& a_action) {
     if(m_stopped) return;
 
     sg::event& evt = a_action.get_event();
-    if(anim_event* _e = safe_cast<sg::event,anim_event>(evt)){
+    if(anim_event* _e = event_cast<sg::event,anim_event>(evt)){
 
       if(m_prev==m_start) begin_anim(); //for parabolic_anim
 

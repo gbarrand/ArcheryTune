@@ -7,6 +7,7 @@
 #include "group"
 #include "render_action"
 #include "bbox_action"
+#include "visible_action"
 
 namespace inlib {
 namespace sg {
@@ -36,8 +37,10 @@ public: //node
   }
   virtual void bbox(bbox_action& a_action) {
     a_action.push_matrices();
+    a_action.push_state();
     parent::bbox(a_action);
     a_action.pop_matrices();
+    a_action.pop_state();
   }
   virtual void event(event_action& a_action) {
     a_action.push_matrices();
@@ -48,8 +51,10 @@ public: //node
   }
   virtual void get_matrix(get_matrix_action& a_action) {
     a_action.push_matrices();
+    a_action.push_state();
     parent::get_matrix(a_action);
     a_action.pop_matrices();
+    a_action.pop_state();
   }
   virtual bool write(write_action& a_action) {
     if(!a_action.beg_node(*this)) return false;
@@ -58,21 +63,28 @@ public: //node
     if(!a_action.end_node(*this)) return false;
     return true;
   }
+  virtual void is_visible(visible_action& a_action) {
+    a_action.push_matrices();
+    a_action.push_state();
+    parent::is_visible(a_action);
+    a_action.pop_matrices();
+    a_action.pop_state();
+  }
 public:
   separator():parent(){
 #ifdef INLIB_MEM
-    inlib::mem::increment(s_class().c_str());
+    mem::increment(s_class().c_str());
 #endif
   }
   virtual ~separator(){
 #ifdef INLIB_MEM
-    inlib::mem::decrement(s_class().c_str());
+    mem::decrement(s_class().c_str());
 #endif
   }
 public:
   separator(const separator& a_from):parent(a_from){
 #ifdef INLIB_MEM
-    inlib::mem::increment(s_class().c_str());
+    mem::increment(s_class().c_str());
 #endif
   }
   separator& operator=(const separator& a_from){

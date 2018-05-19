@@ -4,16 +4,22 @@
 #ifndef inlib_sys_dir
 #define inlib_sys_dir
 
+//inlib_build_use kernel
+
 #include <string>
 #include <vector>
 #include <cstdlib> //getenv
 #include <cstdio> //::remove
 
-#ifdef WIN32
-#include <windows.h>
+#ifdef _MSC_VER
 #include <direct.h>
-#else //UNIX
+#else
 #include <dirent.h>
+#endif
+
+#ifdef _WIN32
+#include <windows.h>
+#else //UNIX
 #include <unistd.h>
 #endif
 
@@ -26,7 +32,7 @@ inline bool pwd(std::string& a_pwd) {
   // Return current directory.
   unsigned int mx_path_len = 2048;
   char* cwd = new char[mx_path_len];
-#ifdef WIN32
+#ifdef _MSC_VER
   //  driveletter = 0 means return the working directory for the default drive.
   if(::_getdcwd(0,cwd,mx_path_len)==NULL) {
     delete [] cwd;
@@ -53,7 +59,7 @@ inline bool cd(const std::string& a_path){
 inline bool create(const std::string& a_name){
   // a_name should be a single directory name, and not a file system path.
   // Then it must not contain : ., .., /, \ etc...
-#ifdef WIN32
+#ifdef _MSC_VER
   return (::mkdir(a_name.c_str())==0 ? true : false); 
 #else
   return (::mkdir(a_name.c_str(), 0755)==0 ? true : false); 
@@ -61,7 +67,7 @@ inline bool create(const std::string& a_name){
 }
 
 inline void home(std::string& a_s) {
-#ifdef WIN32
+#ifdef _WIN32
   const char* env = ::getenv("USERPROFILE");
   a_s = (env?env:"");
 #else
@@ -95,12 +101,12 @@ inline bool is_a(const std::string& a_path,bool& a_value) {
 }
 
 inline bool is_dot(const std::string& a_path) {
-#ifdef WIN32
+#ifdef _WIN32
   char sep = '\\';
 #else
   char sep = '/';
 #endif
-  unsigned int l = a_path.size();
+  size_t l = a_path.size();
   if((l==1) && (a_path[0]=='.') ) return true;
   if((l==2) && (a_path[0]=='.') && (a_path[l]=='.') ) return true;
   if((l>=2) && (a_path[l-1]=='.') && (a_path[l-2]==sep) ) return true;
@@ -121,22 +127,78 @@ inline bool mkcd(const std::string& a_name) {
   return cd(a_name);
 }
 
+#ifdef _WIN32
+#ifdef _UNICODE
+inline bool ansi_to_unicode(const std::string& a_ansi,BSTR& a_unicode) {
+  int la = lstrlenA(a_ansi.c_str());
+  int lu = ::MultiByteToWideChar(CP_ACP,0,a_ansi.c_str(),la,0,0);
+  if(lu<=0) {
+    a_unicode = NULL;
+    return false;
+  }
+  a_unicode = SysAllocStringLen(NULL,lu);
+  if(::MultiByteToWideChar(CP_ACP,0,a_ansi.c_str(),la,a_unicode,lu)==0) {
+    ::SysFreeString(a_unicode);
+    a_unicode = NULL;
+    return false;
+  }
+  return true;
+}
+inline bool unicode_to_ansi(BSTR a_unicode,std::string& a_ansi) {
+  a_ansi.clear();
+  //int lu = ::SysStringLen(a_unicode); //does not work.
+  int lu = wcslen(a_unicode);
+  int la = ::WideCharToMultiByte(CP_ACP,0,a_unicode,lu,0,0,NULL,NULL);
+  if(la<=0) return false;
+  char* _ansi = new char[la+1];
+  if(::WideCharToMultiByte(CP_ACP,0,a_unicode,lu,_ansi,la,NULL,NULL)==0) {delete [] _ansi;return false;}
+  _ansi[la] = 0;
+  a_ansi = _ansi;
+  delete [] _ansi;
+  return true;
+}
+#endif //_UNICODE
+
+inline bool find_first_file(const std::string& a_entry,HANDLE& a_dir,WIN32_FIND_DATA& a_findFileData) {  
+#ifdef _UNICODE
+  BSTR wentry;
+  if(!ansi_to_unicode(a_entry,wentry)) {
+    a_dir = INVALID_HANDLE_VALUE;
+    return false;
+  }
+  a_dir = ::FindFirstFile(wentry,&a_findFileData);
+  ::SysFreeString(wentry);
+#else
+  a_dir = ::FindFirstFile(a_entry.c_str(),&a_findFileData);
+#endif
+  if(a_dir == INVALID_HANDLE_VALUE) return false;
+  return true;
+}
+#endif //_WIN32
+
 inline bool is_empty(const std::string& a_path,bool& a_is_empty){
   a_is_empty = true;
   struct stat finfo;
   if (::stat(a_path.c_str(),&finfo) < 0)  return false;
-#ifdef WIN32
+#ifdef _WIN32
   if (!(finfo.st_mode & S_IFDIR)) return false;
   std::string entry = a_path;
-  if (!(entry[entry.size()] == '/' || entry[entry.size()] == '\\' ))
-    entry += "\\";
+  if (!(entry[entry.size()] == '/' || entry[entry.size()] == '\\' )) entry += "\\";
   entry += "*";
   WIN32_FIND_DATA findFileData;
-  HANDLE dir = ::FindFirstFile(entry.c_str(),&findFileData);
-  if(dir == INVALID_HANDLE_VALUE) return false;
+  HANDLE dir;
+  if(!find_first_file(entry,dir,findFileData)) return false;
   for (;;) {
     if(!::FindNextFile(dir,&findFileData)) break;
+#ifdef _UNICODE
+    std::string name;
+    if(!unicode_to_ansi(findFileData.cFileName,name)) {
+      ::FindClose(dir);
+      return false;
+    }
+#else
     std::string name = (const char*)findFileData.cFileName;
+#endif
     if(name==".") continue;
     if(name=="..") continue;
     a_is_empty = false;
@@ -176,19 +238,27 @@ inline bool entries(const std::string& a_path,
   a_v.clear();
   struct stat finfo;
   if (::stat(a_path.c_str(),&finfo) < 0)  return false;
-#ifdef WIN32
+#ifdef _WIN32
   if (!(finfo.st_mode & S_IFDIR)) return false;
   std::string entry = a_path;
-  if (!(entry[entry.size()] == '/' || entry[entry.size()] == '\\' ))
-    entry += "\\";
+  if (!(entry[entry.size()] == '/' || entry[entry.size()] == '\\' )) entry += "\\";
   entry += "*";
   WIN32_FIND_DATA findFileData;
-  HANDLE dir = ::FindFirstFile(entry.c_str(),&findFileData);
-  if(dir == INVALID_HANDLE_VALUE) return false;
+  HANDLE dir;
+  if(!find_first_file(entry,dir,findFileData)) return false;
   // Get file names :
   for (;;) {
     if(!::FindNextFile(dir,&findFileData)) break;
+#ifdef _UNICODE
+    //_tprintf (TEXT("FindNextFile : %s\n"),findFileData.cFileName);
+    std::string name;
+    if(!unicode_to_ansi(findFileData.cFileName,name)) {
+      ::FindClose(dir);
+      return false;
+    }
+#else
     std::string name = (const char*)findFileData.cFileName;
+#endif
     // Be sure we can work on the file :
     std::string fname = a_path+"\\"+name;
     if (::stat(fname.c_str(),&finfo) < 0)  continue;
@@ -233,19 +303,26 @@ inline bool is_an_entry(const std::string& a_path,
   a_found = false;
   struct stat finfo;
   if (::stat(a_path.c_str(),&finfo) < 0)  return false;
-#ifdef WIN32
+#ifdef _WIN32
   if (!(finfo.st_mode & S_IFDIR)) return false;
   std::string entry = a_path;
-  if (!(entry[entry.size()] == '/' || entry[entry.size()] == '\\' ))
-    entry += "\\";
+  if (!(entry[entry.size()] == '/' || entry[entry.size()] == '\\' )) entry += "\\";
   entry += "*";
   WIN32_FIND_DATA findFileData;
-  HANDLE dir = ::FindFirstFile(entry.c_str(),&findFileData);
-  if(dir == INVALID_HANDLE_VALUE) return false;
+  HANDLE dir;
+  if(!find_first_file(entry,dir,findFileData)) return false;
   // Get file names :
   for (;;) {
     if(!::FindNextFile(dir,&findFileData)) break;
+#ifdef _UNICODE
+    std::string name;
+    if(!unicode_to_ansi(findFileData.cFileName,name)) {
+      ::FindClose(dir);
+      return false;
+    }
+#else
     std::string name = (const char*)findFileData.cFileName;
+#endif
     if(name==a_name) {
       a_found = true;
       ::FindClose(dir);
@@ -312,7 +389,7 @@ inline void path_base_name(const std::string& a_path,std::string& a_s) {
 inline bool rmdir(const std::string& a_path){
   struct stat finfo;
   if(::stat(a_path.c_str(),&finfo) < 0) return true;
-#ifdef WIN32
+#ifdef _MSC_VER
   if(!(finfo.st_mode & S_IFDIR)) return false;
 #else
   if(!S_ISDIR(finfo.st_mode)) return false;
@@ -320,8 +397,8 @@ inline bool rmdir(const std::string& a_path){
   // Empty the directory :
   std::vector<std::string> files;
   entries(a_path,files);
-  unsigned int filen = files.size();
-  for(unsigned int count=0;count<filen;count++) {
+  size_t filen = files.size();
+  for(size_t count=0;count<filen;count++) {
     const std::string& entry = files[count];     
 
    {std::string name;
@@ -354,18 +431,18 @@ inline bool dirs(const std::string& a_path,
   a_dirs.clear();
   struct stat finfo;
   if(::stat(a_path.c_str(),&finfo) < 0) return false;
-#ifdef WIN32
+#ifdef _MSC_VER
   if(!(finfo.st_mode & S_IFDIR)) return false;
 #else
   if(!S_ISDIR(finfo.st_mode)) return false;
 #endif
   std::vector<std::string> files;
   entries(a_path,files,false);
-  unsigned int filen = files.size();
-  for(unsigned int count=0;count<filen;count++) {
+  size_t filen = files.size();
+  for(size_t count=0;count<filen;count++) {
     const std::string& name = files[count];     
     if((name==".")||(name=="..")) continue;
-#ifdef WIN32
+#ifdef _WIN32
     std::string fname = a_path+"\\"+name;
 #else
     std::string fname = a_path+"/"+name;
@@ -383,18 +460,18 @@ inline bool files(const std::string& a_path,
   a_files.clear();
   struct stat finfo;
   if(::stat(a_path.c_str(),&finfo) < 0) return false;
-#ifdef WIN32
+#ifdef _MSC_VER
   if(!(finfo.st_mode & S_IFDIR)) return false;
 #else
   if(!S_ISDIR(finfo.st_mode)) return false;
 #endif
   std::vector<std::string> files;
   entries(a_path,files,false);
-  unsigned int filen = files.size();
-  for(unsigned int count=0;count<filen;count++) {
+  size_t filen = files.size();
+  for(size_t count=0;count<filen;count++) {
     const std::string& name = files[count];     
     if((name==".")||(name=="..")) continue;
-#ifdef WIN32
+#ifdef _WIN32
     std::string fname = a_path+"\\"+name;
 #else
     std::string fname = a_path+"/"+name;
@@ -415,7 +492,7 @@ namespace dir {
 
 inline bool ls(std::ostream& a_out,const std::string& a_path,bool a_full_path = true) {
   bool is_dir;
-  if(!inlib::dir::is_a(a_path,is_dir)) {
+  if(!dir::is_a(a_path,is_dir)) {
     a_out << "inlib::dir::ls :"
           << " inlib::dir::is_a() failed for path \"" << a_path << "\"."
           << std::endl;
@@ -428,7 +505,7 @@ inline bool ls(std::ostream& a_out,const std::string& a_path,bool a_full_path = 
     return false;
   }
   std::vector<std::string> _ls;
-  if(!inlib::dir::entries(a_path,_ls,a_full_path)){
+  if(!dir::entries(a_path,_ls,a_full_path)){
     a_out << "inlib::dir::ls :"
           << " can't get entries"
           << " of directory \"" << a_path << "\"."
@@ -573,5 +650,7 @@ protected:
 };
 
 }}
+
+//inlib_build_use kernel
 
 #endif

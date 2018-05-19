@@ -17,12 +17,11 @@ class _switch : public group {
 public:
   sf<int> which;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(which)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::_switch)
+    static const desc_fields s_v(parent::node_desc_fields(),1, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(which)
+    );
     return s_v;
   }
 private:
@@ -59,7 +58,10 @@ public: //node
     if(index==(-1)) {
       group::search(a_action);
     } else if((index>=0)&&(index<(int)m_children.size())) {
+      if(a_action.do_path()) a_action.path_push(this);
       m_children[index]->search(a_action);
+      if(a_action.done()) return;
+      if(a_action.do_path()) a_action.path_pop();
     }
   }
   virtual void event(event_action& a_action) {

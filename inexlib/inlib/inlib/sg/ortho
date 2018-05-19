@@ -23,12 +23,11 @@ public:
 public:
   sf<float> height;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(height)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::ortho)
+    static const desc_fields s_v(parent::node_desc_fields(),1, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(height)
+    );
     return s_v;
   }
 private:
@@ -41,13 +40,13 @@ public:
   ,height(2)
   {
 #ifdef INLIB_MEM
-    inlib::mem::increment(s_class().c_str());
+    mem::increment(s_class().c_str());
 #endif
     add_fields();
   }
   virtual ~ortho(){
 #ifdef INLIB_MEM
-    inlib::mem::decrement(s_class().c_str());
+    mem::decrement(s_class().c_str());
 #endif
   }
 public:
@@ -56,7 +55,7 @@ public:
   ,height(a_from.height)
   {
 #ifdef INLIB_MEM
-    inlib::mem::increment(s_class().c_str());
+    mem::increment(s_class().c_str());
 #endif
     add_fields();
   }

@@ -16,7 +16,7 @@ namespace net {
 
 class http_part {
 public:
-  http_part(const std::string& a_name,const std::string& a_filename,char* a_buffer,unsigned int a_length)
+  http_part(const std::string& a_name,const std::string& a_filename,char* a_buffer,size_t a_length)
   :m_name(a_name),m_filename(a_filename),m_buffer(0),m_length(0)
   {
     if(a_length) {
@@ -35,12 +35,12 @@ public:
   const std::string& name() const {return m_name;}
   const std::string& filename() const {return m_filename;}
   const char* buffer() const {return m_buffer;}
-  unsigned int buffer_length() const {return m_length;}
+  size_t buffer_length() const {return m_length;}
 protected:
   std::string m_name;
   std::string m_filename;
   char* m_buffer;
-  unsigned int m_length;
+  size_t m_length;
 };
 
 class http_server {
@@ -69,7 +69,7 @@ public:
   bool initialize(const std::string& a_host,unsigned int a_port) {
     if(m_verbose) m_out << "http_server : host " << a_host << ", port " << a_port << "." << std::endl;
 
-    if(!m_server.bind(a_host,a_port,10,1,true)) {
+    if(!m_server.bind(a_host,a_port,num_try(),1,true)) {
       m_out << "inlib::net::http_server::initialize :"
             << " m_server.bind() failed."
             << std::endl;
@@ -134,9 +134,9 @@ public:
       // parse first line :
       std::string method; //GET or POST
       std::string request;
-     {std::vector<std::string> words;
-      inlib::words(first_line," ",false,words);
-      if(words.size()<2) {
+     {std::vector<std::string> ws;
+      words(first_line," ",false,ws);
+      if(ws.size()<2) {
         m_out << "inlib::net::http_server::steer :"
               << " Syntax error in first line " << sout(first_line)
               << std::endl;
@@ -144,8 +144,8 @@ public:
         delete [] buffer;
         continue;
       }
-      method = words[0];
-      request = words[1];}
+      method = ws[0];
+      request = ws[1];}
   
       if(m_verbose) {
         m_out << "http_server : method : " << sout(method) << std::endl;
@@ -240,10 +240,10 @@ public:
 
             if(!dispatch_multipart(url,_parts)) {
               m_client.close();
-              clear<http_part>(_parts);
+              safe_clear<http_part>(_parts);
               continue;
             }
-            clear<http_part>(_parts);
+            safe_clear<http_part>(_parts);
 
           } //content_length
 
@@ -380,9 +380,9 @@ protected:
     return true;
   }
   static bool find_parts(const std::string& a_sep,const char* a_buffer,uint64 a_length,std::vector<http_part*>& a_parts) {
-    clear<http_part>(a_parts);
+    safe_clear<http_part>(a_parts);
 
-    unsigned int lsep = a_sep.size();
+    size_t lsep = a_sep.size();
     std::vector<char*> parts;
     char* beg = const_cast<char*>(a_buffer);
     while(true) {
@@ -411,7 +411,7 @@ protected:
         std::string name,filename;
         if(!find_content_disposition(pbeg,msg,name,filename)){}
 
-        unsigned int lmsg = pend-lsep-msg-2; //rm also a CRLF
+        size_t lmsg = pend-lsep-msg-2; //rm also a CRLF
 
         //::printf("debug : part : \"%s\", \"%s\", msg length %u\n",name.c_str(),filename.c_str(),lmsg);
 
@@ -430,5 +430,7 @@ protected:
 };
 
 }}
+
+//inlib_build_use socket
 
 #endif

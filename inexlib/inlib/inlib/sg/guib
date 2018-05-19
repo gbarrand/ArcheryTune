@@ -10,9 +10,6 @@
 #include "node"
 #include "gui_params"
 
-#include "../vmanip"
-#include "../args"
-#include "../sep"
 #include "../sys/atime"
 #include "../file_finder"
 #include "../dirmanip"
@@ -29,7 +26,7 @@ public:
   guib(bool a_verbose)
   :m_params()
   ,m_data_dirs()
-  ,m_cookie()
+  //,m_cookie()
   ,m_verbose(a_verbose)
   ,m_file_finder(0)
   {
@@ -51,7 +48,7 @@ public:
   ,m_res_dir(a_from.m_res_dir)
   ,m_pwd(a_from.m_pwd)
   ,m_data_dirs(a_from.m_data_dirs)
-  ,m_cookie(a_from.m_cookie)
+  //,m_cookie(a_from.m_cookie)
   ,m_verbose(a_from.m_verbose)
   ,m_file_finder(0)
   { 
@@ -68,7 +65,7 @@ public:
     m_res_dir = a_from.m_res_dir;
     m_pwd = a_from.m_pwd;
     m_data_dirs = a_from.m_data_dirs;
-    m_cookie = a_from.m_cookie;
+    //m_cookie = a_from.m_cookie;
     m_verbose = a_from.m_verbose;
     if(&a_from==this) return *this;
     m_uitems.clear(); //FIXME uuuu
@@ -97,7 +94,7 @@ public:
   }
 
   void clear_lists(){
-    inlib::clear<node>(m_uitems);
+    safe_clear<node>(m_uitems);
   }
 
   void set_uitems(const std::vector<node*>& a_uitems){
@@ -204,22 +201,19 @@ public:
     return true;
   }
 
-  const std::string& cookie() const {return m_cookie;}
-  void set_cookie(const std::string& a_v) {m_cookie = a_v;}
+  //const std::string& cookie() const {return m_cookie;}
+  //void set_cookie(const std::string& a_v) {m_cookie = a_v;}
 
   void set_verbose(bool a_value) {m_verbose = a_value;}
   bool verbose() const {return m_verbose;}
 
 public: //wall
   ///////////////////////////////////////////////////
-  /// virtual for wall/common_main : ////////////////
+  /// virtual for wall/screen_main : ////////////////
   ///////////////////////////////////////////////////
   virtual bool is_wall_screen_app() {return false;}
-  virtual bool is_data_client() {return false;}
-  virtual bool send_sg(node&,const args&) {return false;}
 
-  virtual bool get_data_sub_dirs(const std::string& a_path_from_first_data_dir,
-                                 std::vector<std::string>& a_dirs){
+  virtual bool get_data_sub_dirs(const std::string& a_path_from_first_data_dir,std::vector<std::string>& a_dirs){
     std::string path;
     first_data_dir(path);
     if(path.empty()) {a_dirs.clear();return false;}
@@ -354,11 +348,13 @@ protected:
   std::string m_res_dir;
   std::string m_pwd;
   std::vector<std::string> m_data_dirs;
-  std::string m_cookie;
+  //std::string m_cookie;
   bool m_verbose;
   file::finder* m_file_finder;
 };
 
 }}
+
+//inlib_build_use kernel
 
 #endif

@@ -4,14 +4,7 @@
 #ifndef inlib_sg_viewer
 #define inlib_sg_viewer
 
-#include "event_action"
 #include "group"
-#include "render_zb"
-
-#include "../platform" //for APPLE TargetConditionals.h
-#include "../colorf"
-#include "../sep"
-#include "../sout"
 
 #ifdef INLIB_MEM
 #include "../mem"
@@ -54,13 +47,16 @@ public:
   ,m_ww(a_width)
   ,m_wh(a_height)
   ,m_use_gsto(false)
+  ,m_produce_out_jpg(false)
+  ,m_produce_out_png(false)
+  ,m_produce_out_file()
   {
 #ifdef INLIB_MEM
     mem::increment(s_class().c_str());
 #endif
   }
   virtual ~viewer(){
-    m_sg.clear(); //we must delete node before m_zb_mgr (and any gl_manager).
+    m_sg.clear(); //we must delete node before m_zb_mgr (and any render_manager).
 #ifdef INLIB_MEM
     mem::decrement(s_class().c_str());
 #endif
@@ -72,8 +68,10 @@ public:
   ,m_ww(a_from.m_ww)
   ,m_wh(a_from.m_wh)
   ,m_sg(a_from.m_sg)
-  ,m_zb_mgr(a_from.m_zb_mgr)
   ,m_use_gsto(a_from.m_use_gsto)
+  ,m_produce_out_jpg(a_from.m_produce_out_jpg)
+  ,m_produce_out_png(a_from.m_produce_out_png)
+  ,m_produce_out_file(a_from.m_produce_out_file)
   {
 #ifdef INLIB_MEM
     mem::increment(s_class().c_str());
@@ -84,13 +82,13 @@ public:
     m_ww = a_from.m_ww;
     m_wh = a_from.m_wh;
     m_sg = a_from.m_sg;
-    m_zb_mgr = a_from.m_zb_mgr;
     m_use_gsto = a_from.m_use_gsto;
+    m_produce_out_jpg = a_from.m_produce_out_jpg;
+    m_produce_out_png = a_from.m_produce_out_png;
+    m_produce_out_file = a_from.m_produce_out_file;
     return *this;
   }
 public:  
-  manager_zb& zb_manager() {return m_zb_mgr;}
-
   bool set_default_cursor_shape() {return set_cursor_shape(cursor_default);}
 
   group& sg() {return m_sg;}
@@ -124,6 +122,15 @@ public:
 
   const std::string& out_dir() const {return m_out_dir;}
 
+
+  void set_produce_out_jpg(bool a_value) {m_produce_out_jpg = a_value;}
+  bool produce_out_jpg() const {return m_produce_out_jpg;}
+
+  void set_produce_out_png(bool a_value) {m_produce_out_png = a_value;}
+  bool produce_out_png() const {return m_produce_out_png;}
+
+  void set_produce_out_file(const std::string& a_file) {m_produce_out_file = a_file;}
+  const std::string& produce_out_file() const {return m_produce_out_file;}
 protected:
   // iPod : 320 x 480
   // iPad : 768 x 1024
@@ -156,8 +163,10 @@ protected:
   unsigned int m_wh;
   group m_sg;
   std::string m_out_dir;
-  manager_zb m_zb_mgr;
   bool m_use_gsto;
+  bool m_produce_out_jpg;
+  bool m_produce_out_png;
+  std::string m_produce_out_file;
 };
 
 }}
@@ -167,11 +176,10 @@ protected:
 namespace inlib {
 namespace sg {
 
-// used with Python :
+// used with Python and lua :
 inline viewer* cast_viewer(const std::string& a_s) {
   void* p;
-  // Read with %lx and, if failure, with %lu.
-  if(!inlib::to_pointer(a_s,p)) return 0;
+  if(!to_pointer(a_s,p)) return 0; //read with %lx and, if failure, with %lu.
   return (viewer*)p;
 }
 

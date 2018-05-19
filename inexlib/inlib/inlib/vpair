@@ -9,8 +9,7 @@
 namespace inlib {
 
 template <class K,class V>
-inline void add(std::vector< std::pair<K,V> >& a_vec,
-                const K& a_key,const V& a_value) {
+inline void add(std::vector< std::pair<K,V> >& a_vec,const K& a_key,const V& a_value) {
   typedef typename std::vector< std::pair<K,V> >::iterator it_t;
   it_t it;
   for(it=a_vec.begin();it!=a_vec.end();++it) {
@@ -24,8 +23,7 @@ inline void add(std::vector< std::pair<K,V> >& a_vec,
 }
 
 template <class K,class V>
-inline bool find(const std::vector< std::pair<K,V> >& a_vec,
-                 const K& a_key,V& a_value) {
+inline bool find(const std::vector< std::pair<K,V> >& a_vec,const K& a_key,V& a_value) {
   typedef typename std::vector< std::pair<K,V> >::const_iterator it_t;
   it_t it;
   for(it=a_vec.begin();it!=a_vec.end();++it) {
@@ -39,8 +37,7 @@ inline bool find(const std::vector< std::pair<K,V> >& a_vec,
 }
 
 template <class K,class V>
-inline bool rfind(const std::vector< std::pair<K,V> >& a_vec,
-                  const K& a_key,V& a_value) {
+inline bool rfind(const std::vector< std::pair<K,V> >& a_vec,const K& a_key,V& a_value) {
   typedef typename std::vector< std::pair<K,V> >::const_reverse_iterator it_t;
   it_t it;
   for(it=a_vec.rbegin();it!=a_vec.rend();++it) {
@@ -54,8 +51,17 @@ inline bool rfind(const std::vector< std::pair<K,V> >& a_vec,
 }
 
 template <class K,class V>
-inline bool find_key(const std::vector< std::pair<K,V> >& a_vec,
-                     const V& a_value,K& a_key) {
+inline bool is_key(const std::vector< std::pair<K,V> >& a_vec,const K& a_key) {
+  typedef typename std::vector< std::pair<K,V> >::const_iterator it_t;
+  it_t it;
+  for(it=a_vec.begin();it!=a_vec.end();++it) {
+    if((*it).first==a_key) return true;
+  }
+  return false;
+}
+
+template <class K,class V>
+inline bool find_key(const std::vector< std::pair<K,V> >& a_vec,const V& a_value,K& a_key) {
   typedef typename std::vector< std::pair<K,V> >::const_iterator it_t;
   it_t it;
   for(it=a_vec.begin();it!=a_vec.end();++it) {
@@ -95,6 +101,21 @@ inline void sort_by_second(std::vector< std::pair<K,V> >& a_vec){
   }
 
   a_vec = v;
+}
+
+template <class K,class V>
+inline bool remove(std::vector< std::pair<K,V> >& a_vec,const K& a_key,bool a_delete) {
+  typedef typename std::vector< std::pair<K,V> >::iterator it_t;
+  it_t it;
+  for(it=a_vec.begin();it!=a_vec.end();++it) {
+    if((*it).first==a_key) {
+      V val = (*it).second;      
+      a_vec.erase(it);
+      if(a_delete) delete val;
+      return true;
+    }
+  }
+  return false;
 }
 
 }

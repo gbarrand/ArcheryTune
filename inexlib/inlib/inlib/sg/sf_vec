@@ -14,8 +14,7 @@ class sf_vec : public bsf<T> {
   typedef bsf<T> parent;
 public:
   static const std::string& s_class() {
-    static const std::string s_v
-      ("inlib::sg::sf_vec<"+stype(T())+","+stype(TT())+">");
+    static const std::string s_v("inlib::sg::sf_vec<"+stype(T())+","+stype(TT())+">");
     return s_v;
   }
   virtual void* cast(const std::string& a_class) const {
@@ -72,6 +71,17 @@ public:
   sf_vec& operator=(const T& a_value){
     parent::operator=(a_value);
     return *this;
+  }
+  virtual bool s_value(std::string& a_s) const {
+    const T& vec = parent::m_value;
+    typename T::size_type sz = vec.size();
+    std::ostringstream strm;
+    for(typename T::size_type index=0;index<sz;index++) {
+      if(index) strm << " ";
+      strm << vec[index];
+    }
+    a_s = strm.str();
+    return true;
   }
 };
 

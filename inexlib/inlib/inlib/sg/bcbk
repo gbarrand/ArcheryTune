@@ -18,6 +18,11 @@
 namespace inlib {
 namespace sg {
 
+enum return_action {
+  return_none,
+  return_to_render
+};
+
 class bcbk {
 public:
   INLIB_SCLASS(inlib::sg::bcbk)
@@ -28,10 +33,6 @@ public:
   }
   virtual const std::string& s_cls() const {return s_class();}
 public:
-  enum return_action {
-    return_none,
-    return_to_render
-  };
   virtual return_action action() = 0;
   virtual bcbk* copy() const = 0;
   //virtual bool equal(const bcbk&) const = 0; //it would need the upper cast.
@@ -107,6 +108,19 @@ private:\
   typedef a__parent parent;\
 public:\
   INLIB_T2_SCLASS(a__T1,a__T2,a__sclass)\
+public:\
+  virtual void* cast(const std::string& a_class) const {\
+    if(void* p = inlib::cmp_cast<a__class>(this,a_class)) return p;\
+    return parent::cast(a_class);\
+  }\
+  virtual const std::string& s_cls() const {return s_class();}\
+  virtual inlib::sg::bcbk* copy() const {return new a__class(*this);}
+
+#define INLIB_T3_CBK(a__T1,a__T2,a__T3,a__class,a__sclass,a__parent)\
+private:\
+  typedef a__parent parent;\
+public:\
+  INLIB_T3_SCLASS(a__T1,a__T2,a__T3,a__sclass)\
 public:\
   virtual void* cast(const std::string& a_class) const {\
     if(void* p = inlib::cmp_cast<a__class>(this,a_class)) return p;\

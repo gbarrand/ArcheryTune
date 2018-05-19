@@ -34,6 +34,7 @@ public:
     entry_real,
     entry_range,
     entry_ip,
+    entry_radec,
     entry_string,
     entry_bool,
     entry_color,
@@ -41,7 +42,10 @@ public:
     entry_file,
     entry_opts,
     entry_combo,
-    entry_not_editable
+    entry_combo_string,
+    entry_not_editable,
+    entry_uint64,
+    entry_int64
   };
 public:
   sf<float> text_wmargin_factor;
@@ -69,34 +73,33 @@ public:
   sf_vec<colorf,float> labels_back_color;
   sf_vec<colorf,float> shown_label_color;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(text_wmargin_factor)
-      INLIB_ADD_FIELD_DESC(text_hmargin_factor)
-      INLIB_ADD_FIELD_DESC(labels)
-      INLIB_ADD_FIELD_DESC(types)
-      INLIB_ADD_FIELD_DESC(opts)
-      INLIB_ADD_FIELD_DESC(values)
-      INLIB_ADD_FIELD_DESC(numeric_width)
-      INLIB_ADD_FIELD_DESC(numeric_height)
-      INLIB_ADD_FIELD_DESC(keyboard_width)
-      INLIB_ADD_FIELD_DESC(keyboard_height)
-      INLIB_ADD_FIELD_DESC(colors_width)
-      INLIB_ADD_FIELD_DESC(colors_height)
-      INLIB_ADD_FIELD_DESC(edvalop_width)
-      INLIB_ADD_FIELD_DESC(edvalop_height)
-      INLIB_ADD_FIELD_DESC(file_chooser_width)
-      INLIB_ADD_FIELD_DESC(file_chooser_height)
-      INLIB_ADD_FIELD_DESC(list_width)
-      INLIB_ADD_FIELD_DESC(list_height)
-      INLIB_ADD_FIELD_DESC(list_scroll_width)
-      INLIB_ADD_FIELD_DESC(list_visible_items)
-      INLIB_ADD_FIELD_DESC(entry_label_result_factor)
-      INLIB_ADD_FIELD_DESC(labels_back_color)
-      INLIB_ADD_FIELD_DESC(shown_label_color)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::entries)
+    static const desc_fields s_v(parent::node_desc_fields(),23, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(text_wmargin_factor),
+      INLIB_ARG_FIELD_DESC(text_hmargin_factor),
+      INLIB_ARG_FIELD_DESC(labels),
+      INLIB_ARG_FIELD_DESC(types),
+      INLIB_ARG_FIELD_DESC(opts),
+      INLIB_ARG_FIELD_DESC(values),
+      INLIB_ARG_FIELD_DESC(numeric_width),
+      INLIB_ARG_FIELD_DESC(numeric_height),
+      INLIB_ARG_FIELD_DESC(keyboard_width),
+      INLIB_ARG_FIELD_DESC(keyboard_height),
+      INLIB_ARG_FIELD_DESC(colors_width),
+      INLIB_ARG_FIELD_DESC(colors_height),
+      INLIB_ARG_FIELD_DESC(edvalop_width),
+      INLIB_ARG_FIELD_DESC(edvalop_height),
+      INLIB_ARG_FIELD_DESC(file_chooser_width),
+      INLIB_ARG_FIELD_DESC(file_chooser_height),
+      INLIB_ARG_FIELD_DESC(list_width),
+      INLIB_ARG_FIELD_DESC(list_height),
+      INLIB_ARG_FIELD_DESC(list_scroll_width),
+      INLIB_ARG_FIELD_DESC(list_visible_items),
+      INLIB_ARG_FIELD_DESC(entry_label_result_factor),
+      INLIB_ARG_FIELD_DESC(labels_back_color),
+      INLIB_ARG_FIELD_DESC(shown_label_color)      
+    );
     return s_v;
   }
 private:
@@ -148,8 +151,10 @@ public:
       update_sg(a_action.out());
       reset_touched();
     }
+    if(a_action.do_path()) a_action.path_push(this);
     m_switch.search(a_action);
     if(a_action.done()) return;
+    if(a_action.do_path()) a_action.path_pop();
   }
 public:
   entries(const base_freetype& a_ttf)
@@ -176,8 +181,8 @@ public:
   ,list_scroll_width(0.2f)
   ,list_visible_items(5)
   ,entry_label_result_factor(0.6f)
-  ,labels_back_color(colorf::white())
-  ,shown_label_color(colorf::white())
+  ,labels_back_color(colorf_white())
+  ,shown_label_color(colorf_white())
 
   ,m_ttf(a_ttf)
 
@@ -277,7 +282,8 @@ public:
     return *this;
   }
 public:
-  const sg::cbks& cbks() const {return m_cbks;} //for batch apps.
+  const _switch& container() const {return m_switch;} //must be consistent with pick().
+  const sg::cbks& cbks() const {return m_cbks;} //for offscreen apps.
   void add_callback(bcbk* a_cbk) { //we take ownership of a_cbk
     m_cbks.add(a_cbk);
     touch();
@@ -287,6 +293,15 @@ public:
     touch();
   }
 public:
+  void clear() {
+    labels.clear();
+    types.clear();
+    values.clear();
+    opts.clear();
+    m_valops.clear();
+    parent::clear();
+  }
+
   void add_generic(const std::string& a_label,
                    entry_type a_type,
                    const std::string& a_default,
@@ -316,8 +331,14 @@ public:
     opts.add(std::vector<std::string>());
     m_valops.push_back(valop::def());
   }
-  void add_range(const std::string& a_label,double a_default,
-                 double a_min,double a_max){
+  void add_radec(const std::string& a_label,const std::string& a_default){
+    labels.add(a_label);
+    types.add(entry_radec);
+    values.add(a_default);
+    opts.add(std::vector<std::string>());
+    m_valops.push_back(valop::def());
+  }
+  void add_range(const std::string& a_label,double a_default,double a_min,double a_max){
     labels.add(a_label);
     types.add(entry_range);
     std::string stmp;
@@ -343,6 +364,24 @@ public:
   void add_int(const std::string& a_label,int a_default){
     labels.add(a_label);
     types.add(entry_int);
+   {std::string stmp;
+    if(!num2s(a_default,stmp)){}
+    values.add(stmp);}
+    opts.add(std::vector<std::string>());
+    m_valops.push_back(valop::def());
+  }
+  void add_uint64(const std::string& a_label,uint64 a_default){
+    labels.add(a_label);
+    types.add(entry_uint64);
+   {std::string stmp;
+    if(!num2s(a_default,stmp)){}
+    values.add(stmp);}
+    opts.add(std::vector<std::string>());
+    m_valops.push_back(valop::def());
+  }
+  void add_int64(const std::string& a_label,int64 a_default){
+    labels.add(a_label);
+    types.add(entry_int64);
    {std::string stmp;
     if(!num2s(a_default,stmp)){}
     values.add(stmp);}
@@ -383,6 +422,15 @@ public:
     opts.add(a_opts);
     m_valops.push_back(valop::def());
   }
+  void add_combo_string(const std::string& a_label,
+                        const std::string& a_default,
+                        const std::vector<std::string>& a_opts){
+    labels.add(a_label);
+    types.add(entry_combo_string);
+    values.add(a_default);
+    opts.add(a_opts);
+    m_valops.push_back(valop::def());
+  }
   void add_color(const std::string& a_label,const colorf& a_default){
     labels.add(a_label);
     types.add(entry_color);
@@ -415,8 +463,7 @@ public:
     opts.add(std::vector<std::string>());
     m_valops.push_back(valop::def());
   }
-  void add_not_editable(const std::string& a_label,
-                        const std::string& a_default){
+  void add_not_editable(const std::string& a_label,const std::string& a_default){
     labels.add(a_label);
     types.add(entry_not_editable);
     values.add(a_default);
@@ -450,7 +497,7 @@ protected:
   typedef std::vector<std::string> opts_t;
 
   template <class WIDGET>
-  static bcbk::return_action action_hide_widget(entries& a_this,std::ostream& a_out,unsigned int a_index,
+  static return_action action_hide_widget(entries& a_this,std::ostream& a_out,unsigned int a_index,
                                                 const bcbk&,WIDGET& a_widget,const opts_t&) {
     entry* entry = a_this.find_entry(a_index);
     if(!entry) {
@@ -464,12 +511,12 @@ protected:
     }
     a_this.m_switch.which = WHICH_PANEL();
     a_this.m_active_index = (-1);
-    return bcbk::return_to_render;
+    return return_to_render;
   }
 
-  static bcbk::return_action action_hide_edvalop(entries& a_this,std::ostream& a_out,unsigned int a_index,
+  static return_action action_hide_edvalop(entries& a_this,std::ostream& a_out,unsigned int a_index,
                                                  const bcbk&,sg::edvalop& a_widget,const opts_t&) {
-    valop& res = a_widget.result();
+    const valop& res = a_widget.result();
     a_this.m_valops[a_index] = res;
     entry* entry = a_this.find_entry(a_index);
     if(!entry) {
@@ -484,10 +531,10 @@ protected:
     }
     a_this.m_switch.which = WHICH_PANEL();
     a_this.m_active_index = (-1);
-    return bcbk::return_to_render;
+    return return_to_render;
   }
 
-  static bcbk::return_action action_hide_opts(entries& a_this,std::ostream& a_out,unsigned int a_index,
+  static return_action action_hide_opts(entries& a_this,std::ostream& a_out,unsigned int a_index,
                                               const bcbk&,list&,const opts_t& a_opts) {
     entry* entry = a_this.find_entry(a_index);
     if(!entry) {
@@ -501,10 +548,10 @@ protected:
     }
     a_this.m_switch.which = WHICH_PANEL();
     a_this.m_active_index = (-1);
-    return bcbk::return_to_render;
+    return return_to_render;
   }
 
-  static bcbk::return_action action_hide_combo(entries& a_this,std::ostream& a_out,unsigned int a_index,
+  static return_action action_hide_combo(entries& a_this,std::ostream& a_out,unsigned int a_index,
                                                const bcbk& a_cbk,list& a_list,const opts_t& a_opts) {
     if(a_opts.size()&&(a_opts[0]==s_User())) {
       std::vector<std::string> opts;
@@ -514,8 +561,18 @@ protected:
     }
   }
 
-  static bcbk::return_action action_show_numeric(entries& a_this,std::ostream& a_out,unsigned int a_index,
-                                                 const bcbk&,numeric& a_widget,const opts_t&) {
+  static return_action action_hide_combo_string(entries& a_this,std::ostream& a_out,unsigned int a_index,
+                                                      const bcbk& a_cbk,list& a_list,const opts_t& a_opts) {
+    if(a_opts.size()&&(a_opts[0]==s_User())) {
+      std::vector<std::string> opts;
+      return action_show_keyboard(a_this,a_out,a_index,a_cbk,a_this.m_keyboard,opts);
+    } else {
+      return action_hide_opts(a_this,a_out,a_index,a_cbk,a_list,a_opts);
+    }
+  }
+
+  static return_action action_show_numeric(entries& a_this,std::ostream& a_out,unsigned int a_index,
+                                           const bcbk&,numeric& a_widget,const opts_t&) {
     a_this.label_back_color = a_this.shown_label_color;
     entry_type type;
     if(!a_this.types.get_value(a_index,type)) type = entry_real;
@@ -535,8 +592,14 @@ protected:
       a_widget.number_type = sg::number_uint;
     } else if(type==entry_int) {
       a_widget.number_type = sg::number_int;
+    } else if(type==entry_uint64) {
+      a_widget.number_type = sg::number_uint;
+    } else if(type==entry_int64) {
+      a_widget.number_type = sg::number_int;
     } else if(type==entry_ip) {
       a_widget.number_type = sg::number_ip;
+    } else if(type==entry_radec) {
+      a_widget.number_type = sg::number_radec;
     } else if(type==entry_combo) {
       a_widget.number_type = sg::number_real;
     } else { //just in case :
@@ -551,10 +614,10 @@ protected:
     a_widget.add_callback(new __cbk<numeric>(a_this,a_out,a_index,a_widget,action_hide_widget<numeric>));
     a_this.m_switch.which = WHICH_NUMERIC();
     a_this.m_active_index = a_index;
-    return bcbk::return_to_render;
+    return return_to_render;
   }
 
-  static bcbk::return_action action_show_keyboard(entries& a_this,std::ostream& a_out,unsigned int a_index,
+  static return_action action_show_keyboard(entries& a_this,std::ostream& a_out,unsigned int a_index,
                                                   const bcbk&,keyboard& a_widget,const opts_t&) {
     a_this.label_back_color = a_this.shown_label_color;
     //as long as we can edit the result area it makes no sense
@@ -565,10 +628,10 @@ protected:
     a_widget.add_callback(new __cbk<keyboard>(a_this,a_out,a_index,a_widget,action_hide_widget<keyboard>));
     a_this.m_switch.which = WHICH_KEYBOARD();
     a_this.m_active_index = a_index;
-    return bcbk::return_to_render;
+    return return_to_render;
   }
 
-  static bcbk::return_action action_show_colors(entries& a_this,std::ostream& a_out,unsigned int a_index,
+  static return_action action_show_colors(entries& a_this,std::ostream& a_out,unsigned int a_index,
                                                 const bcbk&,colors& a_widget,const opts_t&) {
     a_this.label_back_color = a_this.shown_label_color;
     a_widget.value = "";
@@ -576,21 +639,21 @@ protected:
     a_widget.add_callback(new __cbk<colors>(a_this,a_out,a_index,a_widget,action_hide_widget<colors>));
     a_this.m_switch.which = WHICH_COLORS();
     a_this.m_active_index = a_index;
-    return bcbk::return_to_render;
+    return return_to_render;
   }
 
-  static bcbk::return_action action_show_edvalop(entries& a_this,std::ostream& a_out,unsigned int a_index,
+  static return_action action_show_edvalop(entries& a_this,std::ostream& a_out,unsigned int a_index,
                                                  const bcbk&,sg::edvalop& a_widget,const opts_t&) {
     a_this.label_back_color = a_this.shown_label_color;
-    a_widget.result() = valop::def();
+    a_widget.set_result(valop::def());
     a_widget.clear_cbks();
     a_widget.add_callback(new __cbk<sg::edvalop>(a_this,a_out,a_index,a_widget,action_hide_edvalop));
     a_this.m_switch.which = WHICH_EDVALOP();
     a_this.m_active_index = a_index;
-    return bcbk::return_to_render;
+    return return_to_render;
   }
 
-  static bcbk::return_action action_show_file_chooser(entries& a_this,std::ostream& a_out,unsigned int a_index,
+  static return_action action_show_file_chooser(entries& a_this,std::ostream& a_out,unsigned int a_index,
                                                       const bcbk&,sg::file_chooser& a_widget,const opts_t&) {
     a_this.label_back_color = a_this.shown_label_color;
 
@@ -601,19 +664,19 @@ protected:
 
     a_this.m_switch.which = WHICH_FILE_CHOOSER();
     a_this.m_active_index = a_index;
-    return bcbk::return_to_render;
+    return return_to_render;
   }
 
-  typedef bcbk::return_action (*hide_func)(entries&,std::ostream&,unsigned int,const bcbk&,list&,const opts_t&);
-  static bcbk::return_action _action_show_opts(entries& a_this,std::ostream& a_out,unsigned int a_index,
-                                               const bcbk&,entry&,const opts_t& a_opts,hide_func a_func) {
+  typedef return_action (*hide_func)(entries&,std::ostream&,unsigned int,const bcbk&,list&,const opts_t&);
+  static return_action _action_show_opts(entries& a_this,std::ostream& a_out,unsigned int a_index,
+                                         const bcbk&,entry&,const opts_t& a_opts,hide_func a_func) {
     a_this.label_back_color = a_this.shown_label_color;
     a_this.m_switch.which = WHICH_OPTS();
     a_this.m_active_index = a_index;
 
     separator* sep = (separator*)(a_this.m_switch[entries::WHICH_OPTS()]);
     sep->clear();
-    if(a_opts.empty()) return bcbk::return_to_render;
+    if(a_opts.empty()) return return_to_render;
 
     float wlist = a_this.list_width;
     float hlist = a_this.list_height;
@@ -624,8 +687,11 @@ protected:
     list->scroll_width = a_this.list_scroll_width;
     list->text_common_height = true;
     list->visible_items = a_this.list_visible_items;
-
-    //a_gv.set_colors(*list);
+    
+    list->font = a_this.font;
+    list->font_modeling = a_this.font_modeling;
+    //a_gv.set_style(*list);
+    
     list->back_color = a_this.back_color;
     list->border_color = a_this.border_color;
     list->front_color = a_this.front_color;
@@ -640,24 +706,29 @@ protected:
     }
 
     sep->add(list);
-    return bcbk::return_to_render;
+    return return_to_render;
   }
 
-  static bcbk::return_action action_show_opts(entries& a_this,std::ostream& a_out,unsigned int a_index,
+  static return_action action_show_opts(entries& a_this,std::ostream& a_out,unsigned int a_index,
                                               const bcbk& a_cbk,entry& a_entry,const opts_t& a_opts) {
     return _action_show_opts(a_this,a_out,a_index,a_cbk,a_entry,a_opts,action_hide_opts);
   }
 
-  static bcbk::return_action action_show_combo(entries& a_this,std::ostream& a_out,unsigned int a_index,
+  static return_action action_show_combo(entries& a_this,std::ostream& a_out,unsigned int a_index,
                                               const bcbk& a_cbk,entry& a_entry,const opts_t& a_opts) {
     return _action_show_opts(a_this,a_out,a_index,a_cbk,a_entry,a_opts,action_hide_combo);
+  }
+
+  static return_action action_show_combo_string(entries& a_this,std::ostream& a_out,unsigned int a_index,
+                                                      const bcbk& a_cbk,entry& a_entry,const opts_t& a_opts) {
+    return _action_show_opts(a_this,a_out,a_index,a_cbk,a_entry,a_opts,action_hide_combo_string);
   }
 
   template <class WIDGET>
   class __cbk : public bcbk {
     INLIB_T_CBK(WIDGET,__cbk,inlib::sg::entries::__cbk,bcbk)
   public:
-    typedef bcbk::return_action (*cbk_func)(entries&,std::ostream&,unsigned int,const bcbk&,WIDGET&,const opts_t&);
+    typedef return_action (*cbk_func)(entries&,std::ostream&,unsigned int,const bcbk&,WIDGET&,const opts_t&);
   public:
     virtual return_action action() {return m_func(m_this,m_out,m_index,*this,m_widget,m_opts);}
   public:
@@ -712,7 +783,7 @@ protected:
   static int WHICH_OPTS()         {return 6;}
 
 public: //for ArcheryTune.
-  virtual unsigned int number_of_items() const {return labels.size();}
+  virtual unsigned int number_of_items() const {return (unsigned int)labels.size();}
 protected: //base_list
   virtual node* create_item(std::ostream& a_out,unsigned int a_index) {
     entry* entry = create_entry(a_out,a_index);
@@ -727,9 +798,14 @@ protected: //base_list
       m_texts.add(new noderef(entry->result_widget()));
     } else if(type==entry_int) {
       m_texts.add(new noderef(entry->result_widget()));
+    } else if(type==entry_uint64) {
+      m_texts.add(new noderef(entry->result_widget()));
+    } else if(type==entry_int64) {
+      m_texts.add(new noderef(entry->result_widget()));
     } else if(type==entry_real) {
     } else if(type==entry_range) {
     } else if(type==entry_ip) {
+    } else if(type==entry_radec) {
     } else if(type==entry_string) {
     } else if(type==entry_color) {
     } else if(type==entry_math) {
@@ -738,6 +814,7 @@ protected: //base_list
       m_texts.add(new noderef(entry->result_widget()));
     } else if(type==entry_opts) {
     } else if(type==entry_combo) {
+    } else if(type==entry_combo_string) {
     } else { //not_editable
     }
 
@@ -760,7 +837,8 @@ protected: //base_list
     head_label->confine = label_confine;
     head_label->back_area::border_color = border_color;
     head_label->color = front_color;
-    head_label->font = gui_font();
+    head_label->font = font;
+    head_label->font_modeling = font_modeling;
     head_label->wmargin_factor = text_wmargin_factor;
     head_label->hmargin_factor = text_hmargin_factor;
 
@@ -792,6 +870,8 @@ protected:
     //values.values().clear(); //no
     values.values().resize(labels.size());
 
+    m_numeric.font = font;
+    m_numeric.font_modeling = font_modeling;
     m_numeric.back_color = back_color;
     m_numeric.front_color = front_color;
     m_numeric.border_color = border_color;
@@ -804,6 +884,8 @@ protected:
     m_numeric.clear_cbks();
     m_numeric.corner_radius = corner_radius;
 
+    m_keyboard.font = font;
+    m_keyboard.font_modeling = font_modeling;
     m_keyboard.back_color = back_color;
     m_keyboard.front_color = front_color;
     m_keyboard.border_color = border_color;
@@ -815,6 +897,8 @@ protected:
     m_keyboard.value = "";
     m_keyboard.clear_cbks();
 
+    m_colors.font = font;
+    m_colors.font_modeling = font_modeling;
     m_colors.back_color = back_color;
     m_colors.front_color = front_color;
     m_colors.border_color = border_color;
@@ -826,6 +910,8 @@ protected:
     m_colors.value = "";
     m_colors.clear_cbks();
 
+    m_edvalop.font = font;
+    m_edvalop.font_modeling = font_modeling;
     m_edvalop.back_color = back_color;
     m_edvalop.front_color = front_color;
     m_edvalop.border_color = border_color;
@@ -841,9 +927,11 @@ protected:
     m_edvalop.list_scroll_width = list_scroll_width;
     m_edvalop.list_visible_items = list_visible_items;
     //m_edvalop.vars.set_values();
-    m_edvalop.result() = valop::def();
+    m_edvalop.set_result(valop::def());
     m_edvalop.clear_cbks();
 
+    m_file_chooser.font = font;
+    m_file_chooser.font_modeling = font_modeling;
     m_file_chooser.back_color = back_color;
     m_file_chooser.front_color = front_color;
     m_file_chooser.border_color = border_color;
@@ -885,8 +973,14 @@ protected:
         m_numeric.number_type = number_uint;
       } else if(type==entry_int) {
         m_numeric.number_type = number_int;
+      } else if(type==entry_uint64) {
+        m_numeric.number_type = number_uint;
+      } else if(type==entry_int64) {
+        m_numeric.number_type = number_int;
       } else if(type==entry_ip) {
         m_numeric.number_type = number_ip;
+      } else if(type==entry_radec) {
+        m_numeric.number_type = number_radec;
       }
       m_numeric.value = old_numeric_value;
       m_numeric.clear_cbks();
@@ -913,7 +1007,8 @@ protected:
     float hentry = hitem();
 
     sg::entry* entry = new sg::entry(m_ttf);
-    //entry->font = gui_font();
+    entry->font = font;
+    entry->font_modeling = font_modeling;
     entry->front_color = front_color;
     entry->back_color = back_color;
     entry->border_color = border_color;
@@ -933,11 +1028,14 @@ protected:
 
     entry_type type = types[a_index];
 
-    if( (type==entry_uint)  ||
-        (type==entry_int)   ||
-        (type==entry_real)  ||
-        (type==entry_range) ||
-        (type==entry_ip)    ){
+    if( (type==entry_uint)   ||
+        (type==entry_int)    ||
+        (type==entry_uint64) ||
+        (type==entry_int64)  ||
+        (type==entry_real)   ||
+        (type==entry_range)  ||
+        (type==entry_ip)     ||
+        (type==entry_radec)  ){
       entry->add_callback(new __cbk<numeric>(*this,a_out,a_index,m_numeric,action_show_numeric));
 
     } else if(type==entry_string) {
@@ -969,6 +1067,12 @@ protected:
       _opts.insert(_opts.begin(),s_User());
       entry->add_callback(new __cbk<sg::entry>(*this,a_out,a_index,*entry,action_show_combo,_opts));
 
+    } else if(type==entry_combo_string) {
+      std::vector<std::string> _opts;
+      if(a_index<opts.size()) _opts = opts.values()[a_index];
+      _opts.insert(_opts.begin(),s_User());
+      entry->add_callback(new __cbk<sg::entry>(*this,a_out,a_index,*entry,action_show_combo_string,_opts));
+
     } else { //not_editable
     }
 
@@ -985,7 +1089,8 @@ protected:
     b->back_area::color = back_color;
     b->back_area::border_color = border_color;
     b->color = front_color;
-    b->font = gui_font();
+    b->font = font;
+    b->font_modeling = font_modeling;
     b->set_label(cancel_label.value());
     b->arm_color = arm_color;
     b->wmargin_factor = text_wmargin_factor;
@@ -1024,5 +1129,7 @@ protected:
 };
 
 }}
+
+//inlib_build_use kernel
 
 #endif

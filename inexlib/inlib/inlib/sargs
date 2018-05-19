@@ -10,6 +10,7 @@ namespace inlib {
 
 INLIB_GLOBAL_STRING_VALUE(arg_verbose,-verbose)
 INLIB_GLOBAL_STRING_VALUE(arg_help,-help)
+INLIB_GLOBAL_STRING_VALUE(arg_version,-version)
 
 INLIB_GLOBAL_STRING_VALUE(arg_host,-host)
 INLIB_GLOBAL_STRING_VALUE(arg_port,-port)
@@ -18,6 +19,11 @@ INLIB_GLOBAL_STRING_VALUE(arg_can_shutdown,-can_shutdown)
 INLIB_GLOBAL_STRING_VALUE(arg_land,-land)
 INLIB_GLOBAL_STRING_VALUE(arg_document,-document)
 INLIB_GLOBAL_STRING_VALUE(arg_orders,-orders)
+
+INLIB_GLOBAL_STRING_VALUE(arg_black,-black)
+INLIB_GLOBAL_STRING_VALUE(arg_full_screen,-full_screen)
+INLIB_GLOBAL_STRING_VALUE(arg_no_decos,-no_decos)
+INLIB_GLOBAL_STRING_VALUE(arg_solid,-solid)
 
 }
 

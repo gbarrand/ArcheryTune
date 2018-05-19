@@ -12,7 +12,7 @@
 
 #include <sys/stat.h>
 
-#ifdef WIN32
+#ifdef _MSC_VER
 #include <process.h>
 #else
 #include <unistd.h>
@@ -21,7 +21,7 @@
 namespace inlib {
 
 inline bool tmpdir(std::string& a_dir){
-#ifdef WIN32
+#ifdef _WIN32
   char* env = ::getenv("TEMP");
   if(!env) {a_dir.clear();return false;}
   a_dir = env;
@@ -36,13 +36,13 @@ inline bool tmpname(const std::string& a_dir,const std::string& a_prefix,const s
   if(a_dir==".") {
   } else if(a_dir.size()) {
     head = a_dir;
-#ifdef WIN32
+#ifdef _WIN32
     head += "\\";
 #else
     head += "/";
 #endif
   } else {
-#ifdef WIN32
+#ifdef _WIN32
     char* env = ::getenv("TEMP");
     if(!env) {a_name.clear();return false;}
     head  = std::string(env);
@@ -77,63 +77,6 @@ inline bool tmpname(const std::string& a_dir,const std::string& a_prefix,const s
   a_name.clear();
   return false;
 }
-
-/* FIXME : we must have Windows.
-enum getmod_who {getmod_user, getmod_group, getmod_other};
-enum getmod_what {getmod_read, getmod_write, getmod_exec};
-
-inline bool getmod(const std::string& a_path,
-                   getmod_who a_who,getmod_what a_what,
-                   bool& a_value){
-  struct stat finfo;
-  if (::stat(a_path.c_str(),&finfo) < 0) {a_value=false;return false;}
-#ifdef WIN32
-  //FIXME
-  return false;
-#else
-  if(a_who==getmod_user) {
-    if(a_what==getmod_read) {
-      a_value = ( (finfo.st_mode & S_IRUSR) ? true : false);
-    } else if(a_what==getmod_write) {
-      a_value = ( (finfo.st_mode & S_IWUSR) ? true : false);
-    } else if(a_what==getmod_exec) {
-      a_value = ( (finfo.st_mode & S_IXUSR) ? true : false);
-    } else {
-      a_value = false;
-      return false;
-    }
-
-  } else if(a_who==getmod_group) {
-    if(a_what==getmod_read) {
-      a_value = ( (finfo.st_mode & S_IRGRP) ? true : false);
-    } else if(a_what==getmod_write) {
-      a_value = ( (finfo.st_mode & S_IWGRP) ? true : false);
-    } else if(a_what==getmod_exec) {
-      a_value = ( (finfo.st_mode & S_IXGRP) ? true : false);
-    } else {
-      a_value = false;
-      return false;
-    }
-
-  } else if(a_who==getmod_other) {
-    if(a_what==getmod_read) {
-      a_value = ( (finfo.st_mode & S_IROTH) ? true : false);
-    } else if(a_what==getmod_write) {
-      a_value = ( (finfo.st_mode & S_IWOTH) ? true : false);
-    } else if(a_what==getmod_exec) {
-      a_value = ( (finfo.st_mode & S_IXOTH) ? true : false);
-    } else {
-      a_value = false;
-      return false;
-    }
-  } else {
-    a_value = false;
-    return false;
-  }
-  return true;
-#endif
-}
-*/
 
 }
 

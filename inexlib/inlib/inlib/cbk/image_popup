@@ -5,128 +5,81 @@
 #define inlib_cbk_image_popup
 
 #include "popup"
+#include "popup_data"
 #include "image_manip"
 #include "../sg/ilist"
-#include "../sg/colors"
-
 #include "../sg/gui_viewer"
 
 namespace inlib {
 namespace cbk {
 
+inline sg::return_action image_popup_action_show_pixel(sg::gui_viewer& a_gv,const popup_data& a_data) {
+  a_gv.hide_popup(); //needed because down,up event are handled by the image_manip.
+  tex_set_manip(a_gv,a_gv.scene(),a_data.m_node,a_gv.verbose());
+  return sg::return_to_render;
+}
+
+inline sg::return_action image_popup_action_load_file(sg::gui_viewer& a_gv,sg::file_chooser& a_fch,const popup_data& a_data) {
+  image::ireader* _reader;
+  if(!find(a_gv.image_readers().named_readers(),a_fch.format.value(),_reader)) {
+    a_gv.popup_warn(a_data.m_ex,a_data.m_ey,"reader not found");
+    return sg::return_to_render;
+  }
+  unsigned int w,h,bpp;
+  unsigned char* buffer = _reader->read(a_gv.out(),a_fch.value.value(),w,h,bpp);
+  if(!buffer) {
+    a_gv.popup_warn(a_data.m_ex,a_data.m_ey,"read failed");
+    return sg::return_to_render;
+  }
+  img<byte> img(w,h,bpp,buffer,true);
+  if(sg::base_tex* _tex = safe_cast<sg::node,sg::base_tex>(a_data.m_node)) {
+    _tex->img.value().transfer(img);
+    _tex->img.touch();
+    _tex->expand = a_gv.m_params.m_image_expand;
+  }
+  return sg::return_to_render;
+}
+
+inline sg::return_action image_popup_action_file(sg::gui_viewer& a_gv,const popup_data& a_data) {
+  //a_gv.hide_popup();
+  sg::file_chooser* fch = new sg::file_chooser(a_gv.ttf());
+  a_gv.set_style(*fch);
+  std::vector<std::string> exts;
+  exts.push_back(file::s_ext_jpg());
+  exts.push_back(file::s_ext_png());
+  fch->exts.add(exts);
+  fch->dirs.add(a_gv.res_dir());
+  fch->dirs.add(a_gv.data_dirs());
+  sg::add_callback(a_gv,*fch,image_popup_action_load_file,a_data);
+  fch->initialize(a_gv.out());
+  a_gv.show_widget(sg::pos_data(true,a_data.m_ex,a_data.m_ey),fch);
+  return sg::return_to_render;
+}
+
 class image_popup : public popup {
   typedef popup parent;
-private:
-  typedef sg::colors g_ui_colors;
-protected:
-  static unsigned int action_none()          {return 0;}
-  static unsigned int action_set_back_color(){return 1;}
-  static unsigned int action_ok_color()      {return 2;}
-  static unsigned int action_show_pixel()    {return 3;}
 public:
-  virtual void add_items(sg::ilist& a_list,int a_ex = 0,int a_ey = 0) const {
-   {image_popup* _cbk = new image_popup(m_gv,parent::m_class,action_set_back_color());
-    _cbk->m_node = m_node;
-    _cbk->m_ex = a_ex;
-    _cbk->m_ey = a_ey;
-    a_list.add("set back color",_cbk);}
-
-   {image_popup* _cbk = new image_popup(m_gv,parent::m_class,action_show_pixel());
-    _cbk->m_node = m_node;
-    a_list.add("show pixel",_cbk);}
-
+  virtual void add_items(sg::ilist& a_list,int a_ex,int a_ey) const {
+    sg::add_item(m_gv,a_list,"show pixel",image_popup_action_show_pixel,popup_data(*m_node,a_ex,a_ey));
+    sg::add_item(m_gv,a_list,"load file",image_popup_action_file,popup_data(*m_node,a_ex,a_ey));
   }
 public:
-  virtual return_action action() {
-
-    if(m_action==action_set_back_color()) {
-      m_gv.hide_popup();
-
-      sg::separator& psep = m_gv.popup_sep();
-      psep.clear();
-      psep.add(new g_ui_colors(m_gv.ttf()));
-      g_ui_colors& _colors = *((g_ui_colors*)psep.children().back());
-
-     {image_popup* _cbk = new image_popup(m_gv,parent::m_class,action_ok_color());
-      _cbk->m_node = m_node;
-      _cbk->m_colors = &_colors;
-      _colors.add_callback(_cbk);}
-
-      //////////////////////////////////////////////////////////
-      /// set size and position ////////////////////////////////
-      //////////////////////////////////////////////////////////
-     {float one_wcw,one_wch; //wall : for one screen.
-     {float tx,ty;
-      float aspect;
-      m_gv.get_gui_wcw_wch(one_wcw,one_wch,tx,ty,aspect);}
-      float hbutton = one_wch*0.05f;
-
-      m_gv.set_colors(_colors);
-      _colors.width = one_wcw*0.5F;
-      _colors.height = 8*hbutton;}
-
-      m_gv.place_show_popup(m_ex,m_ey,_colors.width.value(),_colors.height.value());
-
-      return return_to_render;     
-
-    } else if(m_action==action_ok_color()) {
-      m_gv.hide_popup();
-
-      float r,g,b,a;
-      m_colors->get_color(r,g,b,a);
-
-      sg::base_tex* _tex = safe_cast<sg::node,sg::base_tex>(*m_node);
-      if(!_tex) {
-        m_gv.map_warn("node is not a inlib::sg::tex_*");
-        return return_to_render;
-      }
-      _tex->back_color = colorf(r,g,b,a); //= does a touch.
-
-      return return_to_render;     
-
-    } else if(m_action==action_show_pixel()) {
-      m_gv.hide_popup();
-
-      inlib::cbk::image_manip::set_manip(m_gv,m_gv.scene(),m_node,m_gv.verbose());
-
-      return return_to_render;     
-
-    }
-
-    return return_none;     
-  }
   virtual sg::bcbk* copy() const {return new image_popup(*this);}
 public:
-  image_popup(sg::gui_viewer& a_gv,const std::string& a_class,unsigned int a_action = action_none())
-  :popup(a_class,a_action)
-  ,m_gv(a_gv)
-  ,m_colors(0)
-  ,m_ex(0)
-  ,m_ey(0)
-  {}
+  image_popup(sg::gui_viewer& a_gv,const std::string& a_class):popup(a_class,0),m_gv(a_gv){}
   virtual ~image_popup(){}
 protected:
-  image_popup(const image_popup& a_from)
-  :popup(a_from)
-  ,m_gv(a_from.m_gv)
-  ,m_colors(a_from.m_colors)
-  ,m_ex(a_from.m_ex)
-  ,m_ey(a_from.m_ey)
-  {}
+  image_popup(const image_popup& a_from):popup(a_from),m_gv(a_from.m_gv){}
   image_popup& operator=(const image_popup& a_from){
     popup::operator=(a_from);
-    m_colors = a_from.m_colors;
-    m_ex = a_from.m_ex;
-    m_ey = a_from.m_ey;
     return *this;
   }
 protected:
   sg::gui_viewer& m_gv;
-  g_ui_colors* m_colors; //not owner.
-  int m_ex;
-  int m_ey;
 };
 
 }}
+
+//inlib_build_use kernel
 
 #endif

@@ -10,7 +10,7 @@
 #include "draw_style"
 #include "rgba"
 #include "cbks"
-#include "sfs"
+#include "sf_vec"
 
 #include "back_area"
 
@@ -34,21 +34,20 @@ public:
   sf_vec<colorf,float> border_color;
   sf<bool> auto_resize;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(width)
-      INLIB_ADD_FIELD_DESC(height)
-      INLIB_ADD_FIELD_DESC(cols)
-      INLIB_ADD_FIELD_DESC(rows)
-      INLIB_ADD_FIELD_DESC(back_color)
-      INLIB_ADD_FIELD_DESC(arm_color)
-      INLIB_ADD_FIELD_DESC(border_width)
-      INLIB_ADD_FIELD_DESC(border_height)
-      INLIB_ADD_FIELD_DESC(border_color)
-      INLIB_ADD_FIELD_DESC(auto_resize)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::button_grid)
+    static const desc_fields s_v(parent::node_desc_fields(),10, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(width),
+      INLIB_ARG_FIELD_DESC(height),
+      INLIB_ARG_FIELD_DESC(cols),
+      INLIB_ARG_FIELD_DESC(rows),
+      INLIB_ARG_FIELD_DESC(back_color),
+      INLIB_ARG_FIELD_DESC(arm_color),
+      INLIB_ARG_FIELD_DESC(border_width),
+      INLIB_ARG_FIELD_DESC(border_height),
+      INLIB_ARG_FIELD_DESC(border_color),
+      INLIB_ARG_FIELD_DESC(auto_resize)
+    );
     return s_v;
   }
 private:
@@ -87,8 +86,10 @@ public:
       update_sg();
       reset_touched();
     }
+    if(a_action.do_path()) a_action.path_push(this);
     m_sep.search(a_action);
     if(a_action.done()) return;
+    if(a_action.do_path()) a_action.path_pop();
   }
   virtual void bbox(bbox_action& a_action) {
     if(touched()) {
@@ -109,9 +110,8 @@ public:
     if(!height.value()) return;
     if(!a_action.state().m_camera_ortho) return;
 
-    const inlib::sg::event& evt = a_action.get_event();
-    if(const inlib::sg::size_event* sz_evt = 
-         safe_cast<inlib::sg::event,inlib::sg::size_event>(evt)){
+    const sg::event& evt = a_action.get_event();
+    if(const size_event* sz_evt = event_cast<sg::event,size_event>(evt)){
 
       unsigned int ow = sz_evt->old_width();
       unsigned int oh = sz_evt->old_height();
@@ -136,11 +136,11 @@ public:
   ,height(1)
   ,cols(1)
   ,rows(1)
-  ,back_color(colorf::white())
-  ,arm_color(colorf::grey())
+  ,back_color(colorf_white())
+  ,arm_color(colorf_grey())
   ,border_width(0)
   ,border_height(0)
-  ,border_color(colorf::black())
+  ,border_color(colorf_black())
   ,auto_resize(false)
 
   ,m_cbks()
@@ -212,6 +212,7 @@ public:
     return ((m_selected_col==-1)&&(m_selected_row==-1))?true:false;
   }
 public:
+  const separator& container() const {return m_sep;} //must be consistent with pick().
   void update_sg() {
     m_sep.clear();
 
@@ -223,8 +224,7 @@ public:
     if(border_width.value()<0) return;
     if(border_height.value()<0) return;
 
-    bool back_button = 
-      ((border_width.value()>0) && (border_height.value()>0))?true:false; 
+    bool back_button = ((border_width.value()>0) && (border_height.value()>0))?true:false; 
 
     float bw = border_width;
     float bh = border_height;

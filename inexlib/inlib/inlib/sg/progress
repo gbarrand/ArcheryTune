@@ -19,17 +19,16 @@ class progress : public back_area {
 public:
   sf<float> value; //[0,1]
 
-  sf_vec<inlib::colorf,float> color;
+  sf_vec<colorf,float> color;
   sf<bool> back_visible;  
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(value)
-      INLIB_ADD_FIELD_DESC(color)
-      INLIB_ADD_FIELD_DESC(back_visible)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::progress)
+    static const desc_fields s_v(parent::node_desc_fields(),3, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(value),
+      INLIB_ARG_FIELD_DESC(color),
+      INLIB_ARG_FIELD_DESC(back_visible)
+    );
     return s_v;
   }
 private:
@@ -45,7 +44,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) m_back_sep.render(a_action);
+    if(back_visible.value()) m_back_sep.render(a_action);
     m_sep.render(a_action);
   }
   virtual void pick(pick_action& a_action) {
@@ -53,7 +52,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) {
+    if(back_visible.value()) {
       m_back_sep.pick(a_action);
       if(a_action.done()) return;
     }
@@ -65,7 +64,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) {
+    if(back_visible.value()) {
       m_back_sep.search(a_action);
       if(a_action.done()) return;
     }
@@ -77,7 +76,7 @@ public:
       update_sg();
       reset_touched();
     }
-    if(back_visible) m_back_sep.bbox(a_action);
+    if(back_visible.value()) m_back_sep.bbox(a_action);
     m_sep.bbox(a_action);
   }
 public:
@@ -85,7 +84,7 @@ public:
   :parent()
   ,value(0)
 
-  ,color(inlib::colorf::black())
+  ,color(colorf_black())
   ,back_visible(true)
   {
     add_fields();
@@ -128,7 +127,9 @@ protected:
     float yb = -height*0.5f;
     float ye =  height*0.5f;
 
-    float zfront = 1; //field ?
+    //sf<float> zfront ?
+    float zborder = back_visible.value()?0.01f:0;
+    float zcontent = zborder*0.5f;
 
    {sg::rgba* mat = new sg::rgba();
     mat->color = color;
@@ -139,16 +140,16 @@ protected:
     m_sep.add(nm);
 
     vertices* vtxs = new vertices;
-    vtxs->mode = inlib::gl::triangle_fan();
+    vtxs->mode = gl::triangle_fan();
     m_sep.add(vtxs);
 
-    float zz = zfront*0.5f;
+    float zz = zcontent;
     vtxs->add(xb,yb,zz);
     vtxs->add(xe,yb,zz);
     vtxs->add(xe,ye,zz);
     vtxs->add(xb,ye,zz);}
 
-   {//border :
+   {//content border :
     sg::rgba* mat = new sg::rgba();
     mat->color = border_color;
     m_sep.add(mat);
@@ -159,14 +160,15 @@ protected:
     m_sep.add(ds);
 
     vertices* vtxs = new vertices;
-    vtxs->mode = inlib::gl::line_strip();
+    vtxs->mode = gl::line_strip();
     m_sep.add(vtxs);
 
-    vtxs->add(xb,yb,zfront);
-    vtxs->add(xe,yb,zfront);
-    vtxs->add(xe,ye,zfront);
-    vtxs->add(xb,ye,zfront);
-    vtxs->add(xb,yb,zfront);}
+    float zz = zborder;
+    vtxs->add(xb,yb,zz);
+    vtxs->add(xe,yb,zz);
+    vtxs->add(xe,ye,zz);
+    vtxs->add(xb,ye,zz);
+    vtxs->add(xb,yb,zz);}
 
   }
 protected:
@@ -174,5 +176,7 @@ protected:
 };
 
 }}
+
+//inlib_build_use kernel
 
 #endif

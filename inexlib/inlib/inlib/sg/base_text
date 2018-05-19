@@ -6,9 +6,8 @@
 
 #include "node"
 
-#include "sf"
+#include "sf_enum"
 #include "mf"
-#include "sfs"
 #include "enums" //hjust,vjust
 //#include "../box3f"
 
@@ -32,15 +31,14 @@ public:
   sf_enum<sg::hjust> hjust;
   sf_enum<sg::vjust> vjust;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(strings)
-      INLIB_ADD_FIELD_DESC(height)
-      INLIB_ADD_FIELD_DESC(hjust)
-      INLIB_ADD_FIELD_DESC(vjust)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::base_text)
+    static const desc_fields s_v(parent::node_desc_fields(),4, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(strings),
+      INLIB_ARG_FIELD_DESC(height),
+      INLIB_ARG_FIELD_DESC(hjust),
+      INLIB_ARG_FIELD_DESC(vjust)
+    );
     return s_v;
   }
 private:
@@ -80,7 +78,7 @@ protected:
   }
 public:
 
-//  void get_bounds(float a_height,inlib::box3f& a_box) {
+//  void get_bounds(float a_height,box3f& a_box) {
 //    //for backward compatibility.
 //    float mn_x,mn_y,mn_z;
 //    float mx_x,mx_y,mx_z;

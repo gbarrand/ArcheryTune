@@ -16,6 +16,7 @@ namespace inlib {
 namespace cbk {
 
 class popup : public sg::acbk {
+  virtual sg::return_action action() {return sg::return_none;}
 public:
   INLIB_SCLASS(inlib::cbk::popup)
 public:
@@ -45,15 +46,23 @@ public:
     return *this;
   }
 public:
-  void set_node(sg::node* a_node) {m_node = a_node;}
-  sg::node* node() const {return m_node;}
-public:
-  static popup* find(const std::vector<bcbk*>& a_cbks,const sg::node& a_node){
+  static void add_class_items(sg::ilist& a_list,const std::vector<bcbk*>& a_cbks,const std::string& a_class,int a_ex,int a_ey) {
     inlib_vforcit(bcbk*,a_cbks,it) {
       popup* _cbk = safe_cast<bcbk,popup>(*(*it));
-      if(_cbk && a_node.cast(_cbk->m_class)) return _cbk;
+      if(_cbk && (a_class==_cbk->m_class)) {
+        _cbk->m_node = 0;
+        _cbk->add_items(a_list,a_ex,a_ey);
+      }
     }
-    return 0;
+  }
+  static void add_node_items(sg::ilist& a_list,const std::vector<bcbk*>& a_cbks,sg::node& a_node,int a_ex,int a_ey) {
+    inlib_vforcit(bcbk*,a_cbks,it) {
+      popup* _cbk = safe_cast<bcbk,popup>(*(*it));
+      if(_cbk && a_node.cast(_cbk->m_class)) {
+        _cbk->m_node  = &a_node;
+        _cbk->add_items(a_list,a_ex,a_ey);
+      }
+    }
   }
 protected:
   std::string m_class;

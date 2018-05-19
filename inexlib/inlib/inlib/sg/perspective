@@ -15,7 +15,7 @@ class perspective : public base_camera {
   INLIB_NODE(perspective,inlib::sg::perspective,base_camera)
 public:
   virtual float near_height() const {
-    return 2.0f*znear.value()*inlib::ftan(height_angle.value()*0.5f);
+    return 2.0f*znear.value()*ftan(height_angle.value()*0.5f);
   }
   virtual void zoom(float a_fac) {
     //for exa :
@@ -27,12 +27,11 @@ public:
 public:
   sf<float> height_angle;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(height_angle)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::perspective)
+    static const desc_fields s_v(parent::node_desc_fields(),1, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(height_angle)
+    );
     return s_v;
   }
 private:
@@ -42,16 +41,16 @@ private:
 public:
   perspective()
   :parent()
-  ,height_angle(inlib::fpi()/4.0f) //45 degrees.
+  ,height_angle(fpi()/4.0f) //45 degrees.
   {
 #ifdef INLIB_MEM
-    inlib::mem::increment(s_class().c_str());
+    mem::increment(s_class().c_str());
 #endif
     add_fields();
   }
   virtual ~perspective(){
 #ifdef INLIB_MEM
-    inlib::mem::decrement(s_class().c_str());
+    mem::decrement(s_class().c_str());
 #endif
   }
 public:
@@ -60,7 +59,7 @@ public:
   ,height_angle(a_from.height_angle)
   {
 #ifdef INLIB_MEM
-    inlib::mem::increment(s_class().c_str());
+    mem::increment(s_class().c_str());
 #endif
     add_fields();
   }

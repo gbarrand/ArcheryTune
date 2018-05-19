@@ -69,7 +69,7 @@ inline bool to_xpm(std::ostream& a_out,const std::string& a_file,const std::stri
   //get a set of non problematic characters (for exa avoid \).
   std::vector<unsigned char> chars;
  {for(unsigned char c=0;c<255;c++) {
-    if(inlib::is_letter(c)||inlib::is_digit(c)) {
+    if(is_letter(c)||is_digit(c)) {
       chars.push_back(c);
     }    
   }}

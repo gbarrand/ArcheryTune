@@ -12,6 +12,7 @@
 #include "rgba"
 #include "cbks"
 #include "ecbk"
+#include "sf_vec3f"
 
 #include <map>
 
@@ -28,7 +29,7 @@ public:
   static unsigned int shape_rotate_x()      {return 1<<4;}
   static unsigned int shape_rotate_y()      {return 1<<5;}
   static unsigned int shape_rotate_z()      {return 1<<6;}
-  static unsigned int shape_all()          {
+  static unsigned int shape_all() {
     return shape_scale()|
            shape_translate_xy()|
            shape_translate_yz()|
@@ -37,8 +38,16 @@ public:
            shape_rotate_y()|
            shape_rotate_z();
   }
+  static unsigned int shape_trans_rot() {
+    return shape_translate_xy()|
+           shape_translate_yz()|
+           shape_translate_zx()|
+           shape_rotate_x()|
+           shape_rotate_y()|
+           shape_rotate_z();
+  }
 public:
-  sf_vec<vec3f,float> center;
+  sf_vec3f center;
   sf<float> width;
   sf<float> height;
   sf<float> depth;
@@ -47,19 +56,18 @@ public:
   sf<unsigned int> shape_mask;
   //sf<bool> rotate_as_translate;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(center)
-      INLIB_ADD_FIELD_DESC(width)
-      INLIB_ADD_FIELD_DESC(height)
-      INLIB_ADD_FIELD_DESC(depth)
-      INLIB_ADD_FIELD_DESC(color)
-      INLIB_ADD_FIELD_DESC(drag_color)
-      INLIB_ADD_FIELD_DESC(shape_mask)
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::cube_manip)
+    static const desc_fields s_v(parent::node_desc_fields(),7, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(center),
+      INLIB_ARG_FIELD_DESC(width),
+      INLIB_ARG_FIELD_DESC(height),
+      INLIB_ARG_FIELD_DESC(depth),
+      INLIB_ARG_FIELD_DESC(color),
+      INLIB_ARG_FIELD_DESC(drag_color),
+      INLIB_ARG_FIELD_DESC(shape_mask)
       //INLIB_ADD_FIELD_DESC(rotate_as_translate)
-    }
+    );
     return s_v;
   }
 private:
@@ -83,19 +91,6 @@ public:
     m_sep.render(a_action);
   }
 
-  virtual void search(sg::search_action& a_action) {
-    parent::search(a_action); //will do a node::search()
-    if(a_action.done()) return;
-    if(touched()) {
-      update_sg();
-      reset_touched();
-    }
-    if(a_action.do_path()) a_action.path_push(this);
-    m_sep.search(a_action);
-    if(a_action.done()) return;
-    if(a_action.do_path()) a_action.path_pop();
-  }
-
   virtual void pick(pick_action& a_action) {
     parent::pick(a_action);
 
@@ -110,6 +105,19 @@ public:
     }
   }
 
+  virtual void search(sg::search_action& a_action) {
+    parent::search(a_action); //will do a node::search()
+    if(a_action.done()) return;
+    if(touched()) {
+      update_sg();
+      reset_touched();
+    }
+    if(a_action.do_path()) a_action.path_push(this);
+    m_sep.search(a_action);
+    if(a_action.done()) return;
+    if(a_action.do_path()) a_action.path_pop();
+  }
+
   virtual void event(event_action& a_action) {
     if(touched()) {
       update_sg();
@@ -119,11 +127,10 @@ public:
 
     if(m_active) {
 
-      if(safe_cast<sg::event,sg::move_event>(a_action.get_event())){
-        ecbk::exec_event_cbks(m_move_cbks.callbacks(),
-                              a_action.get_event(),&a_action,this);
+      if(event_cast<sg::event,sg::move_event>(a_action.get_event())){
+        ecbk::exec_event_cbks(m_move_cbks.callbacks(),a_action.get_event(),&a_action,this);
 
-      } else if(safe_cast<sg::event,sg::up_event>(a_action.get_event())){
+      } else if(event_cast<sg::event,sg::up_event>(a_action.get_event())){
         set_active_node(0);
         a_action.set_done(true);
       }
@@ -141,18 +148,24 @@ public:
   ,width(1.0f)
   ,height(1.0f)
   ,depth(1.0f)
-  ,color(colorf::dimgrey())
-  ,drag_color(colorf::lightgrey())
+  ,color(colorf_dimgrey())
+  ,drag_color(colorf_lightgrey())
   ,shape_mask(shape_all())
   //,rotate_as_translate(false)
 
+  ,m_ref_matrix(0)
+  ,m_delete_ref_matrix(false)
+
   ,m_move_cbks()
   ,m_active(0)
+  
   ,m_gidx(-1)
   {
     add_fields();
   }
-  virtual ~cube_manip(){}
+  virtual ~cube_manip() {
+    if(m_delete_ref_matrix) delete m_ref_matrix;
+  }
 public:
   cube_manip(const cube_manip& a_from)
   :parent(a_from)
@@ -166,6 +179,9 @@ public:
   ,shape_mask(a_from.shape_mask)
   //,rotate_as_translate(a_from.rotate_as_translate)
 
+  ,m_ref_matrix(0)
+  ,m_delete_ref_matrix(false)
+  
   ,m_move_cbks(a_from.m_move_cbks)
   ,m_active(a_from.m_active)
   ,m_active_state(a_from.m_active_state)
@@ -196,6 +212,16 @@ public:
     return *this;
   }
 public:
+  matrix* ref_matrix() {return m_ref_matrix;}
+  void set_ref_matrix(matrix* a_matrix,bool a_delete_matrix) {
+    if(m_delete_ref_matrix) delete m_ref_matrix;
+    m_ref_matrix = a_matrix;
+    m_delete_ref_matrix = a_delete_matrix;
+  }
+  void set_delete_ref_matrix(bool a_value) {m_delete_ref_matrix = a_value;}
+  
+  const separator& container() const {return m_sep;} //must be consistent with pick().
+
   void set_active_node(cube* a_cb) {
     if(m_active) {
       sg::rgba& clr = get_color(*m_active);
@@ -211,8 +237,7 @@ public:
   const cube* active_node() const {return m_active;}
 
   const mat4f& get_mtx(const cube& a_cube) const {
-    std::map<cube*,matrix*>::const_iterator it =
-      m_mtxs.find(const_cast<cube*>(&a_cube));
+    std::map<cube*,matrix*>::const_iterator it = m_mtxs.find(const_cast<cube*>(&a_cube));
     return (*it).second->mtx.value();
   }
 
@@ -672,6 +697,9 @@ protected:
   }
 
 protected:
+  matrix* m_ref_matrix;
+  bool m_delete_ref_matrix;
+  
   separator m_sep;
   cbks m_move_cbks;
 

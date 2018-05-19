@@ -20,15 +20,14 @@ public:
 
   sf_vec<colorf,float> arm_color;
 public:
-  virtual const std::vector<field_desc>& node_fields() const {
-    static std::vector<field_desc> s_v;
-    if(s_v.empty()) {
-      s_v = parent::node_fields();
-      INLIB_ADD_FIELD_DESC(text)
-      INLIB_ADD_FIELD_DESC(visible_items)
-      INLIB_ADD_FIELD_DESC(scroll_width)
-      INLIB_ADD_FIELD_DESC(arm_color)
-    }
+  virtual const desc_fields& node_desc_fields() const {
+    INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::scroll_text)
+    static const desc_fields s_v(parent::node_desc_fields(),4, //WARNING : take care of count.
+      INLIB_ARG_FIELD_DESC(text),
+      INLIB_ARG_FIELD_DESC(visible_items),
+      INLIB_ARG_FIELD_DESC(scroll_width),
+      INLIB_ARG_FIELD_DESC(arm_color)
+    );
     return s_v;
   }
 private:
@@ -83,7 +82,7 @@ public:
   ,text()
   ,visible_items(5)
   ,scroll_width(0.2f)
-  ,arm_color(colorf::grey())
+  ,arm_color(colorf_grey())
   ,m_first_item(0)
   {
     add_fields();
@@ -126,7 +125,7 @@ protected:
         }
         m_scroll_text.touch();
       } else if(m_type==arrow_down) {
-        unsigned int num = m_scroll_text.text.size();
+        size_t num = m_scroll_text.text.size();
         if((m_scroll_text.m_first_item+nvis)<num) {
           m_scroll_text.m_first_item += nvis;
           m_scroll_text.touch();
@@ -176,7 +175,7 @@ protected:
     unsigned int beg = m_first_item;
     //012345 : 6 items
     //  2 
-    unsigned int remain = itms.size()-m_first_item;
+    unsigned int remain = uint32(itms.size())-m_first_item;
 
     unsigned int nvis = mn<unsigned int>(visible_items.value(),remain);
 
