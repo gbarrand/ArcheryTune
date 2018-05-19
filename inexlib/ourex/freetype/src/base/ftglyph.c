@@ -361,7 +361,7 @@
     ft_outline_glyph_prepare
   };
 
-#ifdef WIN32  /* G.Barrand : for ftstroke.c */
+#ifdef _MSC_VER  /* G.Barrand : for ftstroke.c */
   const FT_Glyph_Class* FT_get_outline_glyph_class() {
     return &ft_outline_glyph_class;
   }

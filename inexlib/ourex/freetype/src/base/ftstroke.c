@@ -1745,7 +1745,7 @@
     return FT_Err_Invalid_Outline;
   }
 
-#ifdef WIN32 /*G.Barrand*/
+#ifdef _MSC_VER /*G.Barrand*/
   const FT_Glyph_Class*  FT_get_outline_glyph_class();
 #else
   extern const FT_Glyph_Class  ft_outline_glyph_class;
@@ -1764,7 +1764,7 @@
       goto Exit;
 
     glyph = *pglyph;
-#ifdef WIN32 /*G.Barrand*/
+#ifdef _MSC_VER /*G.Barrand*/
     if ( glyph == NULL || glyph->clazz != FT_get_outline_glyph_class() )
       goto Exit;
 #else
@@ -1840,7 +1840,7 @@
       goto Exit;
 
     glyph = *pglyph;
-#ifdef WIN32 /*G.Barrand*/
+#ifdef _MSC_VER /*G.Barrand*/
     if ( glyph == NULL || glyph->clazz != FT_get_outline_glyph_class() )
       goto Exit;
 #else
