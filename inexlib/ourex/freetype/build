@@ -1,11 +1,9 @@
 #!/bin/sh -f
 
-#set -x
+bush_home=../../../bush
 
-build_args=
-while test $# -ge 1 ; do build_args="${build_args} $1";shift; done
-
-. ../mgr/build_header
+. ${bush_home}/args
+. ${bush_home}/ourex_header
 
 if [ ${build_compile} = "yes" ] ; then
 
@@ -48,18 +46,21 @@ cfiles="${cfiles} ./src/type1/type1.c"
 cfiles="${cfiles} ./src/type42/type42.c"
 cfiles="${cfiles} ./src/winfonts/winfnt.c"
 
-if [ ${build_visual} = "yes" ] ; then
-  ccflags="${ccflags} /wd4996"
-fi
-
 ccflags="${ccflags} -I./include"
 ccflags="${ccflags} -I./include/freetype"
 ccflags="${ccflags} -I./src/builds"
 
-. ${inlib_mgr}/build_compile
+if [ ${build_clang} = "yes" -o ${build_sdk_mac} = "yes" -o ${build_sdk_ios} = "yes" ] ; then
+  # quiet warnings on ./src/cff/cffload.c line 1986 :
+  ccflags="${ccflags} -Wno-shift-negative-value"
+  # quiet old clang (for exa 3.4) that does not have the upper warning.
+  ccflags="${ccflags} -Wno-unknown-warning-option"
+fi
+
+. ${bush_home}/compile
 
 fi # end build_compile
  
-if [ ${build_archive} = "yes" ] ; then . ${inlib_mgr}/build_archive; fi
+if [ ${build_archive} = "yes" ] ; then . ${bush_home}/archive; fi
 
-. ${inlib_mgr}/build_clean
+. ${bush_home}/clean
