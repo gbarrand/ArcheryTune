@@ -55,7 +55,7 @@ elif [ ${build_sdk_mac} = "yes" -o ${build_sdk_mac_gnu} = "yes" ] ; then
 
   # see also use_cc :
   sdk_dirs="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs /Developer/SDKs"
-  sdk_verss="10.9 10.8 10.6 10.5"
+  sdk_verss="10.13 10.12 10.9 10.8 10.6 10.5"
   found=no
   for sdk_dir in ${sdk_dirs} ; do
     for sdk_vers in ${sdk_verss} ; do
