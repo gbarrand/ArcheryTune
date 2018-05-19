@@ -25,17 +25,58 @@ import java.io.File;
 import android.content.Intent;
 import android.net.Uri;
 
+// for ACTION_VIEW :
+import android.content.ContentResolver;
+import android.util.Log;
+import android.provider.MediaStore;
+import android.database.Cursor;
+//import android.app.DownloadManager;
+
 public class Main extends NativeActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    System.err.println("debug : Main::onCreate : 014");
+    //System.err.println("ArcheryTune : debug : Main::onCreate : 015");
 
     super.onCreate(savedInstanceState);
 
-    //load_resources(); //called from C.
+    Intent intent = getIntent();
+    String action = intent.getAction();
+
+    if(action.compareTo(Intent.ACTION_VIEW)==0) {
+      String scheme = intent.getScheme();
+      Uri uri = intent.getData();
+      if(scheme.compareTo(ContentResolver.SCHEME_FILE)==0) {
+        //String name = uri.getLastPathSegment();
+        //Log.v("ArcheryTune::Main::onCreate","File intent : "+
+        //      action+" : "+intent.getDataString()+" : "+intent.getType()+" : "+name);
+        String document_path = "/sdcard/Android/data/fr.in2p3.lal.ArcheryTune/DOCUMENT";
+        uri_to_file(uri,document_path); 
+
+      } else if (scheme.compareTo(ContentResolver.SCHEME_CONTENT) == 0) {
+        ContentResolver resolver = getContentResolver();
+        String name = get_content_name(resolver, uri);
+        //Log.v("ArcheryTune::Main::onCreate","Content intent : "+
+        //      action+" : "+intent.getDataString()+" : "+intent.getType()+" : "+name);
+        String document_path = "/sdcard/Android/data/fr.in2p3.lal.ArcheryTune/DOCUMENT";
+        uri_to_file(uri,document_path); 
+
+/*
+      } else if (scheme.compareTo("http") == 0) {
+        Log.v("ArcheryTune::Main::onCreate","http intent : "+
+              action+" : "+intent.getDataString()+" : "+intent.getType());
+        DownloadManager.Request r = new DownloadManager.Request(uri);
+        r.setDestinationInExternalPublicDir("/sdcard/Android/data/fr.in2p3.lal.ArcheryTune","DOCUMENT");
+        //r.allowScanningByMediaScanner();
+        //r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+        DownloadManager dm = (DownloadManager)getSystemService(DOWNLOAD_SERVICE);
+        dm.enqueue(r);
+*/
+      }
+    }
 
     //System.err.println("debug : Main::onCreate : end");	
   }
+
 
   private void load_resources() {
     final Object saved_object = getLastNonConfigurationInstance();
@@ -74,27 +115,37 @@ public class Main extends NativeActivity {
 
         //System.out.println("debug : ext "+ext+" fname "+fname);
 
-          if((ext.equals("dst"))    || //for pmx,agora data
-             (ext.equals("bsg"))    || //for pmx detector
-             (ext.equals("cdf"))    || //for pmx mag field
-             (ext.equals("gdml"))   || //for g4view
-             (ext.equals("mac"))    || //for g4view
-             (ext.equals("cmnd"))   || //for g4view
-             (ext.equals("ttf"))    ||
-             (ext.equals("otf"))    ||
-             (ext.equals("jpg"))    ||
-             (ext.equals("png"))    ||
-             (ext.equals("fog"))    ||
-             (ext.equals("dot"))    ||
-             (ext.equals("dcm"))    || //for DICOM
-             (ext.equals("dic"))    || //for DICOM
-             (ext.equals("fits"))   ||
-             (ext.equals("style"))  ||
-             (ext.equals("ftp"))    ||
-             (ext.equals("hdf5"))   ||
-             (ext.equals("root"))   ||
-             (ext.equals("lua"))    ||
-             (ext.equals("py"))     ||
+          if((ext.equals("dst"))     || //for pmx,agora data
+             (ext.equals("bsg"))     || //for pmx detector
+             (ext.equals("cdf"))     || //for pmx mag field
+             (ext.equals("gdml"))    || //for g4view
+             (ext.equals("mac"))     || //for g4view
+             (ext.equals("cmnd"))    || //for g4view
+             (ext.equals("jive"))    || //for agora vis event file.
+             (ext.equals("xml"))     || //for agora JiveXML event file.
+             (ext.equals("iv"))      || //for ioda built with CoinGL and HEPVis.
+             (ext.equals("hiv"))     || //for ioda built with CoinGL and HEPVis.
+             (ext.equals("wrl"))     || //for ioda built with CoinGL and HEPVis.
+             (ext.equals("heprep"))  || //for ioda.
+             (ext.equals("zheprep")) || //for ioda.
+             (ext.equals("g4m"))     || //for MEMPHYS init.g4m
+             (ext.equals("memphys")) || //for MEMPHYS input event file.
+             (ext.equals("ttf"))     ||
+             (ext.equals("otf"))     ||
+             (ext.equals("jpg"))     ||
+             (ext.equals("png"))     ||
+             (ext.equals("fog"))     ||
+             (ext.equals("dot"))     ||
+             (ext.equals("dcm"))     || //for DICOM
+             (ext.equals("dic"))     || //for DICOM
+             (ext.equals("fits"))    ||
+             (ext.equals("style"))   ||
+             (ext.equals("ftp"))     ||
+             (ext.equals("srv"))     ||
+             (ext.equals("hdf5"))    ||
+             (ext.equals("root"))    ||
+             (ext.equals("lua"))     ||
+             (ext.equals("py"))      ||
              (ext.equals("vds"))       ||
              (ext.equals("zip"))       ||
              (ext.equals("zvid"))      ||
@@ -166,6 +217,32 @@ public class Main extends NativeActivity {
       }
     }
     startActivity(Intent.createChooser(intent,"Choose an Email client :"));
+  }
+
+  private void uri_to_file(Uri a_uri,String a_file) {
+    try {
+      ContentResolver resolver = getContentResolver();
+      InputStream input = resolver.openInputStream(a_uri);
+      OutputStream out = new FileOutputStream(new File(a_file));
+      int size = 0;
+      byte[] buffer = new byte[1024];
+      while ((size = input.read(buffer)) != -1) {out.write(buffer,0,size);}
+      out.close();
+      input.close();
+    } catch (Exception e) {
+      Log.e("ArcheryTune::uri_to_file "," exception: " + e.getMessage());
+    }
+  }
+
+  private String get_content_name(ContentResolver resolver, Uri uri){
+    Cursor cursor = resolver.query(uri, null, null, null, null);
+    cursor.moveToFirst();
+    int nameIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME);
+    if (nameIndex >= 0) {
+        return cursor.getString(nameIndex);
+    } else {
+        return null;
+    }
   }
 
 }
