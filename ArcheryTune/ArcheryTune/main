@@ -28,20 +28,20 @@ protected:
 #include "gui"
 #include "dac"
 
+#include <exlib/png>
+
 #include <exlib/app/main>
 #include <exlib/cbk/out>
-#ifdef WALL_DATA_CLIENT
 #include <exlib/cbk/wall>
-#endif //WALL_DATA_CLIENT
 
 namespace ArcheryTune {
 
-inline inlib::sg::bcbk::return_action action_export_png(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_export_png(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
-  inlib::sg::add_label_item(a_gv,*list,"out.png",exlib::out::action_png);
+  a_gv.set_style(*list);
+  inlib::sg::add_item(a_gv,*list,"out.png",inlib::sg::action_png);
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
 class main : public exlib::app::main,public dac {
@@ -58,7 +58,7 @@ protected:
     //m_out << "ArcheryTune::main::create_home_menu : " << std::endl;
 
     inlib::sg::list* list = new inlib::sg::list(ttf());
-    set_colors(*list);
+    set_style(*list);
 
     list->text_hjust = inlib::sg::center; //if layout_text_under_image
 
@@ -66,14 +66,12 @@ protected:
     inlib::sg::add_image_item(*this,*list,"F.O.C","white.jpg",action_main_FOC);
     inlib::sg::add_image_item(*this,*list,"Sight Charts","white.jpg",action_main_sight_charts);
 
-#ifdef WALL_DATA_CLIENT
-    if(m_xml_wall.walls().size()) {
+    if(m_walls._walls().size()) {
       inlib::sg::add_image_item(*this,*list,"Wall","connect_to_wall.jpg",exlib::wall::action_main);
     }
-#endif //WALL_DATA_CLIENT
 
     if(has_mail_panel()) {
-      inlib::sg::add_image_item(*this,*list,"Mail...","document_export.jpg",exlib::out::action_mail_png);
+      inlib::sg::add_image_item(*this,*list,"Mail...","document_export.jpg",inlib::sg::action_mail_png);
     } else {
       //inlib::sg::add_image_item(*this,*list,"export","document_export.jpg",exlib::out::action_main);
       inlib::sg::add_image_item(*this,*list,inlib::sg::s_export(),"document_export.jpg",action_export_png);
@@ -81,18 +79,22 @@ protected:
 
     //list_add(*list,"utils","tools.jpg",new exlib::cbk::utils(*this));
 
-    inlib::sg::add_image_item(*this,*list,"About","icon.jpg",inlib::sg::action_about,&m_about);
+   {std::vector<std::string> about;
+    about.push_back("App : ArcheryTune");
+    about.push_back("Version : "+std::string(ARCHERYTUNE_VERSION));
+    about.push_back("Archery : Jean-Eric Campagne");
+    about.push_back("Software : Guy Barrand");
+    about.push_back("Animals : Actilia Multimedia");
+    inlib::sg::add_image_item(*this,*list,"about","icon.jpg",inlib::sg::action_about,about);}
 
     if(!inlib::device::stop_app_button()){
-      inlib::sg::add_image_item(*this,*list,"Exit","application_exit.jpg",inlib::sg::action_exit);
+      inlib::sg::add_image_item(*this,*list,"Exit","application_exit.jpg",inlib::sg::action_set_to_exit);
     }
 
     return list;
   }
 
-  virtual void set_list_layout(inlib::sg::list& a_node,
-                               float a_wcw,float a_wch,float a_hbutton,
-                               inlib::sg::matrix& a_mtx) const {
+  virtual void set_list_layout(inlib::sg::list& a_node,float a_wcw,float a_wch,float a_hbutton,inlib::sg::matrix& a_mtx) const {
     //if(inlib::device::small_screen()) a_wcw *= 0.8/0.7;
     unsigned int old_params_list_visible_items = m_params.m_list_visible_items;
     unsigned int vitems = inlib::mn<unsigned int>(m_params.m_list_visible_items,a_node.number_of_items()/*+a_node.extra_items()*/);
@@ -103,8 +105,7 @@ protected:
     self.m_params.m_list_visible_items = old_params_list_visible_items;
   }
 
-  virtual void set_entries_layout(inlib::sg::entries& a_node,
-                                  float a_wcw,float a_wch,float a_hbutton,
+  virtual void set_entries_layout(inlib::sg::entries& a_node,float a_wcw,float a_wch,float a_hbutton,
                                   inlib::sg::matrix& a_mtx) const {
 
     unsigned int old_params_list_visible_items = m_params.m_list_visible_items;
@@ -124,33 +125,33 @@ protected:
 
 public:
   main(std::ostream& a_out,
-       inlib::sg::gl_manager& a_gl_mgr,
+       inlib::sg::render_manager& a_gl_mgr,
        const inlib::sg::base_freetype& a_ttf,
+       const inlib::sg::selection& a_selection,
        const std::string& a_data_dir,
        const std::string& a_res_dir,
        const std::string& a_out_dir,
        const std::string& a_tmp_dir,
        bool a_verbose,
        unsigned int a_mem_limit)
-  :parent("ArcheryTune",ARCHERYTUNE_VERSION,a_out,a_gl_mgr,a_ttf,a_data_dir,a_res_dir,a_out_dir,a_tmp_dir,a_verbose,a_mem_limit)
-  ,dac(*((inlib::sg::gui_viewer*)this))
+  :parent("ArcheryTune",ARCHERYTUNE_VERSION,a_out,a_gl_mgr,a_ttf,a_selection,
+          a_data_dir,a_res_dir,a_out_dir,a_tmp_dir,a_verbose,a_mem_limit)
+  ,dac(parent::get_me())
   {
+    m_image_readers.add_reader(inlib::file::s_format_jpeg(),new exlib::jpeg::reader());
+    m_image_readers.add_reader(inlib::file::s_format_png(),new exlib::png::reader());
+
     params_button_visible = false;
     camera_button_visible = false;
   //m_params.m_touch_move = false;
     m_params.m_console_scale = 2;
 
-    meta_zone_had_been_shown();
+    set_meta_zone_had_been_shown();
 
     m_params.m_gsto_mode = inlib::sg::s_gsto_gl_vbo();
     set_use_gsto(true);
 
     set_param_viewing(false); //to move targets.
-
-    m_about.push_back("Version : "+std::string(ARCHERYTUNE_VERSION));
-    m_about.push_back("Archery : Jean-Eric Campagne");
-    m_about.push_back("Software : Guy Barrand");
-    m_about.push_back("Animals : Actilia Multimedia");
 
     //m_params.m_list_visible_items = 8; //for FOC from Weights.
     m_params.m_list_visible_items = 9; //for Std Marks (speed known).
@@ -163,8 +164,6 @@ protected:
   {}
 private:
   main& operator=(const main&){return *this;}
-protected:
-  std::vector<std::string> m_about;
 };
 
 }
