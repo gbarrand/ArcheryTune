@@ -700,12 +700,13 @@ png_sig_bytes(void)
 png_charp PNGAPI
 png_get_copyright(png_structp png_ptr)
 {
-   if (&png_ptr != NULL)  /* silence compiler warning about unused png_ptr */
+  /*G.Barrand if (&png_ptr != NULL)*/ /* silence compiler warning about unused png_ptr */
    return ((png_charp) "\n libpng version 1.2.16 - January 31, 2007\n\
    Copyright (c) 1998-2007 Glenn Randers-Pehrson\n\
    Copyright (c) 1996-1997 Andreas Dilger\n\
    Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.\n");
    return ((png_charp) "");
+   /*G.Barrand*/ (void)png_ptr; /* silence compiler warning about unused png_ptr */
 }
 
 /* The following return the library version as a short string in the
@@ -720,27 +721,30 @@ png_charp PNGAPI
 png_get_libpng_ver(png_structp png_ptr)
 {
    /* Version of *.c files used when building libpng */
-   if (&png_ptr != NULL)  /* silence compiler warning about unused png_ptr */
+   /*G.Barrand if (&png_ptr != NULL)*/  /* silence compiler warning about unused png_ptr */
       return ((png_charp) PNG_LIBPNG_VER_STRING);
    return ((png_charp) "");
+   /*G.Barrand*/ (void)png_ptr; /* silence compiler warning about unused png_ptr */
 }
 
 png_charp PNGAPI
 png_get_header_ver(png_structp png_ptr)
 {
    /* Version of *.h files used when building libpng */
-   if (&png_ptr != NULL)  /* silence compiler warning about unused png_ptr */
+   /*G.Barrand if (&png_ptr != NULL)*/  /* silence compiler warning about unused png_ptr */
       return ((png_charp) PNG_LIBPNG_VER_STRING);
    return ((png_charp) "");
+   /*G.Barrand*/ (void)png_ptr; /* silence compiler warning about unused png_ptr */
 }
 
 png_charp PNGAPI
 png_get_header_version(png_structp png_ptr)
 {
    /* Returns longer string containing both version and date */
-   if (&png_ptr != NULL)  /* silence compiler warning about unused png_ptr */
+   /*G.Barrand if (&png_ptr != NULL)*/  /* silence compiler warning about unused png_ptr */
       return ((png_charp) PNG_HEADER_VERSION_STRING);
    return ((png_charp) "");
+   /*G.Barrand*/ (void)png_ptr; /* silence compiler warning about unused png_ptr */
 }
 
 #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
@@ -832,11 +836,13 @@ png_init_mmx_flags (png_structp png_ptr)
 /* this function was added to libpng 1.2.0 */
 #if !defined(PNG_USE_PNGGCCRD) && \
     !(defined(PNG_MMX_CODE_SUPPORTED) && defined(PNG_USE_PNGVCRD))
+/*G.Barrand : Android : do it in pnggccrd.c.
 int PNGAPI
 png_mmx_support(void)
 {
     return -1;
 }
+*/
 #endif
 #endif /* PNG_1_0_X  && PNG_ASSEMBLER_CODE_SUPPORTED */
 #endif /* PNG_READ_SUPPORTED */

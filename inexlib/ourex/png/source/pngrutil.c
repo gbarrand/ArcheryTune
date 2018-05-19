@@ -563,8 +563,9 @@ png_handle_IEND(png_structp png_ptr, png_infop info_ptr, png_uint_32 length)
    }
    png_crc_finish(png_ptr, length);
 
-   if (&info_ptr == NULL) /* quiet compiler warnings about unused info_ptr */
-      return;
+   /*G.Barrand if (&info_ptr == NULL)*/ /* quiet compiler warnings about unused info_ptr */
+   /*   return;*/
+   /*G.Barrand*/ (void)info_ptr;
 }
 
 #if defined(PNG_READ_gAMA_SUPPORTED)

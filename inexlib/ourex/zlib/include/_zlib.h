@@ -38,6 +38,11 @@ extern "C" {
 #endif
 
 #define ZLIB_VERSION "1.1.4"
+/*G.Barrand : add the four below lines :*/
+#define ZLIB_VER_MAJOR 1
+#define ZLIB_VER_MINOR 1
+#define ZLIB_VER_REVISION 4
+#define ZLIB_VERNUM 0x1140
 
 /* 
      The 'zlib' compression library provides in-memory compression and

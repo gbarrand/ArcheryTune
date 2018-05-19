@@ -2450,22 +2450,23 @@ extern PNG_EXPORT(void, png_write_png) PNGARG((png_structp png_ptr,
 #define PNG_DEBUG_FILE stderr
 #endif /* PNG_DEBUG_FILE */
 #if (PNG_DEBUG > 1)
+/* G.Barrand : for c++11, add a space between "%s" and m in the three below cpp macros : */
 #define png_debug(l,m) \
 { \
      int num_tabs=l; \
-     fprintf(PNG_DEBUG_FILE,"%s"m,(num_tabs==1 ? "\t" : \
+     fprintf(PNG_DEBUG_FILE,"%s" m,(num_tabs==1 ? "\t" : \
        (num_tabs==2 ? "\t\t":(num_tabs>2 ? "\t\t\t":"")))); \
 }
 #define png_debug1(l,m,p1) \
 { \
      int num_tabs=l; \
-     fprintf(PNG_DEBUG_FILE,"%s"m,(num_tabs==1 ? "\t" : \
+     fprintf(PNG_DEBUG_FILE,"%s" m,(num_tabs==1 ? "\t" : \
        (num_tabs==2 ? "\t\t":(num_tabs>2 ? "\t\t\t":""))),p1); \
 }
 #define png_debug2(l,m,p1,p2) \
 { \
      int num_tabs=l; \
-     fprintf(PNG_DEBUG_FILE,"%s"m,(num_tabs==1 ? "\t" : \
+     fprintf(PNG_DEBUG_FILE,"%s" m,(num_tabs==1 ? "\t" : \
        (num_tabs==2 ? "\t\t":(num_tabs>2 ? "\t\t\t":""))),p1,p2); \
 }
 #endif /* (PNG_DEBUG > 1) */

@@ -1,13 +1,19 @@
 #!/bin/sh -f
 
-build_args=
-while test $# -ge 1 ; do build_args="${build_args} $1";shift; done
+bush_home=../../../bush
 
-. ../mgr/build_header
+. ${bush_home}/args
+. ${bush_home}/ourex_header
 
-if [ ${build_visual} = "yes" ] ; then
-  # yes, yes :
-  libs="${libs} gdi32.lib user32.lib wsock32.lib"
+if [ ${build_clang} = "yes" -o ${build_sdk_mac} = "yes" -o ${build_sdk_ios} = "yes" ] ; then
+  # quiet warnings on ./source/jdphuff.c
+  ccflags="${ccflags} -Wno-shift-negative-value"
+  # quiet old clang (for exa 3.4) that does not have the upper warning.
+  ccflags="${ccflags} -Wno-unknown-warning-option"
 fi
 
-. ../mgr/build_generic
+if [ ${build_visual} = "yes" ] ; then
+  libs="${libs} gdi32.lib user32.lib wsock32.lib" # to build the DLL.
+fi
+
+. ${bush_home}/ourex_generic

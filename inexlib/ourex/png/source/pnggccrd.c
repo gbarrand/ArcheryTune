@@ -5419,5 +5419,6 @@ png_mmx_support(void)
 
 #else /*G.Barrand*/
 int pngccrd_dummy = 0; /*G.Barrand*/
+int PNGAPI png_mmx_support(void) {return -1;} /*G.Barrand : Android : see also png.c*/
 
 #endif /* PNG_USE_PNGGCCRD */

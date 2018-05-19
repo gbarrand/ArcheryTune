@@ -1,11 +1,7 @@
 #!/bin/sh -f
 
-#set -x
+bush_home=../../../bush
 
-build_args=
-while test $# -ge 1 ; do build_args="${build_args} $1";shift; done
-
-. ../mgr/build_header
-
-. ../mgr/build_generic
-
+. ${bush_home}/args
+. ${bush_home}/ourex_header
+. ${bush_home}/ourex_generic

@@ -1,4 +1,4 @@
-#if defined(WIN32)
+#if defined(_WIN32)
 #include "platform/jconfig_win32.h"
 #elif defined(__APPLE__)
 #include "platform/jconfig_macosx.h"
