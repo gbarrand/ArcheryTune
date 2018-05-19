@@ -52,11 +52,9 @@ INLIB_GLOBAL_STRING_VALUE(label_field_20_34,3x4 20cm)
 
 INLIB_GLOBAL_STRING_VALUE(blason,target)
 
-inline inlib::sg::bcbk::return_action action_create_scope(inlib::sg::gui_viewer& a_gv,const inlib::sg::bcbk&,
-                                                          inlib::sg::entries& a_entries,void* a_tag) {
+inline inlib::sg::return_action action_create_scope(inlib::sg::gui_viewer& a_gv,
+                                                    inlib::sg::entries& a_entries,const unsigned int& a_blason_id) {
   const std::vector<std::string>& vals = a_entries.values.values();
-
-  unsigned int blason_id = *((unsigned int*)a_tag);
 
   double dsoe;
   if(!inlib::to(vals[1],dsoe)) dsoe = 0.8;
@@ -77,34 +75,28 @@ inline inlib::sg::bcbk::return_action action_create_scope(inlib::sg::gui_viewer&
 
   double slider_dist_min = 10;
   double slider_dist_max = 80;
- {std::map<unsigned int,mnmx_t>::const_iterator it = blason_mnmxs().find(blason_id);
+ {std::map<unsigned int,mnmx_t>::const_iterator it = blason_mnmxs().find(a_blason_id);
   if(it!=blason_mnmxs().end()) {
     slider_dist_min = (*it).second.first;
     slider_dist_max = (*it).second.second;
   }}
 
-  create_scope_sg(a_gv,blason_id,diamScope,dsoe,dCible,dioptrie,diamPastille,slider_dist_min,slider_dist_max);
+  create_scope_sg(a_gv,a_blason_id,diamScope,dsoe,dCible,dioptrie,diamPastille,slider_dist_min,slider_dist_max);
 
-  return inlib::sg::bcbk::return_to_render;     
+  return inlib::sg::return_to_render;     
 }
 
-///////////////////////////////////////////////////////////////////////////////////
-/// menu nature : /////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////
 INLIB_GLOBAL_STRING(Enter)
 
-inline inlib::sg::bcbk::return_action _action_nature(inlib::sg::gui_viewer& a_gv,const inlib::sg::bcbk&,
-                                                     inlib::sg::list&,void* a_tag) {
-
-  unsigned int blason_id = *((unsigned int*)a_tag);
+inline inlib::sg::return_action _action_scope(inlib::sg::gui_viewer& a_gv,const unsigned int& a_blason_id) {
 
   inlib::sg::entries* node = new inlib::sg::entries(a_gv.ttf());
   node->cancel_label = s_Enter();
-  a_gv.set_colors(*node);
-  node->add_callback(new inlib::sg::funtag_cbk<inlib::sg::entries>(a_gv,*node,action_create_scope,a_tag));
+  a_gv.set_style(*node);
+  inlib::sg::add_callback(a_gv,*node,action_create_scope,a_blason_id);
 
  {std::string v;
-  std::map<unsigned int,std::string>::const_iterator it = blason_names().find(blason_id);
+  std::map<unsigned int,std::string>::const_iterator it = blason_names().find(a_blason_id);
   if(it!=blason_names().end()) v = (*it).second;
   node->add_not_editable(s_blason(),v);}
   
@@ -121,7 +113,7 @@ inline inlib::sg::bcbk::return_action _action_nature(inlib::sg::gui_viewer& a_gv
   node->add_combo(s_dioptrie()+" (1/m)",s_0_5(),opts);}
 
  {dists_t v;
-  std::map<unsigned int,distelem>::const_iterator it = blason_dists().find(blason_id);
+  std::map<unsigned int,distelem>::const_iterator it = blason_dists().find(a_blason_id);
   if(it!=blason_dists().end()) v = (*it).second.first;
   node->add_combo(s_dist_cible()+" (m)",(*it).second.second,v);}
 
@@ -135,74 +127,62 @@ inline inlib::sg::bcbk::return_action _action_nature(inlib::sg::gui_viewer& a_gv
   
   a_gv.push_list(node);
   
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-#define ACTION_ID(a__name) \
-inline void* _blason_##a__name()  {static unsigned int s_v = blason_##a__name();return &s_v;}
-
-ACTION_ID(nature_hippopotame)
-ACTION_ID(nature_chameau)
-
+///////////////////////////////////////////////////////////////////////////////////
+/// menu nature : /////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 #define ADD_ITEM_NATURE(a__name) \
-  inlib::sg::add_label_item(a_gv,*list,s_label_##a__name(),_action_nature,_blason_nature_##a__name());
+  inlib::sg::add_item(a_gv,*list,s_label_##a__name(),_action_scope,blason_nature_##a__name());
 
-inline inlib::sg::bcbk::return_action action_nature_big(inlib::sg::gui_viewer& a_gv){
+inline inlib::sg::return_action action_nature_big(inlib::sg::gui_viewer& a_gv){
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
   ADD_ITEM_NATURE(hippopotame)
   ADD_ITEM_NATURE(chameau)
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-ACTION_ID(nature_daim)
-ACTION_ID(nature_loupgris)
-
-inline inlib::sg::bcbk::return_action action_nature_medium(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_nature_medium(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
   ADD_ITEM_NATURE(daim)
   ADD_ITEM_NATURE(loupgris)  
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-ACTION_ID(nature_paon)
-ACTION_ID(nature_pandaroux)
-
-inline inlib::sg::bcbk::return_action action_nature_little(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_nature_little(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
   ADD_ITEM_NATURE(paon)
   ADD_ITEM_NATURE(pandaroux)
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-ACTION_ID(nature_canardmandarin)
-ACTION_ID(nature_lapin)
-
-inline inlib::sg::bcbk::return_action action_nature_tiny(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_nature_tiny(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
   ADD_ITEM_NATURE(canardmandarin)
   ADD_ITEM_NATURE(lapin)
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_nature(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_nature(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
 
-  inlib::sg::add_label_item(a_gv,*list,"Big",action_nature_big);
-  inlib::sg::add_label_item(a_gv,*list,"Medium",action_nature_medium);
-  inlib::sg::add_label_item(a_gv,*list,"Small",action_nature_little);
-  inlib::sg::add_label_item(a_gv,*list,"Birdy",action_nature_tiny);
+  inlib::sg::add_item(a_gv,*list,"Big",action_nature_big);
+  inlib::sg::add_item(a_gv,*list,"Medium",action_nature_medium);
+  inlib::sg::add_item(a_gv,*list,"Small",action_nature_little);
+  inlib::sg::add_item(a_gv,*list,"Birdy",action_nature_tiny);
   
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -210,73 +190,59 @@ inline inlib::sg::bcbk::return_action action_nature(inlib::sg::gui_viewer& a_gv)
 ///////////////////////////////////////////////////////////////////////////////////
 
 #define ADD_ITEM(a__name) \
-  inlib::sg::add_label_item(a_gv,*list,s_label_##a__name(),_action_nature,_blason_##a__name());
+  inlib::sg::add_item(a_gv,*list,s_label_##a__name(),_action_scope,blason_##a__name());
 
-ACTION_ID(indoor_80)
-ACTION_ID(indoor_60)
-ACTION_ID(indoor_40)
-ACTION_ID(indoor_40_31)
-
-inline inlib::sg::bcbk::return_action action_FITA_indoor(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_FITA_indoor(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
   ADD_ITEM(indoor_80)
   ADD_ITEM(indoor_60)
   ADD_ITEM(indoor_40)
   ADD_ITEM(indoor_40_31)
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-ACTION_ID(outdoor_122)
-ACTION_ID(outdoor_80)
-ACTION_ID(outdoor_80_22)
-
-inline inlib::sg::bcbk::return_action action_FITA_outdoor(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_FITA_outdoor(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
   ADD_ITEM(outdoor_122)
   ADD_ITEM(outdoor_80)
   ADD_ITEM(outdoor_80_22)
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 /// menu field : //////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-ACTION_ID(field_80)
-ACTION_ID(field_60)
-ACTION_ID(field_40_22)
-ACTION_ID(field_20_34)
-
-inline inlib::sg::bcbk::return_action action_field(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_field(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
   ADD_ITEM(field_80)
   ADD_ITEM(field_60)
   ADD_ITEM(field_40_22)
   ADD_ITEM(field_20_34)
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 /// menu scope : //////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-inline inlib::sg::bcbk::return_action action_main_scope(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_main_scope(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
 
-  inlib::sg::add_label_item(a_gv,*list,"FITA indoor",action_FITA_indoor);
-  inlib::sg::add_label_item(a_gv,*list,"FITA outdoor",action_FITA_outdoor);
-  inlib::sg::add_label_item(a_gv,*list,"Field",action_field);
-  inlib::sg::add_label_item(a_gv,*list,"2D - Animals",action_nature);
+  inlib::sg::add_item(a_gv,*list,"FITA indoor",action_FITA_indoor);
+  inlib::sg::add_item(a_gv,*list,"FITA outdoor",action_FITA_outdoor);
+  inlib::sg::add_item(a_gv,*list,"Field",action_field);
+  inlib::sg::add_item(a_gv,*list,"2D - Animals",action_nature);
   
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -285,7 +251,7 @@ inline inlib::sg::bcbk::return_action action_main_scope(inlib::sg::gui_viewer& a
 
 inline void _map_warn(inlib::sg::entries& a_entries,const std::string& a_s) {
   a_entries.label = a_s;
-  a_entries.label_back_color = inlib::colorf::salmon();
+  a_entries.label_back_color = inlib::colorf_salmon();
   //m_gv.map_warn(a_s);
 }
 
@@ -295,7 +261,7 @@ inline void _map_warn(inlib::sg::entries& a_entries,const std::string& a_s) {
     std::string stmp;\
     if(!inlib::num2s(a__index,stmp)){}\
     _map_warn(a_entries,"param["+stmp+"] not a double");\
-    return inlib::sg::bcbk::return_to_render;\
+    return inlib::sg::return_to_render;\
   }}
 
 #define GET_VAL_GT_0(a__variable,a__index) \
@@ -304,13 +270,13 @@ inline void _map_warn(inlib::sg::entries& a_entries,const std::string& a_s) {
     std::string stmp;\
     if(!inlib::num2s(a__index,stmp)){}\
     _map_warn(a_entries,"param["+stmp+"] not a double");\
-    return inlib::sg::bcbk::return_to_render;\
+    return inlib::sg::return_to_render;\
   }\
   if(a__variable<=0) {\
     std::string stmp;\
     if(!inlib::num2s(a__index,stmp)){}\
     _map_warn(a_entries,"param["+stmp+"] must be >0");\
-    return inlib::sg::bcbk::return_to_render;\
+    return inlib::sg::return_to_render;\
   }}
 
 #define GET_VAL_GE_0(a__variable,a__index) \
@@ -319,13 +285,13 @@ inline void _map_warn(inlib::sg::entries& a_entries,const std::string& a_s) {
     std::string stmp;\
     if(!inlib::num2s(a__index,stmp)){}\
     _map_warn(a_entries,"param["+stmp+"] not a double");\
-    return inlib::sg::bcbk::return_to_render;\
+    return inlib::sg::return_to_render;\
   }\
   if(a__variable<0) {\
     std::string stmp;\
     if(!inlib::num2s(a__index,stmp)){}\
     _map_warn(a_entries,"param["+stmp+"] must be >=0");\
-    return inlib::sg::bcbk::return_to_render;\
+    return inlib::sg::return_to_render;\
   }}
 
 #define GET_VAL_RANGE(a__variable,a__index,a__min,a__max) \
@@ -334,7 +300,7 @@ inline void _map_warn(inlib::sg::entries& a_entries,const std::string& a_s) {
     std::string stmp;\
     if(!inlib::num2s(a__index,stmp)){}\
     _map_warn(a_entries,"param["+stmp+"] not a double");\
-    return inlib::sg::bcbk::return_to_render;\
+    return inlib::sg::return_to_render;\
   }\
   if(a__variable<a__min) {\
     std::string stmp;\
@@ -342,7 +308,7 @@ inline void _map_warn(inlib::sg::entries& a_entries,const std::string& a_s) {
     std::string smin;\
     if(!inlib::num2s(a__min,smin)){}\
     _map_warn(a_entries,"param["+stmp+"] must be >="+smin);\
-    return inlib::sg::bcbk::return_to_render;\
+    return inlib::sg::return_to_render;\
   }\
   if(a__variable>a__max) {\
     std::string stmp;\
@@ -350,10 +316,10 @@ inline void _map_warn(inlib::sg::entries& a_entries,const std::string& a_s) {
     std::string smax;\
     if(!inlib::num2s(a__max,smax)){}\
     _map_warn(a_entries,"param["+stmp+"] must be <="+smax);\
-    return inlib::sg::bcbk::return_to_render;\
+    return inlib::sg::return_to_render;\
   }}
 
-inline inlib::sg::bcbk::return_action action__FOC_LA(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
+inline inlib::sg::return_action action__FOC_LA(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
   const std::vector<std::string>& vals = a_entries.values.values();
 
   GET_VAL_GT_0(L,0)
@@ -361,11 +327,11 @@ inline inlib::sg::bcbk::return_action action__FOC_LA(inlib::sg::gui_viewer& a_gv
   double A;
  {if(!inlib::to<double>(vals[1],A)){
     _map_warn(a_entries,"param[1] not a double");
-    return inlib::sg::bcbk::return_to_render;
+    return inlib::sg::return_to_render;
   }
   if(((2*A)<=L)||(A>=L)) {
     _map_warn(a_entries,"param[1] must be in ]L/2,L[");
-    return inlib::sg::bcbk::return_to_render;
+    return inlib::sg::return_to_render;
   }}
 
   double FOC = FOC_LA(L,A);
@@ -375,18 +341,18 @@ inline inlib::sg::bcbk::return_action action__FOC_LA(inlib::sg::gui_viewer& a_gv
   stmp += " %";
   a_entries.label = stmp;}
 
-  a_entries.label_back_color = inlib::colorf::springgreen();
+  a_entries.label_back_color = inlib::colorf_springgreen();
 
-  return inlib::sg::bcbk::return_to_render;     
+  return inlib::sg::return_to_render;     
 }
 
-inline inlib::sg::bcbk::return_action action_FOC_LA(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_FOC_LA(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::entries* node = new inlib::sg::entries(a_gv.ttf());
   node->cancel_label = s_Enter();
-  a_gv.set_colors(*node);
-  node->add_callback(new inlib::sg::funtag_cbk<inlib::sg::entries>(a_gv,*node,action__FOC_LA,0));
+  a_gv.set_style(*node);
+  inlib::sg::add_callback(a_gv,*node,action__FOC_LA);
 
-  node->shown_label_color = inlib::colorf::pink();
+  node->shown_label_color = inlib::colorf_pink();
 
   double def_L = 100; //cm
   double def_A = 60;  //cm
@@ -402,36 +368,36 @@ inline inlib::sg::bcbk::return_action action_FOC_LA(inlib::sg::gui_viewer& a_gv)
   node->label = stmp;}
 
   a_gv.push_list(node);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action__FOC_dm(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
+inline inlib::sg::return_action action__FOC_dm(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
   const std::vector<std::string>& vals = a_entries.values.values();
 
   double old_FOC;
  {if(!inlib::to<double>(vals[0],old_FOC)){
     _map_warn(a_entries,"param[0] not a double");
-    return inlib::sg::bcbk::return_to_render;
+    return inlib::sg::return_to_render;
   }
   if((old_FOC<0)||(old_FOC>50)) {
     _map_warn(a_entries,"param[0] not in [0,50]");
-    return inlib::sg::bcbk::return_to_render;
+    return inlib::sg::return_to_render;
   }}
 
   double mass;
   if(!inlib::to<double>(vals[1],mass)){
     _map_warn(a_entries,"param[1] not a double");
-    return inlib::sg::bcbk::return_to_render;
+    return inlib::sg::return_to_render;
   }
 
   double new_FOC;
  {if(!inlib::to<double>(vals[2],new_FOC)){
     _map_warn(a_entries,"param[2] not a double");
-    return inlib::sg::bcbk::return_to_render;
+    return inlib::sg::return_to_render;
   }
   if((new_FOC<0)||(new_FOC>=50)) {
     _map_warn(a_entries,"param[2] not in [0,50[");
-    return inlib::sg::bcbk::return_to_render;
+    return inlib::sg::return_to_render;
   }}
 
   double dm = FOC_dm(old_FOC,new_FOC,mass);
@@ -446,18 +412,18 @@ inline inlib::sg::bcbk::return_action action__FOC_dm(inlib::sg::gui_viewer& a_gv
   }
 
   a_entries.label = s;
-  a_entries.label_back_color = inlib::colorf::springgreen();
+  a_entries.label_back_color = inlib::colorf_springgreen();
 
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_FOC_dm(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_FOC_dm(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::entries* node = new inlib::sg::entries(a_gv.ttf());
   node->cancel_label = s_Enter();
-  a_gv.set_colors(*node);
-  node->add_callback(new inlib::sg::funtag_cbk<inlib::sg::entries>(a_gv,*node,action__FOC_dm,0));
+  a_gv.set_style(*node);
+  inlib::sg::add_callback(a_gv,*node,action__FOC_dm);
 
-  node->shown_label_color = inlib::colorf::pink();
+  node->shown_label_color = inlib::colorf_pink();
 
   double def_old = 15;
   double def_mass = 475;
@@ -477,10 +443,10 @@ inline inlib::sg::bcbk::return_action action_FOC_dm(inlib::sg::gui_viewer& a_gv)
   node->label = s;}
 
   a_gv.push_list(node);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action__FOC_full(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
+inline inlib::sg::return_action action__FOC_full(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
   const std::vector<std::string>& vals = a_entries.values.values();
 
   GET_VAL_GT_0(m_Pt,0)
@@ -501,19 +467,19 @@ inline inlib::sg::bcbk::return_action action__FOC_full(inlib::sg::gui_viewer& a_
   a_entries.label = s;
   a_entries.label_confine = true;
 
-  a_entries.label_back_color = inlib::colorf::springgreen();
+  a_entries.label_back_color = inlib::colorf_springgreen();
 
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_FOC_full(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_FOC_full(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::entries* node = new inlib::sg::entries(a_gv.ttf());
   node->cancel_label = s_Enter();
-  a_gv.set_colors(*node);
-  node->add_callback(new inlib::sg::funtag_cbk<inlib::sg::entries>(a_gv,*node,action__FOC_full,0));
+  a_gv.set_style(*node);
+  inlib::sg::add_callback(a_gv,*node,action__FOC_full);
 
   //node->visible_items = 8;
-  node->shown_label_color = inlib::colorf::pink();
+  node->shown_label_color = inlib::colorf_pink();
 
   double def_m_Pt = 120;   //gn
   double def_rho_T = 5.9;  //gn/in
@@ -547,26 +513,26 @@ inline inlib::sg::bcbk::return_action action_FOC_full(inlib::sg::gui_viewer& a_g
   node->label_confine = true;
 
   a_gv.push_list(node);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_main_FOC(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_main_FOC(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
 
-  inlib::sg::add_label_item(a_gv,*list,"FOC from Lengths",action_FOC_LA);
-  inlib::sg::add_label_item(a_gv,*list,"Adjust point mass",action_FOC_dm);
-  inlib::sg::add_label_item(a_gv,*list,"FOC from Weights",action_FOC_full);
+  inlib::sg::add_item(a_gv,*list,"FOC from Lengths",action_FOC_LA);
+  inlib::sg::add_item(a_gv,*list,"Adjust point mass",action_FOC_dm);
+  inlib::sg::add_item(a_gv,*list,"FOC from Weights",action_FOC_full);
   
   a_gv.push_list(list);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
 /// menu sight charts : ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-inline inlib::sg::bcbk::return_action action_sight_charts_def(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
+inline inlib::sg::return_action action_sight_charts_def(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
   const std::vector<std::string>& vals = a_entries.values.values();
 
   a_entries.label = "";
@@ -589,7 +555,7 @@ inline inlib::sg::bcbk::return_action action_sight_charts_def(inlib::sg::gui_vie
   double mark0 = sight_chart(doesco,hoenock,qpDegree,v0,auTomm,xFref);
 
   inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*list);
+  a_gv.set_style(*list);
 
  {for(unsigned int index=1;index<=12;index++) {
     double xF = 5*index; //m
@@ -603,22 +569,22 @@ inline inlib::sg::bcbk::return_action action_sight_charts_def(inlib::sg::gui_vie
     inlib::sprintf(_v,128,"%.1f",mark);
     inlib::justify(_v,8,inlib::side_right);
 
-    inlib::sg::add_label_item(a_gv,*list,_x+_v,inlib::sg::action_none);
+    inlib::sg::add_item(a_gv,*list,_x+_v,inlib::sg::action_none);
   }}
 
   a_gv.push_list(list);
 #endif
 
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_sight_charts_def_menu(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_sight_charts_def_menu(inlib::sg::gui_viewer& a_gv) {
   // from for_1_1/test.cpp/func1()
 
   inlib::sg::entries* node = new inlib::sg::entries(a_gv.ttf());
   node->cancel_label = s_Enter();
-  a_gv.set_colors(*node);
-  node->add_callback(new inlib::sg::funtag_cbk<inlib::sg::entries>(a_gv,*node,action_sight_charts_def,0));
+  a_gv.set_style(*node);
+  inlib::sg::add_callback(a_gv,*node,action_sight_charts_def);
 
   double def_doesco   = 31.5;  //inch
   double def_hoenock  = 4.7;   //inch
@@ -633,10 +599,10 @@ inline inlib::sg::bcbk::return_action action_sight_charts_def_menu(inlib::sg::gu
   node->add_double("A.U to mm conv."  ,def_auTomm);
 
   a_gv.push_list(node);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_sight_charts_Std_Marks_speed_known(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
+inline inlib::sg::return_action action_sight_charts_Std_Marks_speed_known(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
   // from for_1_1/test.cpp/func1_1_0()
   // Evolution of func1 with sight chart computed in the range [xFMin,xFMax] and steping xFStep
   // the v0 in known anf the Reference distance is the xFMin
@@ -658,21 +624,21 @@ inline inlib::sg::bcbk::return_action action_sight_charts_Std_Marks_speed_known(
 
   if(xFmax<=xFmin) {
     _map_warn(a_entries,"xFmax<=xFmin !");
-    return inlib::sg::bcbk::return_to_render;
+    return inlib::sg::return_to_render;
   }
 
   create_sight_chart_sg(a_gv,doesco,hoenock,qpDegree,qpDegree,v0,auTomm,xFmin,xFmax,xFstep);
 
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_sight_charts_Std_Marks_speed_known_menu(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_sight_charts_Std_Marks_speed_known_menu(inlib::sg::gui_viewer& a_gv) {
   // from for_1_1/test.cpp/func1_1_0()
 
   inlib::sg::entries* node = new inlib::sg::entries(a_gv.ttf());
   node->cancel_label = s_Enter();
-  a_gv.set_colors(*node);
-  node->add_callback(new inlib::sg::funtag_cbk<inlib::sg::entries>(a_gv,*node,action_sight_charts_Std_Marks_speed_known,0));
+  a_gv.set_style(*node);
+  inlib::sg::add_callback(a_gv,*node,action_sight_charts_Std_Marks_speed_known);
 
   double def_doesco      = 31.5;  //inch
   double def_hoenock     = 4.7;   //inch
@@ -697,10 +663,10 @@ inline inlib::sg::bcbk::return_action action_sight_charts_Std_Marks_speed_known_
   node->add_double("Dist. Step (m)"      ,def_xFstep);
 
   a_gv.push_list(node);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_sight_charts_Std_Marks_speed_unknown(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
+inline inlib::sg::return_action action_sight_charts_Std_Marks_speed_unknown(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
   // from for_1_1/test.cpp/func1_1_1()
   // Alternative to 1_0 where v0 in unknown so the user provide 2 reference distances and the diference
   // of mark sight (<0 means mark2 lower than mark1 with positive vertical axis pointing to the sky)
@@ -721,7 +687,7 @@ inline inlib::sg::bcbk::return_action action_sight_charts_Std_Marks_speed_unknow
 
   if(xFmax<=xFmin) {
     _map_warn(a_entries,"xFmax<=xFmin !");
-    return inlib::sg::bcbk::return_to_render;
+    return inlib::sg::return_to_render;
   }
 
   GET_VAL_GT_0(xFref1,8)
@@ -754,16 +720,16 @@ inline inlib::sg::bcbk::return_action action_sight_charts_Std_Marks_speed_unknow
 
   create_sight_chart_sg(a_gv,doesco,hoenock,qpDegree,qpDegree,v0,auTomm,xFmin,xFmax,xFstep,infos);
 
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_sight_charts_Std_Marks_speed_unknown_menu(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_sight_charts_Std_Marks_speed_unknown_menu(inlib::sg::gui_viewer& a_gv) {
   // from for_1_1/test.cpp/func1_1_1()
 
   inlib::sg::entries* node = new inlib::sg::entries(a_gv.ttf());
   node->cancel_label = s_Enter();
-  a_gv.set_colors(*node);
-  node->add_callback(new inlib::sg::funtag_cbk<inlib::sg::entries>(a_gv,*node,action_sight_charts_Std_Marks_speed_unknown,0));
+  a_gv.set_style(*node);
+  inlib::sg::add_callback(a_gv,*node,action_sight_charts_Std_Marks_speed_unknown);
 
   double def_doesco      = 31.5;  //inch
   double def_hoenock     = 4.7;   //inch
@@ -794,10 +760,10 @@ inline inlib::sg::bcbk::return_action action_sight_charts_Std_Marks_speed_unknow
   node->add_double("Diff. of Sight Mark 1->2 (mm)" ,def_markRef2mRef1);
 
   a_gv.push_list(node);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_sight_charts_Equiv_Dist_vs_Angle_speed_known(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
+inline inlib::sg::return_action action_sight_charts_Equiv_Dist_vs_Angle_speed_known(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
   // from for_1_1/test.cpp/func1_1_2()
   // Provide to the user the different equivalent distance to the target at different slope of the field
   // xF' such that mark(xF,qp) = m(xF',qpRef)
@@ -853,16 +819,16 @@ inline inlib::sg::bcbk::return_action action_sight_charts_Equiv_Dist_vs_Angle_sp
 
   create_ruler_sg(a_gv,ticks,"Angle (deg)","Dist Equi. (m)");
 
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_sight_charts_Equiv_Dist_vs_Angle_speed_known_menu(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_sight_charts_Equiv_Dist_vs_Angle_speed_known_menu(inlib::sg::gui_viewer& a_gv) {
   // from for_1_1/test.cpp/func1_1_2()
 
   inlib::sg::entries* node = new inlib::sg::entries(a_gv.ttf());
   node->cancel_label = s_Enter();
-  a_gv.set_colors(*node);
-  node->add_callback(new inlib::sg::funtag_cbk<inlib::sg::entries>(a_gv,*node,action_sight_charts_Equiv_Dist_vs_Angle_speed_known,0));
+  a_gv.set_style(*node);
+  inlib::sg::add_callback(a_gv,*node,action_sight_charts_Equiv_Dist_vs_Angle_speed_known);
 
   double def_doesco      = 31.5;  //inch
   double def_hoenock     = 4.7;   //inch
@@ -887,10 +853,10 @@ inline inlib::sg::bcbk::return_action action_sight_charts_Equiv_Dist_vs_Angle_sp
   node->add_double("Slope step (deg)"  ,def_qpDegreeStep);
 
   a_gv.push_list(node);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_sight_charts_Equiv_Dist_vs_Angle_speed_unknown(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
+inline inlib::sg::return_action action_sight_charts_Equiv_Dist_vs_Angle_speed_unknown(inlib::sg::gui_viewer& a_gv,inlib::sg::entries& a_entries) {
   // from for_1_1/test.cpp/func1_1_3()
   // Provide to the user the different equivalent distance to the target at different slope of the field
   // xF' such that mark(xF,qp) = m(xF',qpRef)
@@ -977,17 +943,16 @@ inline inlib::sg::bcbk::return_action action_sight_charts_Equiv_Dist_vs_Angle_sp
 
   create_ruler_sg(a_gv,ticks,"Angle (deg)","Dist Equi. (m)",infos);
 
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_sight_charts_Equiv_Dist_vs_Angle_speed_unknown_menu(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_sight_charts_Equiv_Dist_vs_Angle_speed_unknown_menu(inlib::sg::gui_viewer& a_gv) {
   // from for_1_1/test.cpp/func1_1_3()
 
   inlib::sg::entries* node = new inlib::sg::entries(a_gv.ttf());
   node->cancel_label = s_Enter();
-  a_gv.set_colors(*node);
-  node->add_callback
-    (new inlib::sg::funtag_cbk<inlib::sg::entries>(a_gv,*node,action_sight_charts_Equiv_Dist_vs_Angle_speed_unknown,0));
+  a_gv.set_style(*node);
+  inlib::sg::add_callback(a_gv,*node,action_sight_charts_Equiv_Dist_vs_Angle_speed_unknown);
 
   double def_doesco      = 31.5;  //inch
   double def_hoenock     = 4.7;   //inch
@@ -1017,19 +982,19 @@ inline inlib::sg::bcbk::return_action action_sight_charts_Equiv_Dist_vs_Angle_sp
   node->add_double("Slope step (deg)"  ,def_qpDegreeStep);
 
   a_gv.push_list(node);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
-inline inlib::sg::bcbk::return_action action_main_sight_charts(inlib::sg::gui_viewer& a_gv) {
+inline inlib::sg::return_action action_main_sight_charts(inlib::sg::gui_viewer& a_gv) {
   inlib::sg::list* node = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_colors(*node);
+  a_gv.set_style(*node);
   //inlib::sg::add_label_item(a_gv,*node,"default",action_sight_charts_def_menu);
-  inlib::sg::add_label_item(a_gv,*node,"Std Marks",action_sight_charts_Std_Marks_speed_known_menu);
-  inlib::sg::add_label_item(a_gv,*node,"Std Marks + speed",action_sight_charts_Std_Marks_speed_unknown_menu);
-  inlib::sg::add_label_item(a_gv,*node,"Equiv. Dist. vs Angle",action_sight_charts_Equiv_Dist_vs_Angle_speed_known_menu);
-  inlib::sg::add_label_item(a_gv,*node,"Equiv. Dist. vs Angle + speed",action_sight_charts_Equiv_Dist_vs_Angle_speed_unknown_menu);
+  inlib::sg::add_item(a_gv,*node,"Std Marks",action_sight_charts_Std_Marks_speed_known_menu);
+  inlib::sg::add_item(a_gv,*node,"Std Marks + speed",action_sight_charts_Std_Marks_speed_unknown_menu);
+  inlib::sg::add_item(a_gv,*node,"Equiv. Dist. vs Angle",action_sight_charts_Equiv_Dist_vs_Angle_speed_known_menu);
+  inlib::sg::add_item(a_gv,*node,"Equiv. Dist. vs Angle + speed",action_sight_charts_Equiv_Dist_vs_Angle_speed_unknown_menu);
   a_gv.push_list(node);
-  return inlib::sg::bcbk::return_to_render;
+  return inlib::sg::return_to_render;
 }
 
 }
