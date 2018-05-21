@@ -31,9 +31,14 @@ ${bush_home}/find_rm /tmp "${app}_source-${version}*"
 #///////////////////////////////////////////////////
 #///////////////////////////////////////////////////
 dirs="${inlib_home}:${exlib_home}"
+
 if [ ${app} = g4exa ] ; then
   dirs="${dirs}:${ourex_home}/AIDA/v3r2p1"
-  dirs="${dirs}:${ourex_home}/geant4/include/Geant4"
+fi
+
+geant4_version=geant4.10.03.p01
+if [ ${app} = g4exa -o ${app} = g4view -o ${app} = MEMPHYS_vis ] ; then
+  dirs="${dirs}:${ourex_home}/${geant4_version}/include/Geant4"
 fi
 
 nos='exlib/cbk/wall:wall_client'
@@ -89,13 +94,14 @@ for item in ${items} ; do
   /bin/cp -R ${ourex_home}/${item} ${to}/inexlib/ourex/.
 done
 
-#if [ ${app} = g4exa ] ; then
-#  /bin/mkdir -p ${to}/inexlib/ourex/geant4
-#  /bin/cp -R ${ourex_home}/geant4/include ${to}/inexlib/ourex/geant4/.
-#  /bin/cp -R ${ourex_home}/geant4/source ${to}/inexlib/ourex/geant4/.
-#  /bin/cp ${ourex_home}/geant4/build ${to}/inexlib/ourex/geant4/.
-#  /bin/cp ${ourex_home}/geant4/README ${to}/inexlib/ourex/geant4/.
-#fi
+if [ ${app} = g4exa -o ${app} = g4view -o ${app} = MEMPHYS_vis ] ; then
+  /bin/mkdir -p ${to}/inexlib/ourex/${geant4_version}
+  /bin/cp -R ${ourex_home}/${geant4_version}/include ${to}/inexlib/ourex/${geant4_version}/.
+  /bin/cp -R ${ourex_home}/${geant4_version}/source ${to}/inexlib/ourex/${geant4_version}/.
+  /bin/cp ${ourex_home}/${geant4_version}/build ${to}/inexlib/ourex/${geant4_version}/.
+  /bin/cp ${ourex_home}/${geant4_version}/README ${to}/inexlib/ourex/${geant4_version}/.
+  /bin/cp ${ourex_home}/${geant4_version}/a_native_copyright ${to}/inexlib/ourex/${geant4_version}/.
+fi
 
 #///////////////////////////////////////////////////
 #///////////////////////////////////////////////////
@@ -160,6 +166,10 @@ fi
 if [ ${app} = ArcheryTune ] ; then
   /bin/mkdir -p ${to}/inexlib/exlib/exlib/cbk
   /bin/cp ${exlib_home}/exlib/cbk/wall ${to}/inexlib/exlib/exlib/cbk/.
+fi
+
+if [ -f ../history ] ; then
+  /bin/cp ../history ${to}/.
 fi
 
 /bin/mkdir -p ${to}/inexlib/exlib/inlib/wall
