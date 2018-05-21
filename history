@@ -1,0 +1,50 @@
+1.2.0 :
+ - May/2018 : update toward recent inlib/exlib.
+
+1.1 :
+ - Sight charts + spped : show speed in infos box.
+ - main : m_params.m_list_visible_items = 9; //to have all "Std Marks (speed known)" in one panel.
+ - gui : have callback functions with a shorter arg list.
+ - gui : opts -> combo.
+ - Sight charts : back to menu item.
+ - Sight charts : functions 1_[0,1,2,3] as described by JEC.
+ - main/expport menu item.
+ - OSX, Linux : if no mail_panel, have an export menu item to write out.png.
+ - ArcheryTune/main : set_[list,entries]_layout(), enforce m_params.list_visible_items = 8 in cstor. So that
+                      in "F.O.C => FOC from Weights" we see all 8 items.
+ - ArcheryTune/archery : pure archery algorithms and blason tables.
+ - ArcheryTune/gui : use function callback logic.
+ - ArcheryTune/main_cbk -> gui.
+
+1.0 :
+ - 15/Mai/2014 : numeric_width = wcw*0.7f.
+ - 15/Mai/2014 : have cache transparent in case someone move the target behind the cache.
+ - 10/Dec/2013 : with JEC, review targets : add inner border, have larger numbers, add outdoor_80_22.
+                 Revisit internal naming of targets, have one rep_rings() method.
+ - 20/Nov/2013 : slider/begin,end -> pass infos_text outline/filled.
+ - 01/Oct/2013 : if a bad value is entered, dump a salmon
+                 msg in the entries label.
+ - 01/Oct/2013 : have wider entries widget.
+ - 30/Sep/2013 : F.O.C : have "F.O.C from Lengths", "Adjust point mass",
+                 "F.O.C from Weights".
+ - 30/Sep/2013 : F.O.C/full : cock weight -> nock weight.
+ - 30/Sep/2013 : FITA indoor : 122_full : "122cm single".
+ - 30/Sep/2013 : FITA indoor : 40_full : "40cm single", dist def 18.
+ - 30/Sep/2013 : FITA indoor : 60_full : "60cm single", dist def 18.
+ - 30/Sep/2013 : FITA indoor : 80_full : "80cm single", dist def 25.
+ - 30/Sep/2013 : FITA indoor : tri_spot_40_vertical : "40cm Vertical Tri-spot",
+                 dist def 18.
+ - 30/Sep/2013 : console : dist + size scope from the beginning.
+ - 30/Sep/2013 : entries : blason : not editable item.
+ - 30/Sep/2013 : button "back to menu" : beos_menu.jpg icon.
+
+ - 20/Jun/2013 : menu nature.
+ - 17/Jun/2013 : campagne_20 : 12 targets.
+ - 17/Jun/2013 : campagne_40 : 4 targets.
+ -  8/Jun/2013 : scope : vertical slider at left for distances.
+ -  6/Jun/2013 : icons : 64x64.
+ -  6/Jun/2013 : FOC : put result in the entries labels.
+ -  4/Jun/2013 : try no icons by default.
+ -  3/Jun/2013 : FOC menu item.
+ - 23/May/2013 : softinex web pages.
+ - 18/May/2013 : creation.
