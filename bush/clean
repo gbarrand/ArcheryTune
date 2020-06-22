@@ -49,3 +49,5 @@ elif [ ${build_rma} = "yes" ] ; then
   /bin/rm -f tmp_0
 
 fi
+
+for file in "${to_rm}" ; do /bin/rm -f ${file}; done

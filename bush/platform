@@ -11,8 +11,6 @@ if [ $# != 1 ] ; then
   exit
 fi
 
-cpp_compiler="$1"
-
 bin_path=`dirname $0`
 
 save_dir=`pwd`
@@ -26,7 +24,15 @@ if [ "`uname | grep CYGWIN`" != "" ] ; then
   platform="`echo ${platform} | sed -e 's: :\\\ :g'`"
   platform="`echo ${platform} | tr -d '\n\r'`"
   /bin/rm -f ./platform.obj ./platform.exe ./platform.exe.manifest
+elif [ "`uname -r | grep Microsoft`" != "" ] ; then
+  ./vc++ -c -o ./platform.o ./cpp/platform.cpp
+  ./vc++ -o ./platform.exe ./platform.o
+  platform=`./platform.exe`
+  platform="`echo ${platform} | sed -e 's: :\\\ :g'`"
+  platform="`echo ${platform} | tr -d '\n\r'`"
+  /bin/rm -f ./platform.o ./platform.exe
 else
+  cpp_compiler="$1"
   ${cpp_compiler} -o platform_exe ./cpp/platform.cpp
   platform=`./platform_exe`
   /bin/rm -f ./platform_exe

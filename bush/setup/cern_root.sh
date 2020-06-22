@@ -8,12 +8,13 @@ fi
 if [ "`uname -n`" = "barrand-ubuntu" ] ; then # on_my_openstack_ubuntu
  #cd /usr/local/ROOT/6.08.06/bin
   cd /usr/local/ROOT/6.12.06/root/bin
-else    
+else
  #cd /usr/local/ROOT/5.34.18/bin
  #Darwin : the 5.34.18 does not permit to pass exlib/exlib/cern_root.
  #cd /usr/local/ROOT/5.34.00.patches/bin
  #cd /usr/local/ROOT/6.08.06/bin
-  cd /usr/local/ROOT/6.12.06/root/bin
+ #cd /usr/local/ROOT/6.12.06/root/bin
+  cd /usr/local/ROOT/6.20.04/root/bin
 fi
 
 . ./thisroot.sh

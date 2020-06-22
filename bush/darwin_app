@@ -42,7 +42,7 @@ if [ "${darwin_app_libs}" != "" ] ; then
     ${install_name_tool_exe} -change  ${old_name} ${new_name} "${head}/MacOS/${app_exe}"
   done
 
-  # Change the id of dylibs :  
+  # Change the id of dylibs :
   for item in ${darwin_app_libs} ; do
     lib_name="`basename ${item}`"
     new_name="@executable_path/../lib/${lib_name}"

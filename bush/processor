@@ -11,8 +11,6 @@ if [ $# != 1 ] ; then
   exit
 fi
 
-cpp_compiler="$1"
-
 bin_path=`dirname $0`
 
 save_dir=`pwd`
@@ -26,7 +24,15 @@ if [ "`uname | grep CYGWIN`" != "" ] ; then
   processor="`echo ${processor} | sed -e 's: :\\\ :g'`"
   processor="`echo ${processor} | tr -d '\n\r'`"
   /bin/rm -f ./processor.obj ./processor.exe ./processor.exe.manifest
+elif [ "`uname -r | grep Microsoft`" != "" ] ; then
+  ./vc++ -c -o ./processor.o ./cpp/processor.cpp
+  ./vc++ -o ./processor.exe ./processor.o
+  processor=`./processor.exe`
+  processor="`echo ${processor} | sed -e 's: :\\\ :g'`"
+  processor="`echo ${processor} | tr -d '\n\r'`"
+  /bin/rm -f ./processor.o ./processor.exe
 else
+  cpp_compiler="$1"
   ${cpp_compiler} -o processor_exe ./cpp/processor.cpp
   processor=`./processor_exe`
   /bin/rm -f ./processor_exe

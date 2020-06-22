@@ -17,6 +17,7 @@ fi
 #//////////////////////////////////////////////////////
 build_offscreen=no
 build_x11=no
+build_sdl2=no
 build_no_gl=no
 build_cocoa=no
 build_cocoa_gnu=no
@@ -25,10 +26,11 @@ build_ios_gnu=no
 build_iossim=no
 build_android=no
 build_webgl=no
+build_wasm=no
 build_wx=no
 build_tntnet=no
 build_no_screen=no
-build_no_wall=no
+build_no_data_client=no
 build_app_dev=no
 build_app_use=
 build_enforce_vbo=no
@@ -51,11 +53,14 @@ for arg in ${build_args} ; do
      -android)        build_android=yes;;
      -webgl)          build_webgl=yes;;
      -WebGL)          build_webgl=yes;;
+     -wasm)           build_wasm=yes;;
      -wx)             build_wx=yes;;
      -tntnet)         build_tntnet=yes;;
+     -sdl2)           build_sdl2=yes;;
+     -SDL2)           build_sdl2=yes;;
      -no_gl)          build_no_gl=yes;;
      -no_screen)      build_no_screen=yes;;
-     -no_wall)        build_no_wall=yes;;
+     -no_data_client) build_no_data_client=yes;;
      -app_dev)        build_app_dev=yes;;
      -install)        build_install=yes;;
      -vbo)            build_enforce_vbo=yes;;
@@ -83,6 +88,9 @@ elif [ ${build_offscreen} = "yes" ] ; then
 elif [ ${build_x11} = "yes" ] ; then
   # take default compiler : clang on Mac, gnu on Linux.
   echo dummy > /dev/null
+elif [ ${build_sdl2} = "yes" ] ; then
+  # take default compiler : clang on Mac, gnu on Linux.
+  echo dummy > /dev/null
 elif [ ${build_cocoa} = "yes" ] ; then
   header_args="${header_args} -sdk_mac"
 elif [ ${build_cocoa_gnu} = "yes" ] ; then
@@ -100,6 +108,9 @@ elif [ ${build_android} = "yes" ] ; then
 elif [ ${build_webgl} = "yes" ] ; then
   # take default compiler : clang on Mac, gnu on Linux.
   echo dummy > /dev/null
+
+elif [ ${build_wasm} = "yes" ] ; then
+  header_args="${header_args} -emcc"
 
 elif [ ${build_wx} = "yes" ] ; then
   # take default compiler : clang on Mac, gnu on Linux.
@@ -161,9 +172,9 @@ if [ ${build_inlib_gl} = "yes" ] ; then
   cppflags="${cppflags} -DEXLIB_INLIB_GL"
 fi
 
-if [ "${build_no_wall}" = "no" ] ; then
-  cppflags="${cppflags} -DAPP_USE_WALL"
-fi
+#if [ "${build_no_data_client}" = "no" ] ; then
+#  cppflags="${cppflags} -DAPP_USE_DATA_CLIENT"
+#fi
 
 if [ "${exlib_home}" = "" ] ; then
   exlib_home=${bush_home}/../inexlib/exlib
@@ -173,3 +184,17 @@ if [ "${inlib_home}" = "" ] ; then
   inlib_home=${bush_home}/../inexlib/inlib
 fi
 
+if [ "`uname | grep CYGWIN`" != "" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    cppflags="${cppflags} -bigobj"
+    app_lower="`echo ${app} | tr '[:upper:]' '[:lower:]'`"
+    if [ ${app} != ${app_lower} ] ; then
+      cppflags="${cppflags} -I../${app}"  # to bypass "../<app>/main" not found on CYGWIN if the app name contains uppercase chars.
+    fi
+    if [ ${build_webgl} = "yes" ] ; then
+      cppflags="${cppflags} -I${inlib_home}/inlib/WebGL"  # to bypass "wrap_main_js" not found in inlib/WebGL/render.
+    fi
+  else
+    cppflags="${cppflags} -Wa,-mbig-obj"
+  fi
+fi
