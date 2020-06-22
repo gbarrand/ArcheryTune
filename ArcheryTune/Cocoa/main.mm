@@ -5,6 +5,6 @@
 
 typedef ArcheryTune::main app_main_t;
 
-#import <exlib/app/Cocoa/main_mm>
+#import <exlib/app/Cocoa/main.mm>
 
 int main(int argc,char** argv) {return exlib_main<ArcheryTune::context,ArcheryTune::main>("ArcheryTune",argc,argv);}
