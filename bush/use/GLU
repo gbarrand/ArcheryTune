@@ -1,0 +1,18 @@
+# Copyright (C) 2010, Guy Barrand. All rights reserved.
+# See the file bush.license for terms.
+
+if [ "${use_GLU}" = "yes" ] ; then
+  if [ ${build_visual} = "yes" ] ; then
+    libs="${libs} glu32.lib"
+  elif [ ${build_sdk_android} = "yes" ] ; then
+    echo dummy > /dev/null
+  else
+    inc_dirs="/usr/include /opt/X11/include"
+    inc_to_find=GL/glu.h
+    . ${bush_home}/find_inc
+
+    lib_dirs="/usr/${lib} /usr/lib/x86_64-linux-gnu /opt/X11/lib"
+    lib_to_find=GLU
+    . ${bush_home}/find_lib
+  fi
+fi

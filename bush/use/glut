@@ -1,0 +1,13 @@
+# Copyright (C) 2010, Guy Barrand. All rights reserved.
+# See the file bush.license for terms.
+
+if [ "${use_glut}" = "yes" ] ; then
+  inc_dirs="/opt/X11/include"
+  inc_to_find=GL/glut.h
+  . ${bush_home}/find_inc
+
+  lib_dirs="/opt/X11/lib"
+  lib_to_find=glut
+  . ${bush_home}/find_lib
+
+fi
