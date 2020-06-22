@@ -51,7 +51,6 @@ for file in ${files} ; do
 done
 
 /bin/cp ${from}/ioda.style ./comres/ArcheryTune.style
-/bin/cp ${from}/ioda.wall ./comres/ArcheryTune.wall
 
 /bin/cp ./icons/scope_128.jpg ./comres/scope.jpg
 /bin/cp ./icons/plot_128.jpg ./comres/plot.jpg
