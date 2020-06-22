@@ -1,0 +1,108 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef exlib_insh
+#define exlib_insh
+
+#include <inlib/ishell>
+#include <inlib/args>
+
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#include <inlib/path>
+#else
+#include <inlib/sout>
+#include <inlib/file>
+#include <inlib/sep>
+#include <inlib/net/wget>
+#endif
+
+namespace exlib {
+
+inline void insh_web_get_file(inlib::ishell& a_insh,const std::string& a_out_dir,const std::vector<std::string>& a_args) {
+    static const std::string s_header("exlib::insh_web_get_file :");
+    if(a_args.empty()) {
+      a_insh.warn(s_header+" no url given.");
+      return;
+    }
+    std::string url;
+    url = a_args[a_args.size()-1];
+    inlib::args _args(a_args);
+    _args.remove_last();
+  //if(!_args.first_not_hyphen(url)) {  //no, url may contains '=' through a cgi-bin request.
+  //  a_insh.warn(s_header+" no url given.");
+  //  return;
+  //}
+    std::string sout;
+    INLIB_ISHELL_GET_ARG_STRING(_args,out)
+    if(sout.empty()) {
+      inlib::base_name(url,sout);
+    }
+#ifdef EMSCRIPTEN
+    std::ostringstream script;
+    script << "var request = new XMLHttpRequest();"
+           << "request.open('GET','" << url << "',true);"
+           << "request.responseType = 'arraybuffer';"
+           << "request.onreadystatechange = () => {"
+           << "  if (request.readyState == 4) {"
+           << "    if (request.status == 200 || request.status == 0) {"
+           << "      upload_file('" << sout << "',new Int8Array(request.response),true);"
+           << "    }"
+           << "  }"
+           << "};"
+           << "request.send();";
+    ::emscripten_run_script(script.str().c_str());
+#else
+    std::string host;
+    unsigned int port;
+    std::string request;
+    if(!inlib::url_parse(url,host,port,request)) {
+      a_insh.warn(s_header+" url_parse() failed for url "+inlib::sout(url)+".");
+      return;
+    }
+    if(!port) {
+      if((host.size()>=8)&&(host.substr(0,8)=="https://")) {
+        port = 8080;
+      } else {
+        port = 80;
+      }
+    }
+    inlib::net::wget _wget(a_insh.out());
+    std::string path = a_out_dir+inlib::sep()+sout;
+    char* doc;
+    inlib::uint64 ldoc;
+    std::string icookie,ocookie;
+    if(!_wget.get(host,port,request,doc,ldoc,icookie,ocookie)) {
+      a_insh.warn(s_header+" web get failed for url "+inlib::sout(url)+".");
+      return;
+    }
+    if(!ldoc) {
+      a_insh.warn(s_header+" ldoc is zero..");
+      return;
+    }
+    bool status = inlib::file::write_bytes(path,doc,(size_t)ldoc);
+    delete [] doc;
+    if(!status) {
+      a_insh.warn(s_header+" file::write_bytes() failed for file "+inlib::sout(path)+".");
+      return;
+    }
+#endif
+  }
+
+inline const std::string& insh_web_get_file_help() {
+    static const std::string s_help("\
+web_get_file: web_get_file [-out] url\n\
+  Get url and put the content in the doc dir.\n\
+  -out=string to give an output file name.\n\
+  If no -out is given, it is assumed that url finishes with\n\
+  the name of a file, which is then taken as output file name.\n\
+  WARNING : on wasm, the request is asynchronous.\n\
+");
+  return s_help;
+}
+
+}
+
+//exlib_build_use exlib inlib
+
+#endif
