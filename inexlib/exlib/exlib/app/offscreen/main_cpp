@@ -27,14 +27,13 @@ inline void at_exit() {std::cout << "exlib_main : at_exit..."<< std::endl;inlib:
 #include <cstdlib>
 
 template <class APP_CONTEXT,class APP_MAIN>
-int exlib_main(const std::string& a_app_name,int argc,char** argv,bool a_land = true) {
-  //NOTE : we enforce landscape by default for desktop oapps.
+inline int exlib_main(const std::string& a_app_name,int argc,char** argv) {
   bool verbose = false;
 
 #ifdef INLIB_MEM
   #ifdef INLIB_MEM_ATEXIT
   ::atexit(at_exit);
-  #endif  
+  #endif
   inlib::mem::set_check_by_class(true);{
 #endif
 
@@ -48,7 +47,6 @@ int exlib_main(const std::string& a_app_name,int argc,char** argv,bool a_land = 
   }
 
   inlib::args args(argc,argv);
-  if(a_land) args.add("-land","");
 
   verbose = args.is_arg("-verbose");
 
@@ -59,7 +57,7 @@ int exlib_main(const std::string& a_app_name,int argc,char** argv,bool a_land = 
 
   std::string DOCUMENT;
   args.files_at_end(); //take care of the upper -land.
-  if(!args.file(DOCUMENT)) args.find("-document",DOCUMENT);  
+  if(!args.file(DOCUMENT)) args.find("-document",DOCUMENT);
   if(verbose) {
     std::cout << "exlib_main :"
               << " document is " << inlib::sout(DOCUMENT) << "."
@@ -67,7 +65,7 @@ int exlib_main(const std::string& a_app_name,int argc,char** argv,bool a_land = 
   }
 
   std::string orders;
-  args.find(inlib::s_arg_orders(),orders,"offscreen");
+  args.find(inlib::s_arg_orders(),orders,DOCUMENT.size()?DOCUMENT:"offscreen.insh");
 
   //////////////////////////////////////////////////////////////////
   /// dirs : ///////////////////////////////////////////////////////
@@ -78,7 +76,7 @@ int exlib_main(const std::string& a_app_name,int argc,char** argv,bool a_land = 
   if(home_dir.empty()) {
     std::cout << "exlib_main : can't get home directory." << std::endl;
     return EXIT_FAILURE;
-  }  
+  }
   std::string doc_app_dir = "Documents";
   doc_app_dir += inlib::sep();
   doc_app_dir += a_app_name;
@@ -90,7 +88,6 @@ int exlib_main(const std::string& a_app_name,int argc,char** argv,bool a_land = 
   std::string res_dir;
   inlib::app_res_dir(exe_path,res_dir);
 
-  std::string data_dir = doc_dir;
   std::string out_dir = doc_dir;
 
 /* Windows : does not work. But in fact out_dir is not yet used in offscreen apps.
@@ -109,7 +106,7 @@ int exlib_main(const std::string& a_app_name,int argc,char** argv,bool a_land = 
   if(verbose) {
     std::cout << "exe_path : " << inlib::sout(exe_path) << std::endl;
     std::cout << "home_dir : " << inlib::sout(home_dir) << std::endl;
-    std::cout << "data_dir : " << inlib::sout(data_dir) << std::endl;
+    std::cout << "doc_dir : " << inlib::sout(doc_dir) << std::endl;
     std::cout << "res_dir : " << inlib::sout(res_dir) << std::endl;
     std::cout << "out_dir : " << inlib::sout(out_dir) << std::endl;
     std::cout << "tmp_dir : " << inlib::sout(tmp_dir) << std::endl;
@@ -125,7 +122,7 @@ int exlib_main(const std::string& a_app_name,int argc,char** argv,bool a_land = 
   /// create main and steer : //////////////////////////////////////
   //////////////////////////////////////////////////////////////////
 
- {app_offscreen::main<APP_MAIN> _main(std::cout,data_dir,res_dir,out_dir,tmp_dir,verbose);
+ {app_offscreen::main<APP_MAIN> _main(std::cout,doc_dir,res_dir,out_dir,tmp_dir,ww,wh,verbose);
 
   if(DOCUMENT.size()) {
     _main.create_gui();
@@ -133,16 +130,13 @@ int exlib_main(const std::string& a_app_name,int argc,char** argv,bool a_land = 
     _main.opener().open(DOCUMENT,inlib::file::s_format_guessed(),inlib::args(),done);
   }
 
-  if(verbose) {
-    std::cout << "out_file : " << inlib::sout(_main.out_file()) << std::endl;
-  }
-
-  _main.set_size(ww,wh);
   _main.set_meta_zone_had_been_shown();
 
-  //_main.do_works();
+  _main.source_dot_insh();
 
-  _main.insh_exec(orders,verbose);
+//_main.source_startup_insh();
+//_main.exec_insh_startup();
+  _main.insh().exec_file_reset_to_stop(orders);
 
   }
 

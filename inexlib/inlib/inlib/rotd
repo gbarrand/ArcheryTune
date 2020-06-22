@@ -9,6 +9,7 @@
 #include "qrot"
 #include "vec3d"
 #include "vec4d"
+#include "mat3d"
 #include "mat4d"
 
 namespace inlib {
@@ -57,6 +58,8 @@ public:
 
   void value(mat4d& a_m) const {parent::value(a_m);}
   void set_value(const mat4d& a_m) {parent::set_value(a_m,::sqrt);}
+
+  double value(mat3d& a_m) const {return parent::value_3(a_m);}
 };
 
 }

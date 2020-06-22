@@ -30,13 +30,13 @@ inline sg::return_action action_image_manip(sg::alert& a_alert,
     ey = uevt->y();
     type = sg::base_tex::intersect_up;
   } else {
-    return sg::return_none;     
+    return sg::return_none;
   }}
 
   //a_cbk.m_event_action->set_node(this);
-  
+
   const sg::state& state = a_cbk.m_event_action->state();
-  
+
   typedef vec3f vec3f;
 
   line<vec3f> line;
@@ -46,7 +46,7 @@ inline sg::return_action action_image_manip(sg::alert& a_alert,
     state.screen2ndc(ex,ey,x,y,z,w);
     if(w==0.0F) {
       a_alert.out_stream() << "inlib::cbk::image_manip::action : null w." << std::endl;
-      return sg::return_none;     
+      return sg::return_none;
     }
     mat4f mtx = state.m_proj;
     mtx.mul_mtx(state.m_model);
@@ -55,7 +55,7 @@ inline sg::return_action action_image_manip(sg::alert& a_alert,
       a_alert.out_stream() << "inlib::cbk::image_manip::action :"
                            << " can't convert screen to world coordinates."
                            << std::endl;
-      return sg::return_none;     
+      return sg::return_none;
     }
 
     float x2 = x;
@@ -93,7 +93,7 @@ inline sg::return_action action_image_manip(sg::alert& a_alert,
     if(type==sg::base_tex::intersect_move) a_cbk.m_event_action->set_done(true);
   }
 
-  return sg::return_none;     
+  return sg::return_none;
 }
 
 }}
@@ -122,8 +122,8 @@ inline bool tex_set_manip(sg::alert& a_gv,sg::node& a_sg,sg::node& a_node,bool a
   typedef sg::search_action::path_t path_t;
 
   sg::search_action sa(a_gv.out_stream());
-  const path_t& path = sg::find_path(sa,a_sg,a_node,a_verbose);      
-      
+  const path_t& path = sg::find_path(sa,a_sg,a_node,a_verbose);
+
   sg::group* grp;
   sg::event_dispatcher* dpt;
   int gidx; //index in path of the group.

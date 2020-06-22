@@ -68,8 +68,8 @@ protected: //gstos
     }
 
     m_xys.clear(); //ok, but take care of pick(), bbox().
-    
-    m_gsto_sz = gsto_data.size();    
+
+    m_gsto_sz = gsto_data.size();
     if(gsto_data.empty()) return 0;
     return a_mgr.create_gsto_from_data(gsto_data);
   }
@@ -90,7 +90,7 @@ public:
         a_action.draw_gsto_v(gl::triangles(),m_gsto_sz/3,0);
         a_action.end_gsto();
         return;
-  
+
       } else { //!_id
         // use immediate rendering.
       }
@@ -174,7 +174,7 @@ protected:
   void update_sg() {
     clean_gstos(); //must reset for all render_manager.
     m_gsto_sz = 0;
-    
+
     size_t nstep = steps.value();
     float rmn = rmin.value();
     float rmx = rmax.value();
@@ -200,7 +200,7 @@ protected:
       for(size_t index=0;index<=nstep;index++,_angle+=dangle) {
         m_xys[findex] = rmx*fcos(_angle);findex++;
         m_xys[findex] = rmx*fsin(_angle);findex++;
-      }    
+      }
 
     } else {
       // build a triangle strip :
@@ -218,7 +218,7 @@ protected:
         m_xys[findex] = rmn*sa;findex++;
         m_xys[findex] = rmx*ca;findex++;
         m_xys[findex] = rmx*sa;findex++;
-      }    
+      }
     }
   }
 protected:

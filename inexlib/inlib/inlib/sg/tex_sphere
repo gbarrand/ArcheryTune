@@ -65,7 +65,7 @@ public:
     if(m_img.is_empty()) return;
 
     unsigned int _id = get_tex_id(a_action.out(),a_action.render_manager(),m_img,nearest.value());
-  
+
     //const state& state = a_action.state();
 
     //image must be 2^n,2^m in size !
@@ -238,21 +238,21 @@ protected:
 
     float drho = fpi() / float(a_stacks);
     float dtheta = ftwo_pi() / float(a_slices);
- 
+
     float* vts = 0;
-    unsigned int ivt = 0;       
+    unsigned int ivt = 0;
     float* txs = 0;
-    unsigned int itx = 0;       
+    unsigned int itx = 0;
 
     float* nms = 0;
-    unsigned int inm = 0;       
+    unsigned int inm = 0;
 
     float ax = 1,bx = 0,ay = 1,by = 0;
     if(a_tex) tsf_tex_coords(ax,bx,ay,by);
 
        // draw +Z end as a triangle fan :
       {_new((1+a_slices+1)*3,nms,inm,vts,ivt);
-       _new((1+a_slices+1)*2,txs,itx);       
+       _new((1+a_slices+1)*2,txs,itx);
        _set(nms,inm, 0, 0, 1);
        _set(vts,ivt, 0, 0, nsign * a_radius );
        _set(txs,itx, 0, 0);
@@ -272,15 +272,15 @@ protected:
        }
 
        if(a_tex) scale_tex_coords(ax,bx,ay,by,ivt,txs);
-       a_visitor.add_triangle_fan_texture(ivt,vts,nms,a_tex,txs);
+       a_visitor.add_triangle_fan_texture_normal(ivt,vts,nms,a_tex,txs);
        _delete(txs);
        _delete(nms,vts);}
- 
+
        // draw intermediate stacks as triangle strips :
        for (int i=1;i<int(a_stacks)-1;i++) {
  	 rho = i * drho;
          _new((a_slices+1)*2*3,nms,inm,vts,ivt);
-         _new((a_slices+1)*2*2,txs,itx);       
+         _new((a_slices+1)*2*2,txs,itx);
          srho = m_srho[i];
          crho = m_crho[i];
  	 srho_drho = m_srho[i+1];
@@ -303,14 +303,14 @@ protected:
             _set(txs,itx, 1-theta/ftwo_pi(), (rho+drho)/fpi());
  	 }
          if(a_tex) scale_tex_coords(ax,bx,ay,by,ivt,txs);
-         a_visitor.add_triangle_strip_texture(ivt,vts,nms,a_tex,txs);
+         a_visitor.add_triangle_strip_texture_normal(ivt,vts,nms,a_tex,txs);
          _delete(txs);
          _delete(nms,vts);
        }
- 
+
        // draw -Z end as a triangle fan :
       {_new((1+a_slices+1)*3,nms,inm,vts,ivt);
-       _new((1+a_slices+1)*2,txs,itx);       
+       _new((1+a_slices+1)*2,txs,itx);
        _set(nms,inm, 0, 0, -1 );
        _set(vts,ivt, 0, 0, -a_radius*nsign );
        _set(txs,itx, 0, 1);
@@ -329,7 +329,7 @@ protected:
          _set(txs,itx, theta/ftwo_pi(), rho/fpi());
        }
        if(a_tex) scale_tex_coords(ax,bx,ay,by,ivt,txs);
-       a_visitor.add_triangle_fan_texture(ivt,vts,nms,a_tex,txs);
+       a_visitor.add_triangle_fan_texture_normal(ivt,vts,nms,a_tex,txs);
        _delete(txs);
        _delete(nms,vts);}
 

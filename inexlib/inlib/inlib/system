@@ -41,10 +41,10 @@ inline bool get_env(const std::string& a_string,std::string& a_value){
 inline bool getenv(const std::string& a_string,std::string& a_value){return get_env(a_string,a_value);} //deprecated.
 
 template <class T>
-inline bool get_env(const std::string& a_string,T& a_v){
+inline bool get_env(const std::string& a_string,T& a_v,const T& a_def = T()){
   std::string s;
-  if(!getenv(a_string,s)) return false;
-  return to<T>(s,a_v);
+  if(!getenv(a_string,s)) {a_v = a_def;return false;}
+  return to<T>(s,a_v,a_def);
 }
 
 inline bool get_env_bool(const std::string& a_string,bool& a_v){
@@ -95,9 +95,9 @@ inline bool check_getenv(std::ostream& a_out,
   return false;
 }
 
-inline int execute(std::ostream& a_out,const std::string& a_string) {
+inline int std_system(std::ostream& a_out,const std::string& a_string) {
 #if TARGET_OS_IPHONE
-  a_out << "inlib::execute : system() not available on iOS. Can't execute " << sout(a_string) << "." << std::endl;
+  a_out << "inlib::std_system : system() not available on iOS. Can't execute " << sout(a_string) << "." << std::endl;
   return EXIT_FAILURE;
 #else
   return ::system(a_string.c_str());
@@ -150,7 +150,7 @@ inline bool rep_env(std::string& a_string) {
   while((dollar=a_string.find('$'))!=std::string::npos){
     std::string::size_type slash = a_string.find('/',dollar+1);
     std::string::size_type back_slash = a_string.find('\\',dollar+1);
-    std::string::size_type pos = std::string::npos; 
+    std::string::size_type pos = std::string::npos;
     if(slash!=std::string::npos) {
       if(back_slash!=std::string::npos) {
         pos = slash<back_slash?slash:back_slash;
@@ -161,7 +161,7 @@ inline bool rep_env(std::string& a_string) {
       if(back_slash!=std::string::npos) {
         pos = back_slash;
       } else {
-        pos = std::string::npos; 
+        pos = std::string::npos;
       }
     }
     std::string env;

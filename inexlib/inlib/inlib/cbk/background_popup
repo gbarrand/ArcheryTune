@@ -20,14 +20,14 @@ namespace cbk {
 ////////////////////////////////////////////////////////////////////////////////
 inline sg::return_action background_popup_action_cancel(sg::gui_viewer& a_gv) {
   a_gv.hide_popup();
-  return sg::return_to_render;     
+  return sg::return_to_render;
 }
 
 inline sg::return_action background_popup_action_set_color(sg::gui_viewer& a_gv,sg::colors& a_colors) {
   float r,g,b,a;
   a_colors.get_color(r,g,b,a);
   a_gv.set_scene_clear_color(colorf(r,g,b,a));
-  return sg::return_to_render;     
+  return sg::return_to_render;
 }
 
 inline sg::return_action background_popup_action_color(sg::gui_viewer& a_gv,const sg::pos_data& a_data) {
@@ -39,7 +39,7 @@ inline sg::return_action background_popup_action_color(sg::gui_viewer& a_gv,cons
   sg::add_cancel_callback(a_gv,*colors,background_popup_action_cancel);
 
   a_gv.show_widget(a_data,colors);
-  return sg::return_to_render;     
+  return sg::return_to_render;
 }
 
 }}

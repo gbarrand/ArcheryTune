@@ -49,7 +49,7 @@ public:
     }
     return true;
   }
-  
+
   void show_window(HWND a_hwnd){
     ::SetForegroundWindow(a_hwnd);
     ::ShowWindow(a_hwnd,SW_SHOWDEFAULT);

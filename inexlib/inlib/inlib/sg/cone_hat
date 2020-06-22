@@ -61,7 +61,7 @@ protected: //gstos
     size_t num,ntri,nxyz,ngsto;
     float* pxyzs;
     float* pnms;
-	
+
    {num = m_back.size()/3;
     if(num<=2) {
       a_out << "inlib::sg::cone_hat::create_gsto : back : triangle strip or fan with " << num << " points." << std::endl;
@@ -82,7 +82,7 @@ protected: //gstos
     }
     m_back_elems = ntri*3;
     offset += ngsto;}
-    
+
    {num = m_inner_side.size()/3;
     ntri = num/3;
     nxyz = ntri*3*3;
@@ -123,7 +123,7 @@ protected: //gstos
     offset += ngsto;}
 
     _clear(); //ok, but take care of pick(), bbox().
-    
+
     if(gsto_data.empty()) return 0;
     return a_mgr.create_gsto_from_data(gsto_data);
   }
@@ -140,7 +140,7 @@ public:
     if(state.m_use_gsto) {
       unsigned int _id = get_gsto_id(a_action.out(),a_action.render_manager());
       if(_id) {
-	
+
         a_action.begin_gsto(_id);
 
         size_t offset = 0;
@@ -153,28 +153,28 @@ public:
         pnms  = ptris+nxyz;
         a_action.draw_gsto_vn(gl::triangles(),m_back_elems,ptris,pnms);
         offset += nxyz*2;}
-	
+
        {nxyz = m_inner_side_elems*3*sizeof(float);
         ptris = offset;
         pnms  = ptris+nxyz;
         a_action.draw_gsto_vn(gl::triangles(),m_inner_side_elems,ptris,pnms);
         offset += nxyz*2;}
-	  
+
        {nxyz = m_outer_side_elems*3*sizeof(float);
         ptris = offset;
         pnms  = ptris+nxyz;
         a_action.draw_gsto_vn(gl::triangles(),m_outer_side_elems,ptris,pnms);
         offset += nxyz*2;}
-	
+
        {nxyz = m_sides_elems*3*sizeof(float);
         ptris = offset;
         pnms  = ptris+nxyz;
         a_action.draw_gsto_vn(gl::triangles(),m_sides_elems,ptris,pnms);
         offset += nxyz*2;}
-	
+
         a_action.end_gsto();
         return;
-  
+
       } else { //!_id
         // use immediate rendering.
       }
@@ -182,7 +182,7 @@ public:
     } else {
       clean_gstos(&a_action.render_manager());
     }
-    
+
     if(_cleared()) update_sg();
 
     // immediate rendering :
@@ -233,7 +233,7 @@ public:
   ,steps(48)
 
   ,m_is_pickable(true)
-  
+
   ,m_depth(true)
   ,m_back_elems(0)
   ,m_inner_side_elems(0)
@@ -254,7 +254,7 @@ public:
   ,steps(a_from.steps)
 
   ,m_is_pickable(a_from.m_is_pickable)
-  
+
   ,m_depth(true)
   ,m_back_elems(0)
   ,m_inner_side_elems(0)
@@ -293,7 +293,7 @@ protected:
     float rmn = rmin.value();
     float rmx = rmax.value();
 
-    if(!nstep || (angle.value()<=0) || (angle.value()>ftwo_pi()) || (rmn>=rmx) || (height.value()<=0) ) {
+    if(!nstep || (angle.value()<=0) || (angle.value()>ftwo_pi()) || (rmx<=0) || (rmn>=rmx) || (height.value()<=0) ) {
       _clear();
       return;
     }
@@ -317,9 +317,9 @@ protected:
     float nmx_prev,nmy_prev,nmz_prev;
     float nm2x,nm2y,nm2z,nm2l;
     float cos_theta,sin_theta;
-      
+
     float theta = fatan2(rmx,height.value());
-    
+
     if(rmn<=0) {
       m_depth = false;
 
@@ -336,20 +336,20 @@ protected:
       m_back_nms[nindex] = 0;nindex++;
       m_back_nms[nindex] = 0;nindex++;
       m_back_nms[nindex] = -1;nindex++;
-      
+
       for(size_t index=0,bindex=nstep;index<=nstep;index++,bindex--) {
         m_back[findex] = rmx*cas[bindex];findex++;
         m_back[findex] = rmx*sas[bindex];findex++;
         m_back[findex] = zmn;findex++;
-	
+
         m_back_nms[nindex] = 0;nindex++;
         m_back_nms[nindex] = 0;nindex++;
         m_back_nms[nindex] = -1;nindex++;
-      }}    
+      }}
 
       m_inner_side.clear();
       m_inner_side_nms.clear();
-      
+
       if(angle.value()<ftwo_pi()) {
         m_sides.resize(2*3*3);
         m_sides_nms.resize(2*3*3);
@@ -362,11 +362,11 @@ protected:
         m_sides[findex] =   0;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = zmn;findex++;
-	
+
         m_sides_nms[nindex] =  0;nindex++;
         m_sides_nms[nindex] = -1;nindex++;
         m_sides_nms[nindex] =  0;nindex++;
-	
+
         m_sides[findex] = rmx;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = zmn;findex++;
@@ -374,15 +374,15 @@ protected:
         m_sides_nms[nindex] =  0;nindex++;
         m_sides_nms[nindex] = -1;nindex++;
         m_sides_nms[nindex] =  0;nindex++;
-	
+
         m_sides[findex] =   0;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = zmx;findex++;
-	
+
         m_sides_nms[nindex] =  0;nindex++;
         m_sides_nms[nindex] = -1;nindex++;
         m_sides_nms[nindex] =  0;nindex++;
-	
+
         /////////////////////////////////////////
         // second side at angle, one triangles :
 	/////////////////////////////////////////
@@ -390,7 +390,7 @@ protected:
         m_sides[findex] = rmx*cas[bindex];findex++;
         m_sides[findex] = rmx*sas[bindex];findex++;
         m_sides[findex] = zmn;findex++;
-	
+
         m_sides_nms[nindex] = -sas[bindex];nindex++;
         m_sides_nms[nindex] =  cas[bindex];nindex++;
         m_sides_nms[nindex] =            0;nindex++;
@@ -398,7 +398,7 @@ protected:
         m_sides[findex] =   0;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = zmn;findex++;
-	
+
         m_sides_nms[nindex] = -sas[bindex];nindex++;
         m_sides_nms[nindex] =  cas[bindex];nindex++;
         m_sides_nms[nindex] =            0;nindex++;
@@ -406,7 +406,7 @@ protected:
         m_sides[findex] =   0;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = zmx;findex++;
-	
+
         m_sides_nms[nindex] = -sas[bindex];nindex++;
         m_sides_nms[nindex] =  cas[bindex];nindex++;
         m_sides_nms[nindex] =            0;nindex++;
@@ -414,12 +414,12 @@ protected:
         /////////////////////////////////////////
 	/////////////////////////////////////////
 	/////////////////////////////////////////
-	
+
       } else {
         m_sides.clear();
         m_sides_nms.clear();
       }
-      
+
     } else {
       m_depth = true;
 
@@ -435,96 +435,96 @@ protected:
         m_back[findex] = rmn*ca;findex++;
         m_back[findex] = rmn*sa;findex++;
         m_back[findex] = zmn;findex++;
-	
+
         m_back[findex] = rmx*ca;findex++;
         m_back[findex] = rmx*sa;findex++;
         m_back[findex] = zmn;findex++;
-	
+
         m_back_nms[nindex] = 0;nindex++;
         m_back_nms[nindex] = 0;nindex++;
         m_back_nms[nindex] = -1;nindex++;
-	
+
         m_back_nms[nindex] = 0;nindex++;
         m_back_nms[nindex] = 0;nindex++;
         m_back_nms[nindex] = -1;nindex++;
       }}
-      
+
       float inner_side_h = rmn/ftan(theta);
       float inner_side_zmx = inner_side_h-height.value()*0.5f;
-        
+
       // build triangles :
      {m_inner_side.resize(nstep*3*3);
-      m_inner_side_nms.resize(nstep*3*3);        
+      m_inner_side_nms.resize(nstep*3*3);
       findex = 0;
       nindex = 0;
-        
+
       cos_theta = fcos(theta);
       sin_theta = fsin(theta);
-      
+
       // for first triangle :
       ca = cas[0];
       sa = sas[0];
-  
+
       nmx = -cos_theta*ca;
       nmy = -cos_theta*sa;
       nmz = -sin_theta;
-  
+
       m_inner_side[findex] = rmn*ca;findex++;
       m_inner_side[findex] = rmn*sa;findex++;
       m_inner_side[findex] = zmn;findex++;
-  	  
+
       m_inner_side_nms[nindex] = nmx;nindex++;
       m_inner_side_nms[nindex] = nmy;nindex++;
       m_inner_side_nms[nindex] = nmz;nindex++;
-    
+
       nmx_prev = nmx;
       nmy_prev = nmy;
       nmz_prev = nmz;
       for(size_t index=1;index<=nstep;index++) {
         ca = cas[index];
         sa = sas[index];
-        
+
         nmx = -cos_theta*ca;
         nmy = -cos_theta*sa;
         nmz = -sin_theta;
-  
+
         m_inner_side[findex] = 0;findex++;
         m_inner_side[findex] = 0;findex++;
         m_inner_side[findex] = inner_side_zmx;findex++;
-  	  
+
         nm2x = (nmx_prev+nmx)*0.5f;
         nm2y = (nmy_prev+nmy)*0.5f;
         nm2z = (nmz_prev+nmz)*0.5f;
         nm2l = fsqrt(nm2x*nm2x+nm2y*nm2y+nm2z*nm2z);
- 
+
         m_inner_side_nms[nindex] = nm2x/nm2l;nindex++;
         m_inner_side_nms[nindex] = nm2y/nm2l;nindex++;
         m_inner_side_nms[nindex] = nm2z/nm2l;nindex++;
-  
+
         m_inner_side[findex] = rmn*ca;findex++;
         m_inner_side[findex] = rmn*sa;findex++;
         m_inner_side[findex] = zmn;findex++;
-  	  
+
         m_inner_side_nms[nindex] = nmx;nindex++;
         m_inner_side_nms[nindex] = nmy;nindex++;
         m_inner_side_nms[nindex] = nmz;nindex++;
-  
+
         if(index!=nstep) {
           // for next triangle :
           m_inner_side[findex] = rmn*ca;findex++;
           m_inner_side[findex] = rmn*sa;findex++;
           m_inner_side[findex] = zmn;findex++;
-  	  
+
           m_inner_side_nms[nindex] = nmx;nindex++;
           m_inner_side_nms[nindex] = nmy;nindex++;
           m_inner_side_nms[nindex] = nmz;nindex++;
-	  
+
           nmx_prev = nmx;
           nmy_prev = nmy;
           nmz_prev = nmz;
-        }	
-  
-      }}    
+        }
+
+      }}
 
       if(angle.value()<ftwo_pi()) {
         m_sides.resize(4*3*3);
@@ -538,11 +538,11 @@ protected:
         m_sides[findex] = rmn;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = zmn;findex++;
-	
+
         m_sides_nms[nindex] =  0;nindex++;
         m_sides_nms[nindex] = -1;nindex++;
         m_sides_nms[nindex] =  0;nindex++;
-	
+
         m_sides[findex] = rmx;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = zmn;findex++;
@@ -550,11 +550,11 @@ protected:
         m_sides_nms[nindex] =  0;nindex++;
         m_sides_nms[nindex] = -1;nindex++;
         m_sides_nms[nindex] =  0;nindex++;
-	
+
         m_sides[findex] =   0;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = zmx;findex++;
-	
+
         m_sides_nms[nindex] =  0;nindex++;
         m_sides_nms[nindex] = -1;nindex++;
         m_sides_nms[nindex] =  0;nindex++;
@@ -563,11 +563,11 @@ protected:
         m_sides[findex] = rmn;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = zmn;findex++;
-	
+
         m_sides_nms[nindex] =  0;nindex++;
         m_sides_nms[nindex] = -1;nindex++;
         m_sides_nms[nindex] =  0;nindex++;
-	
+
         m_sides[findex] =   0;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = zmx;findex++;
@@ -579,11 +579,11 @@ protected:
         m_sides[findex] =   0;findex++;
         m_sides[findex] =   0;findex++;
         m_sides[findex] = inner_side_zmx;findex++;
-	
+
         m_sides_nms[nindex] =  0;nindex++;
         m_sides_nms[nindex] = -1;nindex++;
         m_sides_nms[nindex] =  0;nindex++;
-	
+
         /////////////////////////////////////////
         // second side at angle, two triangles :
 	/////////////////////////////////////////
@@ -591,7 +591,7 @@ protected:
         m_sides[findex] = rmn*cas[bindex];findex++;
         m_sides[findex] = rmn*sas[bindex];findex++;
         m_sides[findex] = zmn;findex++;
-	
+
         m_sides_nms[nindex] = -sas[bindex];nindex++;
         m_sides_nms[nindex] =  cas[bindex];nindex++;
         m_sides_nms[nindex] =            0;nindex++;
@@ -599,7 +599,7 @@ protected:
         m_sides[findex] = 0;findex++;
         m_sides[findex] = 0;findex++;
         m_sides[findex] = zmx;findex++;
-	
+
         m_sides_nms[nindex] = -sas[bindex];nindex++;
         m_sides_nms[nindex] =  cas[bindex];nindex++;
         m_sides_nms[nindex] =            0;nindex++;
@@ -607,7 +607,7 @@ protected:
         m_sides[findex] = rmx*cas[bindex];findex++;
         m_sides[findex] = rmx*sas[bindex];findex++;
         m_sides[findex] = zmn;findex++;
-	
+
         m_sides_nms[nindex] = -sas[bindex];nindex++;
         m_sides_nms[nindex] =  cas[bindex];nindex++;
         m_sides_nms[nindex] =            0;nindex++;
@@ -616,7 +616,7 @@ protected:
         m_sides[findex] = rmn*cas[bindex];findex++;
         m_sides[findex] = rmn*sas[bindex];findex++;
         m_sides[findex] = zmn;findex++;
-	
+
         m_sides_nms[nindex] = -sas[bindex];nindex++;
         m_sides_nms[nindex] =  cas[bindex];nindex++;
         m_sides_nms[nindex] =            0;nindex++;
@@ -624,7 +624,7 @@ protected:
         m_sides[findex] = 0;findex++;
         m_sides[findex] = 0;findex++;
         m_sides[findex] = inner_side_zmx;findex++;
-	
+
         m_sides_nms[nindex] = -sas[bindex];nindex++;
         m_sides_nms[nindex] =  cas[bindex];nindex++;
         m_sides_nms[nindex] =            0;nindex++;
@@ -632,15 +632,15 @@ protected:
         m_sides[findex] = 0;findex++;
         m_sides[findex] = 0;findex++;
         m_sides[findex] = zmx;findex++;
-	
+
         m_sides_nms[nindex] = -sas[bindex];nindex++;
         m_sides_nms[nindex] =  cas[bindex];nindex++;
         m_sides_nms[nindex] =            0;nindex++;
-	
+
         /////////////////////////////////////////
 	/////////////////////////////////////////
 	/////////////////////////////////////////
-	
+
       } else {
         m_sides.clear();
         m_sides_nms.clear();
@@ -652,10 +652,10 @@ protected:
     m_outer_side_nms.resize(nstep*3*3);
     findex = 0;
     nindex = 0;
-      
+
     cos_theta = fcos(theta);
     sin_theta = fsin(theta);
-      
+
     // for first triangle :
     ca = cas[0];
     sa = sas[0];
@@ -667,7 +667,7 @@ protected:
     m_outer_side[findex] = rmx*ca;findex++;
     m_outer_side[findex] = rmx*sa;findex++;
     m_outer_side[findex] = zmn;findex++;
-	
+
     m_outer_side_nms[nindex] = nmx;nindex++;
     m_outer_side_nms[nindex] = nmy;nindex++;
     m_outer_side_nms[nindex] = nmz;nindex++;
@@ -678,7 +678,7 @@ protected:
     for(size_t index=1;index<=nstep;index++) {
       ca = cas[index];
       sa = sas[index];
-      
+
       nmx = cos_theta*ca;
       nmy = cos_theta*sa;
       nmz = sin_theta;
@@ -686,7 +686,7 @@ protected:
       m_outer_side[findex] = rmx*ca;findex++;
       m_outer_side[findex] = rmx*sa;findex++;
       m_outer_side[findex] = zmn;findex++;
-	
+
       m_outer_side_nms[nindex] = nmx;nindex++;
       m_outer_side_nms[nindex] = nmy;nindex++;
       m_outer_side_nms[nindex] = nmz;nindex++;
@@ -699,7 +699,7 @@ protected:
       nm2y = (nmy_prev+nmy)*0.5f;
       nm2z = (nmz_prev+nmz)*0.5f;
       nm2l = fsqrt(nm2x*nm2x+nm2y*nm2y+nm2z*nm2z);
- 
+
       m_outer_side_nms[nindex] = nm2x/nm2l;nindex++;
       m_outer_side_nms[nindex] = nm2y/nm2l;nindex++;
       m_outer_side_nms[nindex] = nm2z/nm2l;nindex++;
@@ -709,16 +709,16 @@ protected:
         m_outer_side[findex] = rmx*ca;findex++;
         m_outer_side[findex] = rmx*sa;findex++;
         m_outer_side[findex] = zmn;findex++;
-	
+
         m_outer_side_nms[nindex] = nmx;nindex++;
         m_outer_side_nms[nindex] = nmy;nindex++;
         m_outer_side_nms[nindex] = nmz;nindex++;
-      
+
         nmx_prev = nmx;
         nmy_prev = nmy;
         nmz_prev = nmz;
       }
-    }}    
+    }}
 
   }
 

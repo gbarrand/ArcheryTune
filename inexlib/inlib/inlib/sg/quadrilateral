@@ -44,7 +44,7 @@ protected: //gstos
     size_t ngsto = nxyzs*2;   //xyz+nms
     size_t sz = gsto_data.size();
     gsto_data.resize(sz+ngsto);
-    float* pxyz = vec_data<float>(gsto_data)+sz;    
+    float* pxyz = vec_data<float>(gsto_data)+sz;
     f12 tris,nms;
     _front(tris,nms);
     ::memcpy(pxyz,tris,nxyzs*sizeof(float));
@@ -67,14 +67,14 @@ public:
 
     if(state.m_use_gsto) {
       unsigned int _id = get_gsto_id(a_action.out(),a_action.render_manager());
-      if(_id) {        
+      if(_id) {
         bufpos ptris = 0;
         bufpos pnms  = ptris+m_gsto_tris_sz*sizeof(float);
         a_action.begin_gsto(_id);
         a_action.draw_gsto_vn(gl::triangle_fan(),m_gsto_tris_sz/3,ptris,pnms);
         a_action.end_gsto();
         return;
-  
+
       } else { //!_id
         // use immediate rendering.
       }
@@ -142,6 +142,7 @@ public:
 
 protected:
   virtual void update_sg(std::ostream& a_out) {
+    clean_gstos();
     plane<vec3f> plane(corners[0],corners[1],corners[2]);
     m_normal = plane.normal();
   }
@@ -149,7 +150,7 @@ protected:
   typedef float f12[12];
   void _front(f12& a_front,f12& a_nms,float a_epsil = 0.0f) {
     const std::vector<vec3f>& cs = corners.values();
-    
+
     a_front[0] =  cs[0].x()-a_epsil;
     a_front[1] =  cs[0].y()-a_epsil;
     a_front[2] =  cs[0].z();

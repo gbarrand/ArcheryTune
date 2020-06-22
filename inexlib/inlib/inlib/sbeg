@@ -28,7 +28,14 @@ inline bool is_beg(const std::string& a_s,const std::string& a_b,bool a_forward 
     }
   }
   return true;
-  
+}
+
+inline bool is_beg(const std::string& a_s,const std::string& a_b,std::string& a_cmd,bool a_forward = true){
+  if(!inlib::is_beg(a_s,a_b,a_forward)) {a_cmd.clear();return false;}
+  if(a_s.size()<(a_b.size()+1)) {a_cmd.clear();return true;}
+  // a_s.size() >= a_b.size()+1 :
+  a_cmd = a_s.substr(a_b.size()+1,a_s.size()-(a_b.size()+1));
+  return true;
 }
 
 }

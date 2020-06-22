@@ -19,7 +19,7 @@ inline const char** files_help(unsigned int& a_linen){
   static const char _8[] = "     .aida[.gz] : aida files.";
   static const char _9[] = "     .root : files at CERN/ROOT format.";
   static const char _10[] = "     .fits : cfitsio files.";
-  static const char _11[] = "     .jpg : jpeg files.";
+  static const char _11[] = "     .jpg, .jpeg : jpeg files.";
   static const char _12[] = "     .fog : CEA/Saclay povama files describing the LHC/ATLAS";
   static const char _13[] = "            sub detectors. With the courtesy of L.Chevalier,";
   static const char _14[] = "            C.Baudry, Marc Virchaux.";

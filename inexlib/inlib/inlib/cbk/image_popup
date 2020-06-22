@@ -45,11 +45,12 @@ inline sg::return_action image_popup_action_file(sg::gui_viewer& a_gv,const popu
   sg::file_chooser* fch = new sg::file_chooser(a_gv.ttf());
   a_gv.set_style(*fch);
   std::vector<std::string> exts;
+  exts.push_back(file::s_ext_jpeg());
   exts.push_back(file::s_ext_jpg());
   exts.push_back(file::s_ext_png());
   fch->exts.add(exts);
   fch->dirs.add(a_gv.res_dir());
-  fch->dirs.add(a_gv.data_dirs());
+  fch->dirs.add(a_gv.doc_dir());
   sg::add_callback(a_gv,*fch,image_popup_action_load_file,a_data);
   fch->initialize(a_gv.out());
   a_gv.show_widget(sg::pos_data(true,a_data.m_ex,a_data.m_ey),fch);

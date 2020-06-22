@@ -4,8 +4,8 @@
 #ifndef inlib_sg_xmas_tree
 #define inlib_sg_xmas_tree
 
-//   This class provides a set of functions for creating and rendering 
-//  a fractal  Christmas stree. 
+//   This class provides a set of functions for creating and rendering
+//  a fractal  Christmas stree.
 //   From the code of : Evan Hart, email: sdkfeedback@nvidia.com, that
 //  comes with : Copyright (c) NVIDIA Corporation. All rights reserved.
 
@@ -16,6 +16,8 @@
 #include "render_action"
 #include "pick_action"
 #include "bbox_action"
+
+#include "../rtausmef"
 
 namespace inlib {
 namespace sg {
@@ -106,7 +108,7 @@ public:
     add_fields();
     light_colors.add(colorf(1.0f,0.98f,0.90f));
 
-    ornament_colors.add(vec4f(0.9f,0.0f,0.0f,1)); //red 
+    ornament_colors.add(vec4f(0.9f,0.0f,0.0f,1)); //red
     ornament_colors.add(vec4f(0.0f,0.0f,0.9f,1)); //blue
     ornament_colors.add(vec4f(0.9f,0.9f,0.0f,1)); //yellow
   }
@@ -126,12 +128,12 @@ public:
   ,lights_point_size(a_from.lights_point_size)
   ,light_colors(a_from.light_colors)
   ,ornament_colors(a_from.ornament_colors)
- 
+
   ,m_height(a_from.m_height)
   ,m_radius(a_from.m_radius)
   {
     add_fields();
-  } 
+  }
 
   xmas_tree& operator=(const xmas_tree& a_from){
     parent::operator=(a_from);
@@ -265,17 +267,17 @@ protected:
     std::vector<float>::iterator it;
     for(it=_trunk_xyzs.begin();it!=_trunk_xyzs.end();it+=3){
       m.mul_3f(*(it+0),*(it+1),*(it+2));
-    }   
+    }
     for(it=_frond_xyzs.begin();it!=_frond_xyzs.end();it+=3){
       m.mul_3f(*(it+0),*(it+1),*(it+2));
-    }  
+    }
     for(it=_light_xyzs.begin();it!=_light_xyzs.end();it+=3){
       m.mul_3f(*(it+0),*(it+1),*(it+2));
-    }   
+    }
     for(it=_ornament_xyzs.begin();it!=_ornament_xyzs.end();it+=3){
       m.mul_3f(*(it+0),*(it+1),*(it+2));
-    }}   
- 
+    }}
+
   }
 
   // Functions used to generate the tree
@@ -284,6 +286,22 @@ protected:
 
   //  Function used for growing the fractal branch
   void grow_branch(const vec3f&,const vec3f&,float size,int gen);
+
+protected:
+  rtausmef m_rand;
+  float randf_pos() {return m_rand.shoot();}
+
+  float randf() {
+    // Random floating point number [-1 - 1]
+    return randf_pos() * 2.0f - 1.0f;
+  }
+
+  float rand2f() {
+    //  Random floating point number [-1 - 1] with the distribution
+    // clustered toward 0
+    float val = randf();
+    return (val >0.0f) ? val*val : -(val*val);
+  }
 
 protected:
   float m_height;
@@ -312,23 +330,6 @@ protected:
 //  Helper functions
 ///////////////////////////////////////////////////////////////////////////////
 
-inline float randf_pos() {
-  // Random floating point number [0-1]
-  return float(rand()) /float(RAND_MAX);
-}
-
-inline float randf() {
-  // Random floating point number [-1 - 1]
-  return randf_pos() * 2.0f - 1.0f;
-}
-
-inline float rand2f() {
-  //  Random floating point number [-1 - 1] with the distribution
-  // clustered toward 0
-  float val = randf();
-  return (val >0.0f) ? val*val : -(val*val);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // xmas_tree constants
@@ -354,7 +355,7 @@ inline void xmas_tree::grow_branch(const vec3f& a_dir,
     up.normalize();
     vec3f pos = root + a_dir * size;
 
-    
+
     if (gen > 0) {
         // if this is not the end of the branch lenghten it
 
@@ -369,8 +370,8 @@ inline void xmas_tree::grow_branch(const vec3f& a_dir,
         int _branch_sides = (int)branch_sides.value();
 
         for (int ii = 0; ii < _branch_sides; ii++) {
-            float x = sinf(float(ii)/float(_branch_sides)* 2.0f * 3.1415927f); 
-            float y = cosf(float(ii)/float(_branch_sides)* 2.0f * 3.1415927f); 
+            float x = sinf(float(ii)/float(_branch_sides)* 2.0f * 3.1415927f);
+            float y = cosf(float(ii)/float(_branch_sides)* 2.0f * 3.1415927f);
             vec3f dir = x * out + y * up;
             dir.normalize();
             vec3f base = root + dir * size * 0.035f;
@@ -401,16 +402,16 @@ inline void xmas_tree::grow_branch(const vec3f& a_dir,
         // continue to grow the branch
         vec3f dirb;
 
-        dirb = a_dir * dirFactor + 0.9f*out + 0.30f *up;        
-        dirb.normalize();        
+        dirb = a_dir * dirFactor + 0.9f*out + 0.30f *up;
+        dirb.normalize();
         grow_branch( dirb,  pos, size * 0.5f * outVal1, gen-1);
 
         dirb = a_dir * dirFactor + -0.9f*out + 0.22f *up;
-        dirb.normalize();        
+        dirb.normalize();
         grow_branch( dirb, pos, size * 0.5f * outVal2, gen-1);
 
         dirb = a_dir * dirFactor + 0.2f *up;
-        dirb.normalize();        
+        dirb.normalize();
         grow_branch( dirb,              pos, size * 0.6f * outVal3, gen-1);
 
     } else {
@@ -430,7 +431,7 @@ inline void xmas_tree::grow_branch(const vec3f& a_dir,
         if ( size < 0.5f)
             size = 0.5f;
 
-        
+
         pos = root + a_dir * size; // scale by length
 
         // width scale is 1/2 length scale, because it is +/-
@@ -449,8 +450,8 @@ inline void xmas_tree::grow_branch(const vec3f& a_dir,
         // Compute the 4 vertices of the frond geometry and store them,
         // along with
         // normal, texcoord, and tangents
-        // data    = 3 = vertex xyz 
-        // data+3  = 3 = normal xyz 
+        // data    = 3 = vertex xyz
+        // data+3  = 3 = normal xyz
         // data+6  = 2 = texture0 params
         // data+8  = 3 = texture1 params
         // data+11 = 3 = texture2 params
@@ -473,7 +474,7 @@ inline void xmas_tree::grow_branch(const vec3f& a_dir,
         //
         // randomly place an ornament at the end of the frond
         //
-        if(ornament_colors.size()) {        
+        if(ornament_colors.size()) {
           const float materialCount = (float)ornament_colors.size();
           if (randf_pos() < 0.15f * _ornamentFreqAdjust) {
             //add an ornament
@@ -492,7 +493,7 @@ inline void xmas_tree::grow_branch(const vec3f& a_dir,
         }
     }
 
-    
+
 }
 
 inline void xmas_tree::grow() {
@@ -508,7 +509,7 @@ inline void xmas_tree::grow() {
     int _branches_per_segment = (int)branches_per_segment.value();
 
     for (int ii = 0; ii < _num_segments; ii++) {
-        vec3f segmentTop = 
+        vec3f segmentTop =
           segmentBase + vec3f(0.0f,m_height/float(_num_segments),0.0f);
 
         // add the vertices for the trunk segment
@@ -579,14 +580,14 @@ inline void xmas_tree::gen_lights() {
     //  This function places lights randomly in the cone of the tree.
     // The lights are generated within a prism, and culled if they are
     // not in the are of interest to ensure equal spacing. Finally,
-    // lights that are too far into the tree are culled. 
+    // lights that are too far into the tree are culled.
 
-    // 
+    //
     // if no lights are set, default to white lights
     // (not pure white, but warmer)
     //
 
-    unsigned int colorn = (unsigned int)light_colors.size(); 
+    unsigned int colorn = (unsigned int)light_colors.size();
 
     if(!colorn) return;
 
@@ -609,7 +610,7 @@ inline void xmas_tree::gen_lights() {
             continue;
         }
 
-        int color = ii % colorn; 
+        int color = ii % colorn;
 
         const colorf& col = light_colors[color];
 

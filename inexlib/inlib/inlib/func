@@ -54,7 +54,7 @@ public:
   }
   double scale() const {return m_scale;}
   double mean() const {return m_mean;}
-  double sigma() const {return m_sigma;} 
+  double sigma() const {return m_sigma;}
 private:
   double m_scale,m_mean,m_sigma;
 };
@@ -232,7 +232,7 @@ public:
     m_width = a_from.m_width;
     return *this;
   }
-public:  
+public:
   bool in_domain(double) const {return true;}
   double value(double a_x) const {
     // From Wikipedia.
@@ -240,7 +240,7 @@ public:
     double _value = (a_x - m_center)/b;
     return m_height/((_value * _value + 1)*b*pi());
   }
-public:  
+public:
   void set(double a_height,double a_center,double a_width){
     m_height = a_height;
     m_center = a_center;

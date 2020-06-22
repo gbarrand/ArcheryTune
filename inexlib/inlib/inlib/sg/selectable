@@ -62,12 +62,12 @@ public:
     //m_group.pick(a_action);
   }
   virtual void search(search_action& a_action) {
-    parent::search(a_action);
-    if(a_action.done()) return;
     if(touched()) {
       update_sg();
       reset_touched();
     }
+    parent::search(a_action);
+    if(a_action.done()) return;
     if(a_action.do_path()) a_action.path_push(this);
     m_group.search(a_action);
     if(a_action.done()) return;
@@ -129,7 +129,7 @@ public:
     add_fields();
     init_sg();
   }
-  selectable& operator=(const selectable& a_from){    
+  selectable& operator=(const selectable& a_from){
     parent::operator=(a_from);
     if(&a_from==this) return *this;
 
@@ -151,14 +151,14 @@ public:
 protected:
   void init_sg() {
     m_group.clear();
-    m_group.add(new noderef(m_node)); 
-    m_group.add(new noderef(m_border_sep)); 
+    m_group.add(new noderef(m_node));
+    m_group.add(new noderef(m_border_sep));
   }
   void update_sg(){
     m_node.width = width;
     m_node.height = height;
     update_border();
-  }  
+  }
 
   void update_border() {
     m_border_sep.clear();
@@ -193,7 +193,7 @@ protected:
 
     back_area* b = new back_area;
     b->border_visible = false;
-    b->color = border_color;      
+    b->color = border_color;
     b->width = wba;
     b->height = hba;
     sep->add(b);}
@@ -213,7 +213,7 @@ protected:
 
     back_area* b = new back_area;
     b->border_visible = false;
-    b->color = border_color;      
+    b->color = border_color;
     b->width = wba;
     b->height = hba;
     sep->add(b);}
@@ -233,7 +233,7 @@ protected:
 
     back_area* b = new back_area;
     b->border_visible = false;
-    b->color = border_color;      
+    b->color = border_color;
     b->width = wba;
     b->height = hba;
     sep->add(b);}
@@ -253,13 +253,13 @@ protected:
 
     back_area* b = new back_area;
     b->border_visible = false;
-    b->color = border_color;      
+    b->color = border_color;
     b->width = wba;
     b->height = hba;
     sep->add(b);}
 
   }
-    
+
 protected:
   const base_freetype& m_ttf;
   group m_group;

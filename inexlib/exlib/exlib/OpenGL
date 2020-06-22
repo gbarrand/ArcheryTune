@@ -21,7 +21,7 @@
 #elif _WIN32
 #include <windows.h>
 #include <GL/gl.h>
-#elif __APPLE__	
+#elif __APPLE__
 #include <OpenGL/gl.h> //Cocoa
 #else
 #include <GL/gl.h>

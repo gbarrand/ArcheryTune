@@ -159,9 +159,9 @@ public:\
   }\
   template <class VEC>\
   bool mul_vec(VEC& a_vec) const {\
-    T* res = new T[dimension()];\
-    bool status = mul_vec(a_vec,res);\
-    delete [] res;\
+    T* _tmp = new T[dimension()];\
+    bool status = mul_vec(a_vec,_tmp);\
+    delete [] _tmp;\
     return status;\
   }\
 \
@@ -177,9 +177,9 @@ public:\
     return true;\
   }\
   bool mul_array(T a_vec[]) const {\
-    T* res = new T[dimension()];\
-    bool status = mul_array(a_vec,res);\
-    delete [] res;\
+    T* _tmp = new T[dimension()];\
+    bool status = mul_array(a_vec,_tmp);\
+    delete [] _tmp;\
     return status;\
   }\
 \
@@ -315,6 +315,16 @@ public:\
     return true;\
   }\
 \
+  bool is_diagonal() const {\
+    unsigned int _D = dimension();\
+    for(unsigned int r=0;r<_D;r++) {\
+      for(unsigned int c=0;c<_D;c++) {\
+        if(c!=r) {if(value(r,c)!=zero()) return false;}\
+      }\
+    }\
+    return true;\
+  }\
+\
   template <class PREC>\
   bool is_diagonal_prec(const PREC& a_prec,PREC(*a_fabs)(const T&)) const {\
     unsigned int _D = dimension();\
@@ -323,6 +333,33 @@ public:\
         if(c!=r) {if(!is_zero(value(r,c),a_prec,a_fabs)) return false;}\
       }\
     }\
+    return true;\
+  }\
+\
+  bool is_identity() const {\
+    unsigned int _D = dimension();\
+   {for(unsigned int r=0;r<_D;r++) {\
+      if(value(r,r)!=one()) return false;\
+    }}\
+   {for(unsigned int r=0;r<_D;r++) {\
+      for(unsigned int c=0;c<_D;c++) {\
+        if(c!=r) {if(value(r,c)!=zero()) return false;}\
+      }\
+    }}\
+    return true;\
+  }\
+\
+  template <class PREC>\
+  bool is_identity_prec(const PREC& a_prec,PREC(*a_fabs)(const T&)) const {\
+    unsigned int _D = dimension();\
+   {for(unsigned int r=0;r<_D;r++) {\
+      if(!numbers_are_equal(value(r,r),one(),a_prec,a_fabs)) return false;\
+    }}\
+   {for(unsigned int r=0;r<_D;r++) {\
+      for(unsigned int c=0;c<_D;c++) {\
+        if(c!=r) {if(!is_zero(value(r,c),a_prec,a_fabs)) return false;}\
+      }\
+    }}\
     return true;\
   }\
 \
@@ -779,28 +816,14 @@ public:\
 \
   void power(unsigned int a_n,INLIB_MAT_CLASS& a_res) const {\
     a_res.set_identity();\
-    T* res = new T[dim2()];\
+    T* _tmp = new T[dim2()];\
     for(unsigned int i=0;i<a_n;i++) {\
-      a_res._mul_mtx(m_vec,res);\
+      a_res._mul_mtx(m_vec,_tmp);\
     }\
-    delete [] res;\
+    delete [] _tmp;\
   }\
 \
-  void exp(unsigned int a_le,INLIB_MAT_CLASS& a_res) const {\
-    /* result = I + M + M**2/2! + M**3/3! + .... */\
-    a_res.set_identity();\
-    INLIB_MAT_CLASS tmp(*this);\
-    tmp.set_identity();\
-    T* res = new T[dim2()];\
-    for(unsigned int i=1;i<=a_le;i++) {\
-      tmp._mul_mtx(m_vec,res);\
-      tmp.multiply(one()/T(i));\
-      a_res += tmp;\
-    }\
-    delete [] res;\
-  }\
-\
-  void exp(unsigned int a_le,INLIB_MAT_CLASS& a_res,INLIB_MAT_CLASS& a_tmp,T a_tmp_2[]) { /*OPTIMIZATION*/\
+  void exp(unsigned int a_le,INLIB_MAT_CLASS& a_res,INLIB_MAT_CLASS& a_tmp,T a_tmp_2[]) const { /*OPTIMIZATION*/\
     /* result = I + M + M**2/2! + M**3/3! + .... */\
     a_res.set_identity();\
     a_tmp.set_identity();\
@@ -811,6 +834,15 @@ public:\
     }\
   }\
 \
+  void exp(unsigned int a_le,INLIB_MAT_CLASS& a_res) const {\
+    /* result = I + M + M**2/2! + M**3/3! + .... */\
+    INLIB_MAT_CLASS tmp(*this);\
+    tmp.set_identity();\
+    T* tmp_2 = new T[dim2()];\
+    exp(a_le,a_res,tmp,tmp_2);\
+    delete [] tmp_2;\
+  }\
+\
   void cosh(unsigned int a_le,INLIB_MAT_CLASS& a_res) const {\
     /* result = I + M**2/2! + M**4/4! + .... */\
     a_res.set_identity();\
@@ -818,14 +850,14 @@ public:\
     M_2._mul_mtx(m_vec);\
     INLIB_MAT_CLASS tmp(*this);\
     tmp.set_identity();\
-    T* res = new T[dim2()];\
+    T* _tmp = new T[dim2()];\
     for(unsigned int i=1;i<=a_le;i+=2) {\
-      tmp._mul_mtx(M_2.m_vec,res);\
+      tmp._mul_mtx(M_2.m_vec,_tmp);\
       tmp.multiply(one()/T(i+0)); \
       tmp.multiply(one()/T(i+1)); \
       a_res += tmp;\
     }\
-    delete [] res;\
+    delete [] _tmp;\
   }\
 \
   void sinh(unsigned int a_le,INLIB_MAT_CLASS& a_res) const {\
@@ -835,14 +867,14 @@ public:\
     M_2._mul_mtx(m_vec);\
     INLIB_MAT_CLASS tmp(*this);\
     tmp._copy(m_vec);\
-    T* res = new T[dim2()];\
+    T* _tmp = new T[dim2()];\
     for(unsigned int i=1;i<=a_le;i+=2) {\
-      tmp._mul_mtx(M_2.m_vec,res);\
+      tmp._mul_mtx(M_2.m_vec,_tmp);\
       tmp.multiply(one()/T(i+1)); \
       tmp.multiply(one()/T(i+2)); \
       a_res += tmp;\
     }\
-    delete [] res;\
+    delete [] _tmp;\
   }\
 \
   void log(unsigned int a_le,INLIB_MAT_CLASS& a_res) const {\
@@ -860,16 +892,37 @@ public:\
 \
     INLIB_MAT_CLASS tmp;\
 \
-    T* res = new T[dim2()];\
+    T* _tmp = new T[dim2()];\
     for(unsigned int i=0;i<=a_le;i++) {\
       fact *= minus_one();      \
       tmp = M_Ip;\
       tmp.multiply(fact/T(i+1)); \
       a_res += tmp;\
-      M_Ip._mul_mtx(M_I.m_vec,res);\
+      M_Ip._mul_mtx(M_I.m_vec,_tmp);\
     }\
-    delete [] res;\
+    delete [] _tmp;\
   }\
+\
+  void omega(unsigned int a_le,INLIB_MAT_CLASS& a_res,INLIB_MAT_CLASS& a_tmp,T a_tmp_2[]) const { /*OPTIMIZATION*/\
+    /* result = I + M/2! + M**2/3! + M**3/4! + .... */\
+    a_res.set_identity();\
+    a_tmp.set_identity();\
+    for(unsigned int i=1;i<=a_le;i++) {\
+      a_tmp._mul_mtx(m_vec,a_tmp_2);\
+      a_tmp.multiply(one()/T(i+1));\
+      a_res += a_tmp;\
+    }\
+  }\
+\
+  void omega(unsigned int a_le,INLIB_MAT_CLASS& a_res) const {\
+    /* result = I + M/2! + M**2/3! + M**3/4! + .... */\
+    INLIB_MAT_CLASS tmp(*this);\
+    tmp.set_identity();\
+    T* tmp_2 = new T[dim2()];\
+    omega(a_le,a_res,tmp,tmp_2);\
+    delete [] tmp_2;\
+  }\
+\
   template <class MAT>\
   bool copy(const MAT& a_from) {\
     /*for exa from a double matrix to a symbol matrix*/\
@@ -987,26 +1040,26 @@ protected:\
   }\
 \
   void _mul_mtx(const T a_m[]) {\
-    T* res = new T[dim2()];\
-    _mul_mtx(a_m,res);\
-    delete [] res;\
+    T* _tmp = new T[dim2()];\
+    _mul_mtx(a_m,_tmp);\
+    delete [] _tmp;\
   }\
 \
   void _left_mul_mtx(const T a_m[]) {\
     /* this = a_m * this */\
     unsigned int _D = dimension();\
-    T* res = new T[dim2()];\
+    T* _tmp = new T[dim2()];\
     for(unsigned int r=0;r<_D;r++) {\
       for(unsigned int c=0;c<_D;c++) {\
         T _value = zero();\
         for(unsigned int i=0;i<_D;i++) {\
           _value += (*(a_m+r+i*_D)) * (*(m_vec+i+c*_D)); /*optimize.*/\
         }\
-        *(res+r+c*_D) = _value;\
+        *(_tmp+r+c*_D) = _value;\
       }\
     }\
-    _copy(res);\
-    delete [] res;\
+    _copy(_tmp);\
+    delete [] _tmp;\
   }\
 \
   template <class PREC>\

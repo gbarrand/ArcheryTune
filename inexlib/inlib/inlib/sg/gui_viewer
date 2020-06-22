@@ -7,62 +7,64 @@
 #include "../platform"
 
 #include "guiv"
-#include "noderef"
-#include "acbk"
+
+#include "gui_items"
 #include "holder" //for m_tmp_group
-#include "draw_style"
-#include "_switch"
-#include "ghost"
-#include "style_parser"
-#include "style"
-#include "text_style"
 #include "selection"
 #include "torche"
 #include "progress"
-#include "slider"
-#include "matrix"
 #include "depth_test"
 #include "ortho"
 #include "perspective"
 #include "frustum"
 #include "lrbt"
-#include "vertices"
 #include "simple_button"
 #include "button_grid"
 #include "cube_manip"
 #include "search"
 #include "camera_anim"
 #include "count_action"
-
-#include "list"
-#include "infos_box"
 #include "scroll_text"
 #include "scroll_infos"
-#include "numeric"
-#include "edvalop"
 #include "entry"
 #include "entries"
-#include "colors"
-#include "image_text_button"
+#include "shade_model"
 #include "params2entries"
-#include "enum2s"
 #include "opener"
-#include "../image_reader"
 
 #include "../cbk/timer"
-//#include "../cbk/none"
-
 #include "../event_timer"
-#include "../vpair"
 #include "../mapmanip"
-
-//#include "../wall/protocol" //fo set_wall_action_prots()
 
 #include "fundata_cbk"
 #include "gv_cbk"
 #include "base_dumper"
 #include "zb_manager"
+#include "mem_action"
 #include "../atime2s"
+#include "../squote"
+#include "../svar"
+#include "../chars"
+
+#include "../sys/file" //tmpname
+
+#include "../insh"
+#include "../paper_format"
+#include "write_paper"
+#include "write_bsg"
+//#include "write_exsg"
+
+#include "../get_lines"
+#include "senum"
+#include "../parse"
+#include "../insh_ls"
+#include "../insh_console" //windows.h
+
+#include "slice_anim"
+#include "../sglprims"
+#include "../iabs"
+
+#include "object_manager"
 
 //#ifdef _MSC_VER
 //#pragma warning(disable:4355)
@@ -78,7 +80,7 @@ class gui_viewer : public guiv {
   INLIB_HEADER(gui_viewer,inlib::sg::gui_viewer,guiv)
 private:
   INLIB_CLASS_STRING(event_timer)
-protected:  
+protected:
   typedef std::vector<void*> ptrs_t;
 public:
   static int SHOWN() {return 0;}
@@ -111,7 +113,6 @@ public: //guib
     invalidate_works(disarm_work::s_class());
     gui_visible.touch();
   }
-  virtual render_manager* find_render_manager(const std::string&) {return 0;} //to find gl2ps_manager (see exlib/cbk/out).
 public:
   virtual bool has_mail_panel() {return false;}
   virtual bool mail_panel(const std::string& /*a_to*/,
@@ -128,7 +129,7 @@ public: //OpenGL infos.
   virtual void gl_infos(std::vector<std::string>& a_v) const {a_v.clear();}
 public:
   template <class T>
-  void num2console(const T& a_v) {    
+  void num2console(const T& a_v) {
     std::string stmp;
     if(!num2s(a_v,stmp)) {}
     m_console.set_label(stmp);
@@ -141,7 +142,7 @@ public:
     //set_console_layout();
     show_console();
   }
-  
+
 public:
   virtual void clear_scene() {
     m_scene->clear();
@@ -150,7 +151,9 @@ public:
     m_params.m_plane_viewer = true;
     m_params.m_cam_tiled = true;
     m_scene_light = 0;
-    hide_sliders();    
+    m_scene_blend = 0;
+    m_scene_shade_model = 0;
+    hide_sliders();
     //stop_cam_anim();  //any cam_anim node are now deleted.
     //NOTE : we do not stop the event anim here. Someone may want to
     //       clear the scene for one event but continue to vis
@@ -158,7 +161,7 @@ public:
     //stop_event_anim();
   }
 
-  // cursor :  
+  // cursor :
   virtual bool set_cursor_shape(cursor_shape a_shape) {
     cursor_model = a_shape;
     return true;
@@ -176,7 +179,7 @@ public:
       camera->height = a_near_height;
       camera->znear = a_near;
       return camera;
-    } else if(a_type==camera_perspective) { 
+    } else if(a_type==camera_perspective) {
       perspective* camera = new perspective;
 
       float angle = 2 * fatan((a_near_height*0.5f)/a_near);
@@ -187,7 +190,7 @@ public:
       return camera;
     } else {
       return 0;
-    }   
+    }
   }
 
   // in case cam ortho, get one screen world coords size :
@@ -209,8 +212,8 @@ public:
     a_aspect = float(m_ww)/float(m_wh);
     a_wch = a_cam_height;
     a_wcw = a_wch*a_aspect;
-    a_tx = 0;    
-    a_ty = 0;    
+    a_tx = 0;
+    a_ty = 0;
   }
 
   virtual void get_gui_all_wcw_wch(float& a_wcw,float& a_wch) const {
@@ -245,9 +248,17 @@ public:
   virtual void enable_anim() {
     if(has_valid_work(anim_work::s_class())) return;
     add_work(new anim_work(*this));
+    m_params.m_anim_on = true;
+    m_camenu_disable_anim_image_button.color = colorf_pink();
+    m_camenu_disable_anim_text_button.back_area::color = colorf_pink();
   }
 
-  virtual void disable_anim() {invalidate_works(anim_work::s_class());}
+  virtual void disable_anim() {
+    invalidate_works(anim_work::s_class());
+    m_params.m_anim_on = false;
+    m_camenu_disable_anim_image_button.color = m_params.m_gui_back_color;
+    m_camenu_disable_anim_text_button.back_area::color = m_params.m_gui_back_color;
+  }
 
   virtual void ask_to_sync_clients() {}
 
@@ -309,12 +320,10 @@ public:
     if(!swap_scene_camera_kind()) return false;
     base_camera* new_cam = m_scene_camera;
     return grp->replace(cam,new_cam,true);
-  }  
+  }
 
 public:
   virtual inlib::opener& opener() {return m_opener;} //inlib:: needed.
-
-  image::readers& image_readers() {return m_image_readers;}
 private:
   sf<bool> gui_visible;
 public:
@@ -339,7 +348,6 @@ public:
              unsigned int a_width,unsigned int a_height,
              bool a_verbose = false)
   :parent(a_out,a_width,a_height,a_verbose)
-
   ,gui_visible(true)
   ,cursor_visible(false)
   ,cursor_line_width(2)
@@ -361,16 +369,22 @@ public:
   ,m_scene_camera(0)
   ,m_reset_camera(0)
   ,m_scene_light(0)
+  ,m_scene_blend(0)
+  ,m_scene_shade_model(0)
 
   ,m_gui(0)
 
-  ,m_camenu_shift_button(a_ttf)
+  ,m_camenu_anim_mode_button(a_ttf)
   ,m_camenu_sshoot_text_button(a_ttf)
   ,m_camenu_90_text_button(a_ttf)
   ,m_camenu_focal_button(a_ttf)
   ,m_camenu_viewing_button(a_ttf)
-  ,m_camenu_gsto_button(a_ttf)
+  ,m_camenu_gsto_text_button(a_ttf)
+  ,m_camenu_light_text_button(a_ttf)
+  ,m_camenu_blend_text_button(a_ttf)
+  ,m_camenu_smooth_text_button(a_ttf)
   ,m_camenu_plane_exam_button(a_ttf)
+  ,m_camenu_disable_anim_text_button(a_ttf)
   ,m_console(a_ttf)
 
   ,m_popup_cbks()
@@ -389,21 +403,27 @@ public:
 
   ,m_motion_slider(0)
 
-  ,m_treat_mouse_motion(false)
+  //,m_treat_mouse_motion(false)
 
   ,m_cursor_camera(0)
 
   ,m_memory_warning(false)
   //,m_jpeg_data(a_out)
 
-  ,m_action_prots()
+  //,m_action_prots()
 
   ,m_dumpers()
   ,m_opener(get_me(),0)
-  ,m_vr_mode(false)  
+  ,m_png_writer(0)
+  ,m_jpeg_writer(0)
+  ,m_vr_mode(false)
+  ,m_insh(get_me())
+  ,m_object_manager(a_out)
   {
     m_scene = safe_cast<node,selection>(*(a_selection.copy()));
     m_gui = safe_cast<node,selection>(*(a_selection.copy()));
+
+    m_object_manager.add_source(m_scene,"viewer_scene"); //dangerous. m_scene must not be deleted.
 
     //WARNING : in m_sg, m_scene_switch expected at 0, m_gui at 1.
     //          If changing that, look at touch_[down,up]().
@@ -438,7 +458,7 @@ public:
 
     m_cursor_matrix.set_identity();
 
-    set_arconf(m_console,"");
+    set_arconf(m_params,m_console,"");
     m_console.hjust = sg::left;
     m_console.confine = false;
     m_console.add_callback
@@ -446,6 +466,15 @@ public:
 
     // set default gsto mode on m_params :
     gsto_mode2s(m_render_manager.get_gsto_mode(),m_params.m_gsto_mode);
+
+    ////////////////////////////////////////////
+    /// insh : /////////////////////////////////
+    ////////////////////////////////////////////
+    insh_add_cmds();
+
+   {std::string HOME;
+    dir::home(HOME);
+    m_insh.add_env("HOME",HOME);}
   }
   virtual ~gui_viewer(){
     safe_clear<std::string,base_dumper>(m_dumpers);
@@ -481,16 +510,22 @@ protected:
   ,m_scene_camera(0)
   ,m_reset_camera(0)
   ,m_scene_light(0)
+  ,m_scene_blend(0)
+  ,m_scene_shade_model(0)
 
   ,m_gui(0)
 
-  ,m_camenu_shift_button(m_ttf)
+  ,m_camenu_anim_mode_button(m_ttf)
   ,m_camenu_sshoot_text_button(m_ttf)
   ,m_camenu_90_text_button(m_ttf)
   ,m_camenu_focal_button(m_ttf)
   ,m_camenu_viewing_button(m_ttf)
-  ,m_camenu_gsto_button(m_ttf)
+  ,m_camenu_gsto_text_button(m_ttf)
+  ,m_camenu_light_text_button(m_ttf)
+  ,m_camenu_blend_text_button(m_ttf)
+  ,m_camenu_smooth_text_button(m_ttf)
   ,m_camenu_plane_exam_button(m_ttf)
+  ,m_camenu_disable_anim_text_button(m_ttf)
   ,m_console(m_ttf)
 
   ,m_popup_cbks(a_from.m_popup_cbks)
@@ -507,24 +542,29 @@ protected:
 
   ,m_motion_slider(0)
 
-  ,m_treat_mouse_motion(false)
+  //,m_treat_mouse_motion(false)
 
   ,m_cursor_camera(0)
 
   ,m_memory_warning(false)
 
-  ,m_action_prots(a_from.m_action_prots)
+  //,m_action_prots(a_from.m_action_prots)
 
   //,m_jpeg_data(a_from.m_out)
   ,m_dumpers()
   ,m_opener(a_from.m_opener)
   ,m_image_readers(a_from.m_image_readers)
+  ,m_png_writer(a_from.m_png_writer)
+  ,m_jpeg_writer(a_from.m_jpeg_writer)
   ,m_vr_mode(a_from.m_vr_mode)
   ,m_argcv(a_from.m_argcv)
+  ,m_insh(a_from.m_insh)
+  //,m_object_manager(a_from.m_object_manager)
+  ,m_object_manager(a_from.m_out)
   {
     //m_scene = safe_cast<node,selection>(*(a_from.m_scene->copy()));
     //m_gui = safe_cast<node,selection>(*(a_from.m_scene->copy()));
-    //m_scene->clear();    
+    //m_scene->clear();
     //m_gui->clear();
 
     delete m_reset_camera;
@@ -537,7 +577,7 @@ protected:
     parent::operator=(a_from);
 
     if(&a_from==this) return *this;
-    
+
     gui_visible = a_from.gui_visible;
     cursor_visible = a_from.cursor_visible;
     cursor_line_width = a_from.cursor_line_width;
@@ -551,11 +591,13 @@ protected:
     camenu_viewing_visible = a_from.camenu_viewing_visible;
     camenu_view_all_visible = a_from.camenu_view_all_visible;
 
-    m_scene_camera = 0;    
+    m_scene_camera = 0;
 
     delete m_reset_camera;
     m_reset_camera = a_from.m_reset_camera?a_from.m_reset_camera->copy():0;
     m_scene_light = 0;
+    m_scene_blend = 0;
+    m_scene_shade_model = 0;
 
     m_popup_cbks = a_from.m_popup_cbks;
 
@@ -564,6 +606,7 @@ protected:
     m_touch_in_motion = false;
     m_touch_prev_x = 0;
     m_touch_prev_y = 0;
+    m_touches.clear();
 
     m_gesture_begin_x = 0;
     m_gesture_begin_y = 0;
@@ -571,41 +614,46 @@ protected:
 
     m_motion_slider = 0;
 
-    m_treat_mouse_motion = false;
+    //m_treat_mouse_motion = false;
 
     m_cursor_camera = 0;
 
     m_memory_warning = false;
 
-    m_action_prots = a_from.m_action_prots;
+    //m_action_prots = a_from.m_action_prots;
 
     copy<std::string,base_dumper>(m_dumpers,a_from.m_dumpers);
 
+    m_png_writer = a_from.m_png_writer;
+    m_jpeg_writer = a_from.m_jpeg_writer;
+
     m_vr_mode = a_from.m_vr_mode;
     m_argcv = a_from.m_argcv;
+    m_insh = a_from.m_insh;
 
     return *this;
   }
 public:
   const gui_viewer& get_me() const {return *this;}
   gui_viewer& get_me() {return *this;}
- 
+
   const base_freetype& ttf() const {return m_ttf;}
 
   sg::zb_manager& zb_manager() {return m_zb_mgr;}
+  sg::gl2ps_manager& gl2ps_manager() {return m_gl2ps_mgr;}
 
   //void set_vr_mode(bool a_value) {
   //  m_vr_mode = a_value;
   //  ask_to_rebuild_gui();
   //}
   //bool vr_mode() const {return m_vr_mode;}
-public:   
-
+public:
   ///////////////////////////////////////////////////
-  /// wall : for communication with data_client : ///
+  /// wall : for communication with sg_client : /////
   ///////////////////////////////////////////////////
 
   typedef std::map<unsigned int,std::string> action_prots_t;
+/*
   const action_prots_t& action_prots() const {return m_action_prots;}
   //action_prots_t& action_prots() {return m_action_prots;}
 
@@ -621,7 +669,7 @@ public:
     a_action = 0;
     return false;
   }
-
+*/
 /* previously used in exlib/app/wall_client :
   void set_wall_action_prots() {
     //used by wall_screen and wall data client programs.
@@ -648,23 +696,86 @@ public:
     m_action_prots[gui_cbk::action_cam_anim_zoom_in_out_rot()] = wall::protocol::s_rwc_cam_anim_zoom_in_out_rot();
   }
 */
+
+  bool receive_document_buffer(char* a_buffer,unsigned int a_length,const std::string& a_arg_sep) {
+    char* copt = str_dup(a_buffer);
+    std::string options(copt);
+    str_del(copt);
+
+    size_t lopt = options.size();
+    size_t ldoc = a_length-(lopt+1);
+    char* pdoc = a_buffer+lopt+1;
+
+    if(ldoc==0) {
+      m_out << "inlib::sg::gui_viewer::receive_document_buffer :"
+            << " WARNING : receive an empty document."
+            << std::endl;
+      //not fatal
+      return true;
+    }
+
+    //see inlib/sg/send
+    args _args(options,a_arg_sep,false);
+    bool done;
+    if(!opener().open(ldoc,pdoc,_args,done)){
+      m_out << "inlib::sg::gui_viewer::receive_document_buffer :"
+            << " open buffer failed."
+            << std::endl;
+      //not fatal
+      win_render();
+      return true;
+    }
+
+    if(done) {
+      win_render();
+      return true;
+    }
+
+    std::string DOCUMENT;
+    if(!tmpname(m_tmp_dir,"gui_viewer_","",DOCUMENT)) {
+      m_out << "inlib::sg::gui_viewer::receive_document_buffer :"
+            << " can't get tmp file name."
+            << std::endl;
+      return false;
+    }
+
+    if(!file::write_bytes(DOCUMENT,pdoc,ldoc)) {
+      m_out << "inlib::sg::gui_viewer::receive_document_buffer :"
+            << " can't write file " << inlib::sout(DOCUMENT) << "."
+            << std::endl;
+      return false;
+    }
+
+    if(!opener().open(DOCUMENT,file::s_format_guessed(),_args,done) || !done) {
+      m_out << "inlib::sg::gui_viewer::receive_document_buffer :"
+            << " open_file failed."
+             << std::endl;
+      //not fatal
+    }
+    win_render();
+
+    ::remove(DOCUMENT.c_str());
+
+    return true;
+  }
+
   ///////////////////////////////////////////////////
   ///////////////////////////////////////////////////
   ///////////////////////////////////////////////////
 
   virtual void set_event_anim(event_timer* a_timer) { //get ownership. //virtual for WebGL
-    add_in_tmp_group<event_timer>(s_event_timer(),a_timer);  
+    add_in_tmp_group<event_timer>(s_event_timer(),a_timer);
     add_work(new cbk::timer(*this,*a_timer));
   }
 
   void stop_event_anim() { // Used in exlib/[pmx,agora,cbk/lhc1].
     cbk::timer::invalidate_timer_works(*this,event_timer::s_class());
-    remove_in_tmp_group<base_timer>(s_event_timer());
+    remove_in_tmp_group<event_timer>(s_event_timer());
   }
 
   node* create_to_stop_event_anim_holder() { //see exlib/geant4/exas for an example.
     return new holder<to_stop_event_anim>(new to_stop_event_anim(*this));
-  }     
+  }
   ///////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////
@@ -678,7 +789,7 @@ public:
   }
   void trigger_button(base_button* a_node) {
     add_work(new disarm_work(*this,a_node));
-    add_work_cbks(a_node->cbks().callbacks(),true);    
+    add_work_cbks(a_node->cbks().callbacks(),true);
   }
 
   selection& scene() {return *m_scene;}
@@ -711,6 +822,63 @@ public:
     if(!m_scene_light) return false;
     m_scene_light->on = a_value;
     m_params.m_light_on = a_value; //keep in sync.
+    if(a_value) {
+      m_camenu_light_image_button.color = colorf_pink();
+      m_camenu_light_text_button.back_area::color = colorf_pink();
+    } else {
+      m_camenu_light_image_button.color = m_params.m_gui_back_color;
+      m_camenu_light_text_button.back_area::color = m_params.m_gui_back_color;
+    }
+    return true;
+  }
+
+  blend* scene_blend() const {return m_scene_blend;}
+  void set_scene_blend(blend* a_blend) {
+    //we don't get ownership of a_blend.
+    m_scene_blend = a_blend;
+    if(m_scene_blend) m_scene_blend->on = m_params.m_blend_on;
+  }
+  bool set_scene_blend_on(bool a_value) {
+    if(!m_scene_blend) return false;
+    m_scene_blend->on = a_value;
+    m_params.m_blend_on = a_value; //keep in sync.
+    if(a_value) {
+      m_camenu_blend_image_button.color = colorf_pink();
+      m_camenu_blend_text_button.back_area::color = colorf_pink();
+    } else {
+      m_camenu_blend_image_button.color = m_params.m_gui_back_color;
+      m_camenu_blend_text_button.back_area::color = m_params.m_gui_back_color;
+    }
+    return true;
+  }
+
+  shade_model* scene_shade_model() const {return m_scene_shade_model;}
+  void set_scene_shade_model(shade_model* a_shade_model) {
+    //we don't get ownership of a_shade_model.
+    m_scene_shade_model = a_shade_model;
+    if(m_scene_shade_model) {
+      if(m_params.m_smooth_on) {
+        m_scene_shade_model->model = shade_smooth;
+      } else {
+        m_scene_shade_model->model = shade_flat;
+      }
+    }
+  }
+  bool set_scene_smooth_on(bool a_value) {
+    if(!m_scene_shade_model) return false;
+    if(a_value) {
+      m_scene_shade_model->model = shade_smooth;
+    } else {
+      m_scene_shade_model->model = shade_flat;
+    }
+    m_params.m_smooth_on = a_value; //keep in sync.
+    if(a_value) {
+      m_camenu_smooth_image_button.color = colorf_pink();
+      m_camenu_smooth_text_button.back_area::color = colorf_pink();
+    } else {
+      m_camenu_smooth_image_button.color = m_params.m_gui_back_color;
+      m_camenu_smooth_text_button.back_area::color = m_params.m_gui_back_color;
+    }
     return true;
   }
 
@@ -733,14 +901,16 @@ public:
       //      << std::endl;
     }}
 
-    // the gl manager may refuse the given value :    
+    // the gl manager may refuse the given value :
     gsto_mode2s(m_render_manager.get_gsto_mode(),m_params.m_gsto_mode);
 
     if(m_params.m_use_gsto) {
-      m_camenu_gsto_button.back_area::color = colorf_pink();
+      m_camenu_gsto_image_button.color = colorf_pink();
+      m_camenu_gsto_text_button.back_area::color = colorf_pink();
       //m_params.m_gui_button_active_color;
     } else {
-      m_camenu_gsto_button.back_area::color = m_params.m_gui_back_color;
+      m_camenu_gsto_image_button.color = m_params.m_gui_back_color;
+      m_camenu_gsto_text_button.back_area::color = m_params.m_gui_back_color;
     }
 
   }
@@ -750,10 +920,15 @@ public:
   ////////////////////////////////////////////
   base_camera* scene_camera() const {return m_scene_camera;}
 
+  bool camera_height_at_focal(float& a_h) const {
+    if(!m_scene_camera) {a_h = 2;return false;}
+    return m_scene_camera->height_at_focal(a_h);
+  }
+
   void set_scene_camera(base_camera* a_camera,bool a_set_reset_cam = true) {
     //we don't get ownership of a_camera.
     m_scene_camera = a_camera;
-    _set_params_camera();    
+    _set_params_camera();
 
     if(a_set_reset_cam){
       delete m_reset_camera;
@@ -773,10 +948,10 @@ public:
       //reverse of exlib/opener/exsg_create_camera.
       float pos = pc->position.value().length();
       return pos * ftan(pc->height_angle.value()*0.5f);
-    }     
+    }
 
     return 10000; //10*m A01
-  }     
+  }
 */
 
   void start_anim_around_focal() { //for exlib/cbk/anim
@@ -790,53 +965,13 @@ public:
     delete cbk;
   }
 
-  void update_anim_motion(anim_what a_anim,bool a_shift) {
+  bool update_anim_motion(anim_what a_anim,anim_mode a_anim_mode) {
     int move;
-    if(!anim2motion(a_anim,a_shift,move)) return;
-    update_motion(move);
+    if(!anim2motion(a_anim,a_anim_mode,move)) return false;
+    if(!m_scene_camera) return false;
+    if(!m_scene_camera->update_motion(move)) return false;
     hide_meta_zone();
-  }
-private:
-  void update_motion(int a_what) {
-    if(!m_scene_camera) return;
-
-    float dx = m_scene_camera->dx;
-    float da = m_scene_camera->da;
-    float ds = m_scene_camera->ds;
-
-    if(a_what==move_rotate_right) {
-      m_scene_camera->rotate_around_up(-da);
-    } else if(a_what==move_rotate_left) {
-      m_scene_camera->rotate_around_up(da);
-
-    } else if(a_what==move_translate_right) {
-      m_scene_camera->translate_along_side(dx);
-    } else if(a_what==move_translate_left) {
-      m_scene_camera->translate_along_side(-dx);
-
-    } else if(a_what==move_up) {
-      m_scene_camera->translate_along_up(dx);
-    } else if(a_what==move_down) {
-      m_scene_camera->translate_along_up(-dx);
-
-    } else if(a_what==move_forward) {
-      m_scene_camera->translate_along_dir(dx);
-    } else if(a_what==move_backward) {
-      m_scene_camera->translate_along_dir(-dx);
-
-    } else if(a_what==move_zoom_in) {
-      m_scene_camera->zoom(ds);
-    } else if(a_what==move_zoom_out) {
-      m_scene_camera->zoom(1.0f/ds);
-
-    } else if(a_what==move_rotate_around_focal_right) {
-      m_scene_camera->rotate_around_y_at_focal(-da);
-
-    } else if(a_what==move_rotate_around_focal_left) {
-      m_scene_camera->rotate_around_y_at_focal(da);
-
-    }
-
+    return true;
   }
 public:
   ////////////////////////////////////////////
@@ -858,13 +993,13 @@ public:
       if(!grp) {
         m_out << "gui_viewer::delete_manips :"
                       << " cube_manip parent group not found."
-                      << std::endl;       
+                      << std::endl;
       } else {
         cm_t* cm = tail<cm_t>(p);
         if(!cm) {
           m_out << "inlib::sg::gui_viewer::delete_manips :"
                         << " cube_manip path with bad tail."
-                        << std::endl;       
+                        << std::endl;
         } else {
           node* parent;
           node* node;
@@ -872,27 +1007,27 @@ public:
           if(!parent||!node) {
             m_out << "inlib::sg::gui_viewer::delete_manips :"
                           << " cube_manip without a maniped node."
-                          << std::endl;       
+                          << std::endl;
           }
-          
+
           matrix* m = new matrix;
           m->mtx = cm->mtx;
           grp->replace(cm,m,true); // it deletes cm.
-           
+
           if(parent && node) {
             group* pgrp = safe_cast<node,group>(*parent);
             if(pgrp && pgrp->remove(node)) {
-              delete node;          
+              delete node;
             } else {
               m_out << "inlib::sg::gui_viewer::delete_manips :"
                             << " maniped node not in the expected parent."
-                            << std::endl;       
+                            << std::endl;
             }
           }
         }
       }
-    }    
-    
+    }
+
   }
 */
 
@@ -909,22 +1044,18 @@ public:
       const path_t& p = *it;
       group* grp = container<group>(p);
       if(!grp) {
-        m_out << "inlib::sg::gui_viewer::reset_manips :"
-                      << " cube_manip parent group not found."
-                      << std::endl;       
+        m_out << "inlib::sg::gui_viewer::reset_manips : cube_manip parent group not found." << std::endl;
       } else {
         cm_t* cm = tail<cm_t>(p);
         if(!cm) {
-          m_out << "inlib::sg::gui_viewer::reset_manips :"
-                        << " cube_manip path with bad tail."
-                        << std::endl;       
+          m_out << "inlib::sg::gui_viewer::reset_manips : cube_manip path with bad tail." << std::endl;
         } else {
           matrix* m = new matrix;
           m->mtx = cm->m_start_matrix;
           grp->replace(cm,m,true); // it deletes cm.
         }
       }
-    }    
+    }
   }
 
   void count_points() {
@@ -953,25 +1084,35 @@ public:
     return visibles?true:false;
   }
 
-  std::string anim_shift_button_label() const {
-    //logic must be in sync with the below update_anim_motion. 
-    if(m_params.m_camera_type.empty()) return "nil";
+  void anim_mode_button_label(std::vector<std::string>& a_v) const {
+    //logic must be in sync with the below update_anim_motion.
+    a_v.clear();
+    if(m_params.m_camera_type.empty()) {a_v.push_back("nil");return;}
 
     if(m_params.m_plane_viewer) {
-      if(m_params.m_anim_shift) {
-        return "P/Z"; //P=Pane, Z=Zoom
+      if(m_params.m_anim_mode==anim_mode_0) {
+        a_v.push_back("PAN");
       } else {
-        return "P";
+        a_v.push_back("ZOOM");
+        a_v.push_back("PAN");
       }
     } else { //exam viewer.
-      if(m_params.m_anim_shift) {
-        return "P";
+      if(m_params.m_anim_mode==anim_mode_0) {
+        a_v.push_back("ZOOM");
+        a_v.push_back("YAW");
+      } else if(m_params.m_anim_mode==anim_mode_1) {
+        a_v.push_back("PAN");
+      } else if(m_params.m_anim_mode==anim_mode_2) {
+        a_v.push_back("PITCH");
+        a_v.push_back("YAW");
+      } else if(m_params.m_anim_mode==anim_mode_3) {
+        a_v.push_back("FWD");  //FB = Forward/Backward
+        a_v.push_back("YAW");  //FB = Forward/Backward
+      } else if(m_params.m_anim_mode==anim_mode_4) {
+        a_v.push_back("ROLL");
+        a_v.push_back("YAW");
       } else {
-        if(m_params.m_camera_type==s_camera_ortho()){
-          return "R/Z"; //R=Rotate.
-        } else {
-          return "R/T"; //T=Translate (in z)
-        }
+        a_v.push_back("nil");
       }
     }
   }
@@ -1050,16 +1191,13 @@ public:
   }
 */
 
-  bool anim2motion(anim_what a_anim,bool a_shift,int& a_move) {
+  bool anim2motion(anim_what a_anim,anim_mode a_anim_mode,int& a_move) {
     if(a_anim==anim_left) {
       if(m_params.m_plane_viewer) {
         a_move = move_translate_left;
         return true;
       } else { //exam viewer.
-        if(a_shift) {
-          a_move = move_translate_left;
-          return true;
-        } else {
+        if((a_anim_mode==anim_mode_0)||(a_anim_mode==anim_mode_2)||(a_anim_mode==anim_mode_3)||(a_anim_mode==anim_mode_4)) {
           if(m_params.m_anim_around_focal) {
             a_move = move_rotate_around_focal_left;
             return true;
@@ -1067,6 +1205,9 @@ public:
             a_move = move_rotate_left;
             return true;
           }
+        } else if(a_anim_mode==anim_mode_1) {
+          a_move = move_translate_left;
+          return true;
         }
       }
 
@@ -1075,10 +1216,7 @@ public:
         a_move = move_translate_right;
         return true;
       } else { //exam viewer.
-        if(a_shift) {
-          a_move = move_translate_right;
-          return true;
-        } else {
+        if((a_anim_mode==anim_mode_0)||(a_anim_mode==anim_mode_2)||(a_anim_mode==anim_mode_3)||(a_anim_mode==anim_mode_4)) {
           if(m_params.m_anim_around_focal) {
             a_move = move_rotate_around_focal_right;
             return true;
@@ -1086,54 +1224,81 @@ public:
             a_move = move_rotate_right;
             return true;
           }
+        } else if(a_anim_mode==anim_mode_1) {
+          a_move = move_translate_right;
+          return true;
         }
       }
 
     } if(a_anim==anim_up) {
       if(m_params.m_plane_viewer) {
-        if(a_shift) {
-          a_move = move_zoom_in;
+        if(a_anim_mode==anim_mode_0) {
+          a_move = move_up;
           return true;
         } else {
-          a_move = move_up;
+          a_move = move_zoom_in;
           return true;
         }
       } else { //exam viewer.
-        if(a_shift) {
+        if(a_anim_mode==anim_mode_0) {
+          a_move = move_zoom_in;
+          return true;
+        } else if(a_anim_mode==anim_mode_1) {
           a_move = move_up;
           return true;
-        } else {
-          if(m_params.m_camera_type==s_camera_ortho()){
-            a_move = move_zoom_in;
-            return true;
+        } else if(a_anim_mode==anim_mode_2) {
+          if(m_params.m_anim_around_focal) {
+            a_move = move_rotate_around_focal_up;
           } else {
-            a_move = move_forward;
-            return true;
+            a_move = move_rotate_up;
           }
+          return true;
+        } else if(a_anim_mode==anim_mode_3) {
+          a_move = move_forward;
+          return true;
+        } else if(a_anim_mode==anim_mode_4) {
+          if(m_params.m_anim_around_focal) {
+            a_move = move_roll_around_focal_plus;
+          } else {
+            a_move = move_roll_plus;
+          }
+          return true;
         }
       }
 
     } if(a_anim==anim_down) {
       if(m_params.m_plane_viewer) {
-        if(a_shift) {
-          a_move = move_zoom_out;
+        if(a_anim_mode==anim_mode_0) {
+          a_move = move_down;
           return true;
         } else {
-          a_move = move_down;
+          a_move = move_zoom_out;
           return true;
         }
       } else { //exam viewer.
-        if(a_shift) {
+        if(a_anim_mode==anim_mode_0) {
+          a_move = move_zoom_out;
+          return true;
+        } else if(a_anim_mode==anim_mode_1) {
           a_move = move_down;
           return true;
-        } else {
-          if(m_params.m_camera_type==s_camera_ortho()){
-            a_move = move_zoom_out;
-            return true;
+        } else if(a_anim_mode==anim_mode_2) {
+          if(m_params.m_anim_around_focal) {
+            a_move = move_rotate_around_focal_down;
           } else {
-            a_move = move_backward;
-            return true;
+            a_move = move_rotate_down;
           }
+          return true;
+        } else if(a_anim_mode==anim_mode_3) {
+          a_move = move_backward;
+          return true;
+        } else if(a_anim_mode==anim_mode_4) {
+          if(m_params.m_anim_around_focal) {
+            a_move = move_roll_around_focal_minus;
+          } else {
+            a_move = move_roll_minus;
+          }
+          return true;
         }
       }
     }
@@ -1217,7 +1382,7 @@ public:
     a_node.arm_color = m_params.m_gui_arm_color;
     a_node.font = m_params.m_gui_font;
     a_node.font_modeling = m_params.m_gui_font_modeling;
-  }  
+  }
   void set_style(edvalop& a_node) const {
     a_node.back_color = m_params.m_gui_back_color;
     a_node.border_color = m_params.m_gui_border_color;
@@ -1234,28 +1399,12 @@ public:
     a_node.font = m_params.m_gui_font;
     a_node.font_modeling = m_params.m_gui_font_modeling;
   }
-  
+
   typedef button_grid<simple_button> sbg_t;
   void set_colors(button_grid<simple_button>& a_node) const {
     a_node.back_color = m_params.m_gui_back_color;
     a_node.border_color = m_params.m_gui_border_color;
     a_node.arm_color = m_params.m_gui_arm_color;
-  }
-  void set_arconf(text& a_text,const std::string& a_s){
-    a_text.strings.clear();
-    a_text.strings.add(a_s);
-    a_text.font = m_params.m_gui_font;
-    a_text.font_modeling = m_params.m_gui_font_modeling;
-    a_text.confine = true;
-    a_text.hjust = center;
-  }
-  static void set_arconf(const gui_params& a_params,text& a_text,const std::string& a_s){
-    a_text.strings.clear();
-    a_text.strings.add(a_s);
-    a_text.font = a_params.m_gui_font;
-    a_text.font_modeling = a_params.m_gui_font_modeling;
-    a_text.confine = true;
-    a_text.hjust = center;
   }
 
   void set_text_layout(text& a_node,float a_wcw,float a_wch,float a_hbutton,matrix& a_mtx) const {
@@ -1330,7 +1479,7 @@ public:
     float hlist = mn<float>(hwanted,havailable);
 
     a_node.height = hlist;
-        
+
     float y = a_wch*0.5f-havailable*0.5f-hmargin;
     // x center relative to central list (not taking into account right arrows)
     float x = a_node.width*0.5f-a_node.witem()*0.5f;
@@ -1420,7 +1569,7 @@ public:
     // x center relative to the whole widget (taking into account right arrows)
     a_mtx.set_translate(0,a_mtx.mtx.value().v13(),a_mtx.mtx.value().v23());
 
-  }  
+  }
 
   bool ui_visible() {
     return (m_main_menu_switch.which.value()==SHOWN()?true:false);
@@ -1444,7 +1593,7 @@ public:
     m_backup_scene.down_cbks().copy(m_scene->down_cbks());
     m_backup_scene.move_cbks().copy(m_scene->move_cbks());
     m_scene->clear_cbks();
-  } 
+  }
   void restore_scene() {
     m_scene->transfer(m_backup_scene);
 
@@ -1464,14 +1613,25 @@ public:
 
   void set_scene_clear_color(float a_r,float a_g,float a_b,float a_a = 1) {
     set_scene_clear_color(colorf(a_r,a_g,a_b,a_a));
-  }  
- 
+  }
+
   void swap_scene_clear_color() {
     if(m_params.m_scene_screen_color==colorf_white()) {
       set_scene_clear_color(colorf_black());
     } else /*if(m_params.m_scene_screen_color==colorf_black())*/ {
       set_scene_clear_color(colorf_white());
     }
+  }
+
+  void set_gui_clear_color(const colorf& a_color) {
+    m_params.m_gui_screen_color = a_color;
+    if(m_main_menu_switch.which.value()==SHOWN()) {
+      m_clear_color = m_params.m_gui_screen_color;
+    }
+  }
+
+  void set_gui_clear_color(float a_r,float a_g,float a_b,float a_a = 1) {
+    set_gui_clear_color(colorf(a_r,a_g,a_b,a_a));
   }
 
   //virtual
@@ -1484,6 +1644,7 @@ public:
       m_gui_sliders_switch.which = HIDDEN(); //do not traverse scene sliders
       hide_popup();
     }
+    set_default_cursor_shape();
   }
 
   bool main_menu_shown() {
@@ -1508,8 +1669,13 @@ public:
       m_meta_switch.which = SHOWN();
       m_meta_had_been_shown = true;
     }
+    if(m_params.m_viewing){
+      set_default_cursor_shape();
+    } else {
+      set_cursor_shape(cursor_target);
+    }
   }
- 
+
   void hide_meta_zone() {m_meta_switch.which = HIDDEN();}
   void set_meta_zone_had_been_shown() {m_meta_had_been_shown = true;}
   void set_meta_zone_had_not_been_shown() {m_meta_had_been_shown = false;}
@@ -1521,6 +1687,7 @@ public:
   }
 
   void hide_camera_menu() {m_camenu_switch.which = HIDDEN();}
+  bool is_camera_menu_hidden() const {return m_camenu_switch.which==HIDDEN()?true:false;}
 
   void toggle_camera_menu() {
     if(m_camenu_switch.which==HIDDEN())
@@ -1528,21 +1695,24 @@ public:
     else
       hide_camera_menu();
   }
-  
+
   void set_camera_menu_labels() {
-    set_arconf(m_camenu_shift_button,anim_shift_button_label());
-    set_arconf(m_camenu_viewing_button,viewing_button_label());
+   {std::vector<std::string> ss;
+    anim_mode_button_label(ss);
+    set_arconf(m_params,m_camenu_anim_mode_button,ss);}
+
+    set_arconf(m_params,m_camenu_viewing_button,viewing_button_label());
 
     set_img_from_res_file(single_shoot_image_button_file(),m_camenu_sshoot_image_button.img.value());
     m_camenu_sshoot_image_button.img.touch();
-    set_arconf(m_camenu_sshoot_text_button,single_shoot_button_label());
+    set_arconf(m_params,m_camenu_sshoot_text_button,single_shoot_button_label());
 
     set_img_from_res_file(rot_90_image_button_file(),m_camenu_90_image_button.img.value());
     m_camenu_90_image_button.img.touch();
-    set_arconf(m_camenu_90_text_button,rot_90_button_label());
+    set_arconf(m_params,m_camenu_90_text_button,rot_90_button_label());
 
-    set_arconf(m_camenu_focal_button,around_focal_button_label());
-    set_arconf(m_camenu_plane_exam_button,plane_exam_button_label());
+    set_arconf(m_params,m_camenu_focal_button,around_focal_button_label());
+    set_arconf(m_params,m_camenu_plane_exam_button,plane_exam_button_label());
     set_use_gsto(m_use_gsto);
   }
 
@@ -1562,19 +1732,19 @@ public:
     }
   }
 
-  void hide_gui() { //used by rwc.
-    hide_main_menu();
-    hide_camera_menu();
-    hide_meta_zone();
-  }
+  //void hide_gui() { //used by rwc.
+  //  hide_main_menu();
+  //  hide_camera_menu();
+  //  hide_meta_zone();
+  //}
 
-  void toggle_light() {
-    set_scene_light_on(m_params.m_light_on?false:true);
-  }
-  
-  void toggle_gsto() {
-    set_use_gsto(m_params.m_use_gsto?false:true);
-  } 
+  void toggle_light() {set_scene_light_on(m_params.m_light_on?false:true);}
+
+  void toggle_blend() {set_scene_blend_on(m_params.m_blend_on?false:true);}
+
+  void toggle_smooth() {set_scene_smooth_on(m_params.m_smooth_on?false:true);}
+
+  void toggle_gsto() {set_use_gsto(m_params.m_use_gsto?false:true);}
 
   void show_progress() {m_progress_switch.which = SHOWN();}
   void hide_progress() {m_progress_switch.which = HIDDEN();}
@@ -1783,11 +1953,8 @@ public:
     pop_warn(a_data.m_popup,a_data.m_ex,a_data.m_ey,a_msg,a_warn);
   }
 
-  ///////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////
-
   void map_warn(const std::string& a_msg,bool a_warn = true) {
+    hide_camera_menu();
     show_main_menu();
     list* _list = new list(m_ttf);
     set_style(*_list);
@@ -1796,11 +1963,14 @@ public:
     _list->front_color = m_params.m_gui_warn_front_color;
     _list->border_color = m_params.m_gui_warn_border_color;
     _list->add(a_msg,new gv_cbk(*this,action_pop_list));
-    m_uitems.push_back(_list);
-    ask_to_rebuild_gui();
+    push_list(_list);
   }
 
-  void do_escape() {activate_meta_zone();} 
+  ///////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////
+
+  void do_escape() {activate_meta_zone();}
 
   bool touch_down(int a_x,int a_y) {
     //a_x,a_y are signed because of wall. (0,0) is bottom left of window.
@@ -1811,7 +1981,7 @@ public:
       m_out << "inlib::sg::gui_viewer::touch_down :"
                     << " x " << a_x << " y " << a_y
                     << " ww " << m_ww << " wh " << m_wh
-                    << std::endl;       
+                    << std::endl;
     }
 
     unsigned int vp_ww = uint32(m_vr_mode?m_ww*0.5:m_ww);
@@ -1828,7 +1998,7 @@ public:
     event_action action(m_out,vp_ww,m_wh,e);
     m_sg.swap(0,1); //have m_gui traversed before m_scene_switch.
     m_sg.event(action);
-    m_sg.swap(0,1); 
+    m_sg.swap(0,1);
 
     m_scene_switch.which = old_scene_switch_which;
     m_cursor_switch.which = old_cursor_switch_which;
@@ -1841,11 +2011,12 @@ public:
 
     if(m_touch_in_motion) {
       m_touch_in_motion = false;
+      m_touches.clear();
 
       if(m_motion_slider) {
         // We may have missed a touch up on the slider thumb.
         // We have to execute the ends callbacks anyway.
-        add_work_cbks(m_motion_slider->ends(),true);    
+        add_work_cbks(m_motion_slider->ends(),true);
         m_motion_slider = 0;
         return false;
       }
@@ -1857,7 +2028,7 @@ public:
       m_out << "inlib::sg::gui_viewer::touch_up :"
                     << " x " << a_x << " y " << a_y
                     << " ww " << m_ww << " wh " << m_wh
-                    << std::endl;       
+                    << std::endl;
     }
 
     unsigned int vp_ww = uint32(m_vr_mode?m_ww*0.5:m_ww);
@@ -1891,7 +2062,9 @@ public:
     if(!m_touch_in_motion) {
       m_touch_prev_x = a_x;
       m_touch_prev_y = a_y;
+      m_touches.push_back(one_touch(a_x,a_y));
       m_touch_in_motion = true;
+      return false;
     }
 
     if(!m_ww||!m_wh) {
@@ -1904,7 +2077,7 @@ public:
       m_out << "inlib::sg::gui_viewer::touch_move :"
                     << " x " << a_x << " y " << a_y
                     << " ww " << m_ww << " wh " << m_wh
-                    << std::endl;       
+                    << std::endl;
     }
 
     bool to_render = false;
@@ -1918,7 +2091,7 @@ public:
       to_render = false; //Android : "true" may induce double redraw.
 
     } else { //scene or sliders visible
-    
+
       bool gui_hit = false; //for ArcheryTune mv animal whilst having sliders.
 
       if(sliders_visible()) {
@@ -1939,7 +2112,29 @@ public:
       if(m_params.m_viewing) {
 
         if(m_scene_camera && m_params.m_touch_move) {
-          if(!m_params.m_plane_viewer && m_params.m_anim_around_focal) {
+          int dx,dy;
+          if(touch_direction(dx,dy) && (
+            ((iabs(dx)>=5)&&(iabs(dy)<=2)) ||
+            ((iabs(dx)<=2)&&(iabs(dy)>=5))
+             )) {
+            if(iabs(dx)>iabs(dy)) {  ///left/right
+              if(dx>0) {
+                update_anim_motion(anim_right,m_params.m_anim_mode);
+              } else if(dx<0) {
+                update_anim_motion(anim_left,m_params.m_anim_mode);
+              }
+            } else {
+              if(dy>0) {
+                update_anim_motion(anim_up,m_params.m_anim_mode);
+              } else if(dy<0) {
+                update_anim_motion(anim_down,m_params.m_anim_mode);
+              }
+            }
+            hide_meta_zone();
+            to_render = true;
+          }
+
+        /*if(!m_params.m_plane_viewer && m_params.m_anim_around_focal) {
 
             float n2f = m_scene_camera->focal-m_scene_camera->znear;
             if(n2f) {
@@ -1984,7 +2179,8 @@ public:
               hide_meta_zone();
               to_render = true;
             }
-          }
+          }*/
+
         }
 
       } else { //viewer is in picking mode.
@@ -2002,10 +2198,12 @@ public:
 
     m_touch_prev_x = a_x;
     m_touch_prev_y = a_y;
+    m_touches.push_back(one_touch(a_x,a_y));
 
     return to_render;
   }
 
+/*
   void treat_mouse_motion(bool a_value) {m_treat_mouse_motion = a_value;}
 
   bool mouse_motion(unsigned int a_x,unsigned int a_y) {
@@ -2025,7 +2223,7 @@ public:
 
     return to_render;
   }
-
+*/
   /////////////////////////////////////
   /// gesture (mainly iOS) ////////////
   /////////////////////////////////////
@@ -2063,7 +2261,7 @@ public:
       }
     }
 
-    _set_params_camera();    
+    _set_params_camera();
   }
   /////////////////////////////////////
   /////////////////////////////////////
@@ -2074,12 +2272,12 @@ public:
 
   void set_cursor_position(float a_x,float a_y) {
     m_cursor_matrix.set_translate(a_x,a_y,0);
-  } 
+  }
   void get_cursor_position(float& a_x,float& a_y) const {
     const mat4f& mtx = m_cursor_matrix.mtx.value();
     a_x = mtx[12];
     a_y = mtx[13];
-  } 
+  }
 
 public:
   //void clear_tmp_group() {m_tmp_group.clear();}
@@ -2107,292 +2305,10 @@ public:
     remove_holders<T>(m_tmp_group.children(),a_name);
   }
 
-protected:
-  static void set_button_style(const gui_params& a_params,
-                               text_button& a_node) {
-    a_node.back_area::color = a_params.m_gui_back_color;
-    a_node.back_area::border_color = a_params.m_gui_border_color;
-    a_node.color = a_params.m_gui_front_color;
-    a_node.arm_color = a_params.m_gui_arm_color;
-    a_node.hmargin_factor = 0.5f; //Apple seems to have that.
-    a_node.font = a_params.m_gui_font;
-    a_node.font_modeling = a_params.m_gui_font_modeling;
-  }
-  static void set_image_button_style(const gui_params& a_params,
-                                     image_button& a_node) {
-    a_node.back_area::color = a_params.m_gui_back_color;
-    a_node.back_area::border_color = a_params.m_gui_border_color;
-    a_node.color = a_params.m_gui_back_color;
-    a_node.arm_color = a_params.m_gui_arm_color;
-    //a_node.hmargin_factor = 0.8f;
-    a_node.hmargin_factor = 0.6f;
-  }
-  static void set_arrow_button_style(const gui_params& a_params,
-                                     arrow_button& a_node) {
-    a_node.back_area::color = a_params.m_gui_back_color;
-    a_node.back_area::border_color = a_params.m_gui_border_color;
-    a_node.color = a_params.m_gui_front_color;
-    a_node.arm_color = a_params.m_gui_arm_color;
-  }
-
-  //static //not static because of set_img_from_file
-  void create_main_button(std::ostream&,
-                          const std::string& /*a_res_dir*/,
-                          const gui_params& a_params,
-                          separator& a_parent,
-                          float a_wcw,float a_wch,float a_wb,float a_hb,
-                          float a_roffset,
-                          unsigned int a_col,unsigned int a_row,
-                          const std::string& a_label,
-                          const std::string& a_img_label,
-                          const std::string& a_img,
-                          bcbk* a_cbk) { //take ownerhship.
-    //a_col=[0,a_cols-1] 0=left
-    //a_row=[0,a_rows-1] 0=bottom
-    //a_roffset : for Wt : to see right border of buttons at right.
- 
-    //float wbutton = a_wcw/float(a_cols);
-    //float hbutton = a_wch/float(a_rows);
-    float wbutton = a_wb;
-    float hbutton = a_hb;
-
-    separator* sep = new separator;
-    a_parent.add(sep);
-
-    matrix* m = new matrix;
-
-    float x = -a_wcw*0.5F+wbutton*0.5f; //at left.
-    x += a_col*wbutton;
-    x -= a_wcw*a_roffset;
-
-    float y = -a_wch*0.5F+hbutton*0.5f; //at bottom.
-    y += a_row*hbutton;
-
-    m->set_translate(x,y,0);
-    sep->add(m);
-
-    if(a_img.size()&&a_params.m_image_buttons) {
-      image_text_button* b = new image_text_button(m_ttf);
-      b->width = wbutton;
-      b->height = hbutton;
-
-      set_image_button_style(a_params,*b);
-      set_img_from_res_file(a_img,b->img.value());
-      b->img.touch();
-
-      if(a_img_label.size()) {
-        b->text().strings.clear();
-        b->text().strings.add(a_img_label);
-        b->text().font = a_params.m_gui_font;
-        b->text().font_modeling = a_params.m_gui_font_modeling;
-        b->text().color = a_params.m_gui_front_color;
-      }
-      s2layout_policy(m_params.m_list_item_layout,b->layout.value());
-      b->corner_radius = a_params.m_corner_radius;
-
-      b->add_callback(a_cbk);
-      sep->add(b);
-
-    } else {
-      text_button* b = new text_button(m_ttf);
-      b->width = wbutton;
-      b->height = hbutton;
-
-      set_button_style(a_params,*b);
-      set_arconf(*b,a_label);
-
-      b->corner_radius = a_params.m_corner_radius;
-
-      b->add_callback(a_cbk);
-      sep->add(b);
-    }
-  }
-
-  //static //not static because of set_img_from_file
-  void create_main_button(std::ostream&,
-                          const std::string& /*a_res_dir*/,
-                          const gui_params& a_params,
-                          separator& a_parent,
-                          float a_wcw,float a_wch,float a_wb,float a_hb,
-                          float a_roffset,
-                          unsigned int a_col,unsigned int a_row,
-                          image_button& a_img_button,
-                          text_button& a_button,
-                          const std::string& a_label,
-                          const std::string& a_img,
-                          bcbk* a_cbk) { //take ownerhship.
-    float wbutton = a_wb;
-    float hbutton = a_hb;
-
-    separator* sep = new separator;
-    a_parent.add(sep);
-
-    matrix* m = new matrix;
-
-    float x = -a_wcw*0.5F+wbutton*0.5f; //at left.
-    x += a_col*wbutton;
-    x -= a_wcw*a_roffset;
-
-    float y = -a_wch*0.5F+hbutton*0.5f; //at bottom.
-    y += a_row*hbutton;
-
-    m->set_translate(x,y,0);
-    sep->add(m);
-
-    if(a_params.m_image_buttons) {
-      a_img_button.width = wbutton;
-      a_img_button.height = hbutton;
-
-      set_image_button_style(a_params,a_img_button);
-      set_img_from_res_file(a_img,a_img_button.img.value());
-      a_img_button.img.touch();
-
-      a_img_button.corner_radius = a_params.m_corner_radius;
-
-      a_img_button.clear_cbks();
-      a_img_button.add_callback(a_cbk);
-      sep->add(new noderef(a_img_button));
-
-    } else {
-      a_button.width = wbutton;
-      a_button.height = hbutton;
-
-      set_button_style(a_params,a_button);
-      set_arconf(a_button,a_label);
-
-      a_button.corner_radius = a_params.m_corner_radius;
-
-      a_button.clear_cbks();
-      a_button.add_callback(a_cbk);
-      sep->add(new noderef(a_button));
-    }
-  }
-
-  static void create_main_button(
-                          const gui_params& a_params,
-                          separator& a_parent,
-                          float a_wcw,float a_wch,float a_wb,float a_hb,
-                          float a_roffset,
-                          unsigned int a_col,unsigned int a_row,
-                          const std::string& a_label,
-                          text_button& a_button,
-                          bcbk* a_cbk) { //take ownerhship.
-    float wbutton = a_wb;
-    float hbutton = a_hb;
-
-    separator* sep = new separator;
-    a_parent.add(sep);
-
-    matrix* m = new matrix;
-
-    float x = -a_wcw*0.5F+wbutton*0.5f; //at left.
-    x += a_col*wbutton;
-    x -= a_wcw*a_roffset;
-
-    float y = -a_wch*0.5F+hbutton*0.5f; //at bottom.
-    y += a_row*hbutton;
-
-    m->set_translate(x,y,0);
-    sep->add(m);
-
-    a_button.width = wbutton;
-    a_button.height = hbutton;
-
-    set_button_style(a_params,a_button);
-    set_arconf(a_params,a_button,a_label);
-
-    a_button.corner_radius = a_params.m_corner_radius;
-
-    a_button.clear_cbks();
-    a_button.add_callback(a_cbk);
-
-    sep->add(new noderef(a_button));
-  }
-
-  static void create_arrow(const gui_params& a_params,
-                           separator& a_parent,
-                           float a_wcw,float a_wch,float a_wb,float a_hb,
-                           float a_roffset,
-                           unsigned int a_col,unsigned int a_row,
-                           arrow_type a_type,
-                           bcbk* a_cbk) { //take ownerhship.
-    float wbutton = a_wb;
-    float hbutton = a_hb;
-
-    separator* sep = new separator;
-    a_parent.add(sep);
-
-    matrix* m = new matrix;
-
-    float x = -a_wcw*0.5F+wbutton*0.5f; //at left.
-    x += a_col*wbutton;
-    x -= a_wcw*a_roffset;
-
-    float y = -a_wch*0.5F+hbutton*0.5f; //at bottom.
-    y += a_row*hbutton;
-
-    m->set_translate(x,y,0);
-    sep->add(m);
-
-    arrow_button* b = new arrow_button;
-    b->width = wbutton;
-    b->height = hbutton;
-    b->orientation = a_type;
-    set_arrow_button_style(a_params,*b);
-
-    b->corner_radius = a_params.m_corner_radius;
-
-    b->add_callback(a_cbk);
-
-    sep->add(b);
-  }
-
-  static void create_meta_zone(const gui_params& a_params,
-                               const base_freetype& a_ttf,
-                               separator& a_parent,
-                               _switch& a_meta_switch,
-                               float a_wcw,float a_wch,float a_hzone,
-                               bcbk* a_cbk) { //take ownerhship.
-    int old_meta_switch_which = a_meta_switch.which;
-
-    separator* sep = new separator;
-    a_parent.add(sep);
-
-    matrix* m = new matrix;
-    float wbutton = a_wcw;
-    float x = 0;
-    float y = -a_wch*0.5F+a_hzone*0.5f;
-    m->set_translate(x,y,-0.1f);
-    sep->add(m);
-
-    a_meta_switch.clear();
-    sep->add(new noderef(a_meta_switch));
-
-   {text_button* b = new text_button(a_ttf);
-    set_arconf(a_params,*b,"scene to menu area (shown once)");
-    set_button_style(a_params,*b);
-    b->back_area::color = colorf(0.7f,0.9f,1,0.2f);
-    //b->width = wbutton*(1-2*0.3f);
-    b->width = wbutton;
-    b->height = a_hzone;
-    b->add_callback(a_cbk->copy());
-    a_meta_switch.add(b);}
-
-   {ghost* b = new ghost;
-    b->width = wbutton;
-    b->height = a_hzone;
-    b->add_callback(a_cbk);
-    a_meta_switch.add(b);}
-
-    a_meta_switch.which = old_meta_switch_which;
-  }
 
 public:
-  bool set_img(image_button& a_button,const std::string& a_file) {
-    bool status = set_img_from_res_file(a_file,a_button.img.value());
-    a_button.img.touch();
-    return status;
-  }
+  const sg::object_manager& object_manager() const {return m_object_manager;}
+  sg::object_manager& object_manager() {return m_object_manager;}
 
 public:
   float gui_camera_height() const {return 2;}
@@ -2427,6 +2343,7 @@ public:
 
     float cam_height = gui_camera_height();
     base_camera* camera = create_camera(camera_ortho,cam_height,0.1f);
+    if(!camera) return;
     camera->position.value().set_value(0,0,2);
     camera->focal = 2;
     m_gui->add(camera);
@@ -2483,7 +2400,7 @@ public:
     float wbutton = wcw/float(3);
 
     create_control_items(wcw,wch,wbutton,hbutton,right_offset);
-  
+
    {separator* sep = new separator;
     m_full_sep.add(sep);
 
@@ -2496,12 +2413,12 @@ public:
         set_list_layout(*_list,wcw,wch,hbutton,*m);
         sep->add(new noderef(*_node));
 
-      } else if(text* _text = safe_cast<node,text>(*_node)) {
-        set_text_layout(*_text,wcw,wch,hbutton,*m);
+      } else if(scroll_text* _stext = safe_cast<node,scroll_text>(*_node)) { //before the below text.
+        set_scroll_text_layout(*_stext,wcw,wch,hbutton,*m);
         sep->add(new noderef(*_node));
 
-      } else if(scroll_text* _stext = safe_cast<node,scroll_text>(*_node)) {
-        set_scroll_text_layout(*_stext,wcw,wch,hbutton,*m);
+      } else if(text* _text = safe_cast<node,text>(*_node)) {
+        set_text_layout(*_text,wcw,wch,hbutton,*m);
         sep->add(new noderef(*_node));
 
       } else if(scroll_infos* _sinfos = safe_cast<node,scroll_infos>(*_node)) {
@@ -2652,32 +2569,32 @@ protected:
   // virtual gui methods containing callbacks :
   // For example redefined for the wall data client remote control gui.
   virtual void create_meta_zone(float a_wcw,float a_wch,float a_hzone) {
-    create_meta_zone(m_params,m_ttf,*m_gui,m_meta_switch,
+    sg::create_meta_zone(m_params,m_ttf,*m_gui,m_meta_switch,
                      a_wcw,a_wch,a_hzone,
                      new gv_cbk(*this,action_activate_meta_zone));
   }
 
   virtual void create_control_items(float a_wcw,float a_wch,
                                     float a_wb,float a_hb,float a_roffset) {
-    create_main_button(m_out,m_res_dir,m_params,
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                        m_full_sep,a_wcw,a_wch,a_wb,a_hb,0,
                        0,0,"home","home","go_home_large.jpg",
                        new gv_cbk(*this,action_push_home));
 
-    if(params_button_visible.value()) { 
-      create_main_button(m_out,m_res_dir,m_params,
+    if(params_button_visible.value()) {
+      create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                          m_full_sep,a_wcw,a_wch,a_wb,a_hb,0,
                          0,1,"params","params","system_config_boot.jpg",
                          new gv_cbk(*this,action_params_show));
     }
-  
-    create_main_button(m_out,m_res_dir,m_params,
+
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                        m_full_sep,a_wcw,a_wch,a_wb,a_hb,a_roffset,
                        2,0,"back","back","turn_around.jpg",
                        new gv_cbk(*this,action_push_back_item));
 
-    if(camera_button_visible.value()) { 
-      create_main_button(m_out,m_res_dir,m_params,
+    if(camera_button_visible.value()) {
+      create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                          m_full_sep,a_wcw,a_wch,a_wb,a_hb,a_roffset,
                          2,1,"camera","camera","movie_camera.jpg",
                          new gv_cbk(*this,action_show_camera_menu));
@@ -2707,15 +2624,18 @@ protected:
                  a_nb-1,1,arrow_right,
                  new gv_cbk(*this,action_right));
 
-    //inside "shift" button :
-    create_main_button(m_params,
+    //inside camera mode button :
+   {create_main_button(m_params,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
-                       a_nb-2,1,anim_shift_button_label(),
-                       m_camenu_shift_button,
-                       new gv_cbk(*this,action_toggle_param_anim_shift));
+                       a_nb-2,1,std::string(),
+                       m_camenu_anim_mode_button,
+                       new gv_cbk(*this,action_toggle_param_anim_mode));
+    std::vector<std::string> ss;
+    anim_mode_button_label(ss);
+    m_camenu_anim_mode_button.strings = ss;}
 
     //outside top-left "single shoot" button :
-    create_main_button(m_out,m_res_dir,m_params,
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
                        a_nb-3,2,
                        m_camenu_sshoot_image_button,
@@ -2725,20 +2645,20 @@ protected:
                        new gv_cbk(*this,action_toggle_param_single_shoot));
 
     //outside bottom-right hide button :
-    create_main_button(m_out,m_res_dir,m_params,
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
                        a_nb-1,0,"hide","","close.jpg",
                        new gv_cbk(*this,action_hide_camera_menu));
 
     //outside top-right reset camera button :
-    create_main_button(m_out,m_res_dir,m_params,
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
                        a_nb-1,2,"reset","","edit_undo.jpg",
                        new gv_cbk(*this,action_reset_camera));
 
     //outside bottom-left "90" button :
     if(camenu_90_visible.value()) {
-      create_main_button(m_out,m_res_dir,m_params,
+      create_main_button(m_out,m_res_dir,m_params,m_image_readers,
                          m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
                          a_nb-3,0,
                          m_camenu_90_image_button,
@@ -2750,7 +2670,7 @@ protected:
 
     if(camenu_edit_visible.value()) {
       //outside top-left "edit" button :
-      create_main_button(m_out,m_res_dir,m_params,
+      create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                          m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
                          a_nb-4,2,"edit","","edit.jpg",
                          new gv_cbk(*this,action_cam_choose_type));
@@ -2764,7 +2684,7 @@ protected:
                        m_camenu_focal_button,
                        new gv_cbk(*this,action_toggle_param_anim_around_focal));
     }
-  
+
     if(camenu_viewing_visible.value()) {
       // viewing/picking mode button under the focal one :
       create_main_button(m_params,
@@ -2774,81 +2694,151 @@ protected:
                          new gv_cbk(*this,action_toggle_param_viewing));
     }
 
-    create_main_button(m_out,m_res_dir,m_params,
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
                        a_nb-5,2,"mv","","",
                        new gv_cbk(*this,action_cam_choose_anim));
-
-    create_main_button(m_out,m_res_dir,m_params,
+/*
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
                        a_nb-5,1,"EA","","object_rotate_left.jpg",
                        new gv_cbk(*this,action_enable_anim));
-
-    create_main_button(m_out,m_res_dir,m_params,
-                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
-                       a_nb-5,0,"DA","","stop_object_rotate_left.jpg",
-                       new gv_cbk(*this,action_disable_anim));
-
-/*
-    create_main_button(m_out,m_res_dir,m_params,
+*/
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
                        a_nb-5,1,"P/O","","",
                        new gv_cbk(*this,action_swap_camera_kind));
-*/
-    ///////////////////////////////////////////////////////////////////////
-    /// camenu left area //////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////
-
-/*
-    create_main_button(m_out,m_res_dir,m_params,
-                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
-                       0,0,"clear","","edit_clear.jpg",
-                       new gv_cbk(*this,action_clear_static_and_dynamic_scene)); //does not compile.
-*/
-
-    create_main_button(m_out,m_res_dir,m_params,
-                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
-                       0,0,"W/B","","",
-                       new gv_cbk(*this,action_swap_scene_clear_color));
 
     create_main_button(m_params,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
-                       0,1,plane_exam_button_label(),
+                       a_nb-5,0,plane_exam_button_label(),
                        m_camenu_plane_exam_button,
                        new gv_cbk(*this,action_toggle_plane_exam));
 
-    if(camenu_view_all_visible.value()) {
-      create_main_button(m_out,m_res_dir,m_params,
-                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
-                         0,2,"<)","","",
-                         new gv_cbk(*this,action_adapt_camera_to_scene));
-   }
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       a_nb-6,0,
+                       m_camenu_disable_anim_image_button,
+                       m_camenu_disable_anim_text_button,
+                       "DA",
+                       "stop_object_rotate_left.jpg",
+                       new gv_cbk(*this,action_disable_anim));
+    if(m_params.m_anim_on) {
+      m_camenu_disable_anim_image_button.color = colorf_pink();
+      m_camenu_disable_anim_text_button.back_area::color = colorf_pink();
+    } else {
+      m_camenu_disable_anim_image_button.color = m_params.m_gui_back_color;
+      m_camenu_disable_anim_text_button.back_area::color = m_params.m_gui_back_color;
+    }
 
-    create_main_button(m_out,m_res_dir,m_params,
+    ///////////////////////////////////////////////////////////////////////
+    /// camenu left area //////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+    unsigned int _row = 0;
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       0,_row++,"W/B","","black_white.jpg",
+                       new gv_cbk(*this,action_swap_scene_clear_color));
+
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       0,_row++,
+                       m_camenu_blend_image_button,
+                       m_camenu_blend_text_button,
+                       "~",
+                       "transparency.jpg",
+                       new gv_cbk(*this,action_toggle_blend));
+    if(m_params.m_blend_on) {
+      m_camenu_blend_image_button.color = colorf_pink();
+      m_camenu_blend_text_button.back_area::color = colorf_pink();
+    } else {
+      m_camenu_blend_image_button.color = m_params.m_gui_back_color;
+      m_camenu_blend_text_button.back_area::color = m_params.m_gui_back_color;
+    }
+
+#ifndef EMSCRIPTEN
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       0,_row++,
+                       m_camenu_smooth_image_button,
+                       m_camenu_smooth_text_button,
+                       "SMO",
+                       "smooth.jpg",
+                       new gv_cbk(*this,action_toggle_smooth));
+    if(m_params.m_smooth_on) {
+      m_camenu_smooth_image_button.back_area::color = colorf_pink();
+      m_camenu_smooth_text_button.back_area::color = colorf_pink();
+    } else {
+      m_camenu_smooth_image_button.back_area::color = m_params.m_gui_back_color;
+      m_camenu_smooth_text_button.back_area::color = m_params.m_gui_back_color;
+    }
+#endif
+
+    if(camenu_view_all_visible.value()) {
+      create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
+                         m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                         0,_row++,"<)","","eye.jpg",
+                         new gv_cbk(*this,action_adapt_camera_to_scene));
+    }
+
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       0,_row++,"clear stat","","clear_static.jpg",
+                       new gv_data_cbk<std::string>(*this,action_insh_source_script,"scene_clear_static"));
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       0,_row++,"clear dyn","","clear_event.jpg",
+                       new gv_data_cbk<std::string>(*this,action_insh_source_script,"scene_clear_dynamic"));
+
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
                        1,0,"N","","",
                        new gv_cbk(*this,action_count_points));
 
-    create_main_button(m_out,m_res_dir,m_params,
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
-                       1,1,"^","","",
+                       1,1,
+                       m_camenu_light_image_button,
+                       m_camenu_light_text_button,
+                       "^",
+                       "light_bulb.jpg",
                        new gv_cbk(*this,action_toggle_light));
+    if(m_params.m_light_on) {
+      m_camenu_light_image_button.color = colorf_pink();
+      m_camenu_light_text_button.back_area::color = colorf_pink();
+    } else {
+      m_camenu_light_image_button.color = m_params.m_gui_back_color;
+      m_camenu_light_text_button.back_area::color = m_params.m_gui_back_color;
+    }
 
-    create_main_button(m_params,
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
-                       1,2,"gsto",
-                       m_camenu_gsto_button,
+                       1,2,
+                       m_camenu_gsto_image_button,
+                       m_camenu_gsto_text_button,
+                       "gsto",
+                       "gpu.jpg",
                        new gv_cbk(*this,action_toggle_gsto));
     set_use_gsto(m_use_gsto); //update back color.
 
-    create_main_button(m_out,m_res_dir,m_params,
+   {std::vector<std::string> args;
+    args.push_back("-hide_camera_menu");
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
                        m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
                        1,3,"png","","",
-                       new gv_cbk(*this,action_export_png));
+                       new gv_data_cbk< std::vector<std::string> >(*this,action_window_to_png,args));}
+
+   {std::vector<std::string> args;
+    args.push_back("-hide_camera_menu");
+    create_main_button(m_out,m_res_dir,m_params,m_image_readers,m_ttf,
+                       m_camenu_sep,a_wcw,a_wch,a_wb,a_hb,0,
+                       1,4,"jpeg","","",
+                       new gv_data_cbk< std::vector<std::string> >(*this,action_window_to_jpeg,args));}
 
   }
 public:
-  //virtual bool insh_dispatch(const std::string&,const std::vector<std::string>&) {return false;} //see below.
+  separator& camenu_sep() {return m_camenu_sep;}
+
 protected:
   void _set_console_layout(float a_wcw,float a_wch) {
     float hconsole = a_wch*m_params.m_console_height*m_params.m_console_scale;
@@ -3038,7 +3028,7 @@ protected:
     } else {
       text_button* b = new text_button(m_ttf);
       set_button_style(m_params,*b);
-      set_arconf(*b,"H");
+      set_arconf(m_params,*b,"H");
       b->add_callback
         (new fundata_cbk<gui_viewer,_switch,pos_data>(*this,m_sliders_switch,action_hide,pos_data(false,0,0)));
       m_hide_sliders_sep.add(b); //1
@@ -3060,7 +3050,7 @@ protected:
 
     } else if(safe_cast<base_camera,ortho>(*m_scene_camera)) {
       m_params.m_camera_type = s_camera_ortho();
-    } else if(safe_cast<base_camera,lrbt>(*m_scene_camera)) { 
+    } else if(safe_cast<base_camera,lrbt>(*m_scene_camera)) {
       m_params.m_camera_type = s_camera_ortho();
 
     } else if(safe_cast<base_camera,perspective>(*m_scene_camera)) {
@@ -3085,6 +3075,7 @@ protected:
       m_params.m_cam_dx = 0;
       m_params.m_cam_da = 0;
       m_params.m_cam_ds = 0;
+      m_params.m_cam_orientation = rotf(vec3f(0,0,1),0);
     } else {
       m_params.m_cam_x = m_scene_camera->position.value().x();
       m_params.m_cam_y = m_scene_camera->position.value().y();
@@ -3095,6 +3086,7 @@ protected:
       m_params.m_cam_dx = m_scene_camera->dx;
       m_params.m_cam_da = m_scene_camera->da;
       m_params.m_cam_ds = m_scene_camera->ds;
+      m_params.m_cam_orientation = m_scene_camera->orientation.value();
     }
     m_params.m_cam_zof = 1;
   }
@@ -3126,10 +3118,11 @@ public:
       }
     }
 
-    _set_params_camera();    
+    _set_params_camera();
   }
 
   bool adapt_camera_to_scene() {return adapt_camera(scene());}
+  bool view_all() {return adapt_camera(scene());}
 
   bool adapt_camera(node& a_node) {
     base_camera* cam = scene_camera();
@@ -3141,13 +3134,15 @@ public:
     vec3f c;
     if(!_action.box().center(c)) return false;
     float dx,dy,dz;
-    if(!_action.box().get_cube_size(dx,dy,dz)) return false;    
+    if(!_action.box().get_cube_size(dx,dy,dz)) return false;
+
+    // at this point, we assume dx, dy and dz are not zero.
 
     //::printf("debug : gui_viewer::adapt_camera : center = %g %g %g, size = %g %g %g\n",c.x(),c.y(),c.z(),dx,dy,dz);
 
     group* grp = find_container<group>(m_out,*m_scene,*cam,false);
     if(!grp) return false;
-       
+
     float radius = ::sqrtf(dx*dx+dy*dy+dz*dz);
 
     float z = radius*2; // z = 2*dz is not ok for bbox thin in z but large in x,y.
@@ -3155,20 +3150,33 @@ public:
     float ortho_cam_height = 0;
     if(dy>=dx) {
       ortho_cam_height = dy*1.2f;
+
+      float aspect = float(m_ww)/float(m_wh);
+      float cam_width = ortho_cam_height*aspect;
+      if(dx>=cam_width) {
+        float factor = dx/cam_width;
+        ortho_cam_height *= factor*1.2F;
+      }
+
     } else {
       float cam_width = dx*1.2f;
       float aspect = float(m_ww)/float(m_wh);
       ortho_cam_height = cam_width/aspect;
+
+      if(dy>=ortho_cam_height) {
+        float factor = dy/ortho_cam_height;
+        ortho_cam_height *= factor*1.2F;
+      }
     }
 
     base_camera* new_cam = 0;
 
-    if( safe_cast<base_camera,ortho>(*cam) || safe_cast<base_camera,lrbt>(*cam)  ){ 
+    if( safe_cast<base_camera,ortho>(*cam) || safe_cast<base_camera,lrbt>(*cam)  ){
 
       new_cam = create_camera(camera_ortho,ortho_cam_height,znear);
 
     } else if(safe_cast<base_camera,perspective>(*cam) || safe_cast<base_camera,frustum>(*cam) ){
-    
+
       float angle = 2*fatan((0.5f*ortho_cam_height)/z);
 
       float near_height = 2*znear*ftan(angle*0.5f);
@@ -3189,6 +3197,9 @@ public:
     new_cam->focal = z;
 
     new_cam->position.value() += c;
+
+    new_cam->da = cam->da;
+    new_cam->ds = cam->ds;
 
     if(!grp->replace(cam,new_cam,true)) {
       delete new_cam;
@@ -3217,14 +3228,14 @@ public:
     if(_path.empty()) {
       m_out << "inlib::sg::gui_viewer::stop_cam_anim :"
                     << " path not found for current camera."
-                    << std::endl;       
+                    << std::endl;
       return;
     }
     group* grp = container<group>(_path);
     if(!grp) {
       m_out << "inlib::sg::gui_viewer::stop_cam_anim :"
                     << " camera group not found."
-                    << std::endl;       
+                    << std::endl;
       return;
     }
 
@@ -3249,12 +3260,12 @@ public:
     set_scene_camera(new_cam,false); //WARNING : false
   }
 
-  void start_cam_anim(anim_what a_anim,bool a_shift,unsigned int a_cycle) {
+  void start_cam_anim(anim_what a_anim,anim_mode a_anim_mode,unsigned int a_cycle) {
     int move;
-    if(!anim2motion(a_anim,a_shift,move)) {
+    if(!anim2motion(a_anim,a_anim_mode,move)) {
       m_out << "inlib::sg::gui_viewer::start_cam_anim :"
                     << " unknown anim code " << a_anim
-                    << std::endl;       
+                    << std::endl;
       return;
     }
     start_cam_move(move,a_cycle);
@@ -3268,17 +3279,17 @@ public:
     search_action sa(m_out);
     const path_t& _path = find_path(sa,*m_scene,*m_scene_camera,false);
     if(_path.empty()) {
-      m_out << "inlib::sg::gui_viewer::start_cam_anim :"
+      m_out << "inlib::sg::gui_viewer::start_cam_move :"
                     << " path not found for current camera."
-                    << std::endl;       
+                    << std::endl;
       return;
     }
 
     group* grp = container<group>(_path);
     if(!grp) {
-      m_out << "inlib::sg::gui_viewer::start_cam_anim :"
+      m_out << "inlib::sg::gui_viewer::start_cam_move :"
                     << " camera group not found."
-                    << std::endl;       
+                    << std::endl;
       return;
     }
 
@@ -3297,7 +3308,7 @@ public:
       new_cam = new camera_anim<lrbt>(*lc,_now,-1,a_move,a_cycle);
 
     } else {
-      m_out << "inlib::sg::gui_viewer::start_cam_anim :"
+      m_out << "inlib::sg::gui_viewer::start_cam_move :"
                     << " camera not ortho and not perspective."
                     << std::endl;
       return;
@@ -3342,7 +3353,7 @@ public:
 #include "args2params.icc"
 
   bool args2camera(const std::vector<arg>& a_args,bool a_warn){
-    //WARNING : used in for wall/screen_dispatch rwc_set_camera protocol.    
+    //WARNING : used in for wall/screen_dispatch rwc_set_camera protocol.
     if(!m_scene_camera) return false;
 
     bool status = true;
@@ -3364,7 +3375,7 @@ public:
            ((val==s_camera_ortho())||
             (val==gui_params::s_ortho())) )       //old wall data clients.
           to_swap = true;
-          
+
         if(to_swap) {
           //if(!swap_scene_camera_kind()) { //FIXME : have to delete old cam !
           if(!swap_camera_kind()) {
@@ -3380,7 +3391,7 @@ public:
         }
       }
     }}
-  
+
     for(unsigned int index=0;index<a_args.size();index++) {
       const std::string& label = a_args[index].first;
       const std::string& val = a_args[index].second;
@@ -3539,7 +3550,7 @@ public:
                           << std::endl;
             status = false; //not fatal.
           }
-        } else if(changed) {          
+        } else if(changed) {
           m_scene_camera->zoom(v);
         }
 
@@ -3549,33 +3560,60 @@ public:
       } else {
         if(a_warn) {
           map_warn(std::string("unknown param ")+label);
-          return false;     
+          return false;
         } else {
           m_out << "inlib::sg::gui_viewer::args2camera : unknown param " << label << std::endl;
           status = false; //not fatal.
         }
       }
     }
-    return status;     
+    return status;
   }
 
-  //bool anim_shift() const {return m_params.m_anim_shift;}
+  //bool anim_mode() const {return m_params.m_anim_mode;}
 
   void set_params_camenu(const gui_params& a_params) {
     m_params = a_params;
-    set_param_single_shoot(a_params.m_single_shoot);    
-    set_param_90(a_params.m_90);    
-    set_param_anim_shift(a_params.m_anim_shift);    
-    set_param_anim_around_focal(a_params.m_anim_around_focal);    
-    set_param_viewing(a_params.m_viewing);    
+    set_param_single_shoot(a_params.m_single_shoot);
+    set_param_90(a_params.m_90);
+    set_param_anim_mode(a_params.m_anim_mode);
+    set_param_anim_around_focal(a_params.m_anim_around_focal);
+    set_param_viewing(a_params.m_viewing);
   }
 
-  void set_param_anim_shift(bool a_value) {
-    m_params.m_anim_shift = a_value;
-    m_camenu_shift_button.set_label(anim_shift_button_label());
+  void set_param_anim_mode(anim_mode a_anim_mode) {
+    m_params.m_anim_mode = a_anim_mode;
+    std::vector<std::string> ss;
+    anim_mode_button_label(ss);
+    m_camenu_anim_mode_button.strings = ss;
   }
-  void toggle_param_anim_shift() {
-    set_param_anim_shift(m_params.m_anim_shift?false:true);
+  void toggle_param_anim_mode() {
+    unsigned int mode = m_params.m_anim_mode;
+    if(m_params.m_plane_viewer) {
+      if(mode==anim_mode_0) {
+        set_param_anim_mode(anim_mode_1);
+      } else if(mode==anim_mode_1) {
+        set_param_anim_mode(anim_mode_0);
+      } else if(mode==anim_mode_2) {
+        set_param_anim_mode(anim_mode_0);
+      } else if(mode==anim_mode_3) {
+        set_param_anim_mode(anim_mode_0);
+      } else if(mode==anim_mode_4) {
+        set_param_anim_mode(anim_mode_0);
+      }
+    } else { //exam viewer.
+      if(mode==anim_mode_0) {
+        set_param_anim_mode(anim_mode_2);
+      } else if(mode==anim_mode_2) {
+        set_param_anim_mode(anim_mode_3);
+      } else if(mode==anim_mode_3) {
+        set_param_anim_mode(anim_mode_4);
+      } else if(mode==anim_mode_4) {
+        set_param_anim_mode(anim_mode_1);
+      } else if(mode==anim_mode_1) {
+        set_param_anim_mode(anim_mode_0);
+      }
+    }
   }
 
   void set_param_anim_around_focal(bool a_value) {
@@ -3644,6 +3682,7 @@ public:
     // cam pos(0,0,1) near 0.1 far 10, menu pos in xy plan.
     float cam_height = 2;
     base_camera* camera = create_camera(camera_ortho,cam_height,0.1f);
+    if(!camera) return;
     m_cursor_camera = camera;
     m_cursor.add(camera);
 
@@ -3660,7 +3699,7 @@ public:
     full_sep->add(mat);
 
     draw_style* ds = new draw_style;
-    ds->style = draw_style::lines;
+    ds->style = draw_lines;
     ds->line_width = cursor_line_width;
     full_sep->add(ds);
 
@@ -3672,7 +3711,7 @@ public:
     vtcs->mode = gl::lines();
 
     if(cursor_model.value()==cursor_target) {
-    
+
       float size = 0.1f;
 
       vtcs->add(-size, size,0);
@@ -3691,7 +3730,7 @@ public:
       vtcs->add(-size,0,0);
       vtcs->add( size,0,0);
 
-/* various tentative definitly uglies.	
+/* various tentative definitly uglies.
     } else {
 
       float hsq = 0.05f;
@@ -3757,7 +3796,7 @@ public:
   void set_memory_warning(bool a_value) {m_memory_warning = a_value;}
   bool has_memory_warning() {return m_memory_warning;}
 
-  //bool add_jpeg_read_work(const std::string& a_file) {    
+  //bool add_jpeg_read_work(const std::string& a_file) {
   //  if(!m_jpeg_data.open(a_file)) return false;
   //  add_work(new jpeg_read_work(*this,m_jpeg_data));
   //  return true;
@@ -3805,9 +3844,9 @@ public:
       to_render = true;
     }
     return to_render;
-  } 
+  }
   void do_return() {
-    base_button* btn = get_tab_current(); 
+    base_button* btn = get_tab_current();
     if(!btn) return;
 
     // ask to execute cbks by using the highly
@@ -3815,10 +3854,10 @@ public:
 
     btn->disarm();
 
-    add_work_cbks(btn->cbks().callbacks(),true);    
+    add_work_cbks(btn->cbks().callbacks(),true);
 
     m_tab_current--; //so that next tab be at same button position.
-  } 
+  }
 
   void add_work_check_arm_buttons() {
     add_work(new check_arms_work(*this));
@@ -3851,21 +3890,21 @@ public:
     sep->add(camera);
 
     set_scene_camera(camera);
-  
+
     rgba* mat = new rgba();
     mat->color = colorf_black();
     sep->add(mat);
-  
+
     sep->add(new normal);
 
     matrix* m = new matrix;
     sep->add(m);
-  
+
     float wcw,wch,aspect;
    {float tx,ty;
     get_gui_wcw_wch(wcw,wch,tx,ty,aspect);}
 
-    infos_box* text = new infos_box(m_ttf);   
+    infos_box* text = new infos_box(m_ttf);
     text->width = wcw;
     text->back_visible = false;
     //text->hmargin_factor = 1.0f;
@@ -3890,26 +3929,27 @@ public:
     mtx.mul_translate(0,-text->height*0.5f+wch*0.5f,0);
   }
 
-  void gui_text(const std::vector<std::string>& a_text){
+  void gui_text(const std::vector<std::string>& a_data) {
+    sg::text* text = new sg::text(m_ttf);
+    set_style(*text);
+    text->strings = a_data;
+    text->confine = true;
+    text->hjust = sg::center;
+    push_list(text);
+  }
+
+  void gui_scroll_text(const std::vector<std::string>& a_text){
     if(a_text.empty()) {
       map_warn_empty();
       return;
     }
-
     scroll_text* text = new scroll_text(m_ttf);
     set_style(*text);
-
-   {std::vector<std::string>::const_iterator it;
-    for(it=a_text.begin();it!=a_text.end();++it) {
-      text->text.add(*it);
-    }}
-
+    inlib_vforcit(std::string,a_text,it) text->text.add(*it);
     push_list(text);
   }
 
-  void gui_text(const std::vector<std::string>& a_ltext,
-                const std::vector<std::string>& a_rtext) {
-
+  void gui_scroll_infos(const std::vector<std::string>& a_ltext,const std::vector<std::string>& a_rtext) {
     if(a_ltext.empty()) {
       map_warn_empty();
       return;
@@ -3918,19 +3958,10 @@ public:
       map_warn("size mismatch");
       return;
     }
-
     scroll_infos* text = new scroll_infos(m_ttf);
     set_style(*text);
-
-   {std::vector<std::string>::const_iterator it;
-    for(it=a_ltext.begin();it!=a_ltext.end();++it) {
-      text->ltext.add(*it);
-    }}
-   {std::vector<std::string>::const_iterator it;
-    for(it=a_rtext.begin();it!=a_rtext.end();++it) {
-      text->rtext.add(*it);
-    }}
-
+    inlib_vforcit(std::string,a_ltext,it) text->ltext.add(*it);
+    inlib_vforcit(std::string,a_rtext,it) text->rtext.add(*it);
     push_list(text);
   }
 
@@ -3939,8 +3970,7 @@ public:
     float znear = 0.1f*a_radius;
     float near_height = 2 * znear * (a_radius/cam_pos);
 
-    base_camera* camera =
-      create_camera(camera_perspective,near_height,znear);
+    base_camera* camera = create_camera(camera_perspective,near_height,znear);
     if(!camera) {
       m_out << "inlib::sg::gui_viewer::create_3D_camera :"
             << " create_camera failed."
@@ -3982,7 +4012,7 @@ public:
     } else if(safe_cast<node,perspective>(a_cam)){
       camera = create_camera(camera_perspective,a_cam.near_height(),a_cam.znear);
     }
-    if(!camera) return 0;    
+    if(!camera) return 0;
 
     camera->zfar = a_cam.zfar;
     camera->position = a_cam.position;
@@ -4016,91 +4046,235 @@ public:
           anim = anim_down;
 
         // do we want to change things in the cam panel ?
-        // Huum, yes as long as m_params.m_anim_shift
+        // Huum, yes as long as m_params.m_anim_mode
         // belongs to gui_viewer.
-        set_param_anim_shift(a_shift);
+        set_param_anim_mode(a_shift?anim_mode_1:anim_mode_0);
 
-        start_cam_anim(anim,a_shift,m_params.m_cycle_secs);
+        start_cam_anim(anim,a_shift?anim_mode_1:anim_mode_0,m_params.m_cycle_secs);
       }
       return false; //do not render.
 
     } else {
       if(a_key==key_left)
-        update_anim_motion(anim_left,a_shift);
+        update_anim_motion(anim_left,a_shift?anim_mode_1:anim_mode_0);
       else if(a_key==key_right)
-        update_anim_motion(anim_right,a_shift);
+        update_anim_motion(anim_right,a_shift?anim_mode_1:anim_mode_0);
       else if(a_key==key_up)
-        update_anim_motion(anim_up,a_shift);
+        update_anim_motion(anim_up,a_shift?anim_mode_1:anim_mode_0);
       else if(a_key==key_down)
-        update_anim_motion(anim_down,a_shift);
+        update_anim_motion(anim_down,a_shift?anim_mode_1:anim_mode_0);
 
       return true; //to render.
     }
-  } 
+  }
 
 public:
+  image::readers& image_readers() {return m_image_readers;}
+
+  bool set_img(image_button& a_button,const std::string& a_file) {
+    bool status = set_img_from_res_file(a_file,a_button.img.value());
+    a_button.img.touch();
+    return status;
+  }
+
+  void set_png_writer(png_writer a_writer) {m_png_writer = a_writer;}
+  void set_jpeg_writer(jpeg_writer a_writer) {m_jpeg_writer = a_writer;}
+
+  virtual bool write_scene_to_paper(const std::string& a_path,const std::string& a_format,unsigned int a_scale) {
+    const inlib::colorf& bg = parent::m_clear_color;
+    inlib::sg::node& _node = parent::m_sg;
+    return write_paper(m_out,m_gl2ps_mgr,m_zb_mgr,m_png_writer,m_jpeg_writer,
+                       bg.r(),bg.g(),bg.b(),bg.a(),_node,a_scale*m_ww,a_scale*m_wh,a_path,a_format);
+  }
+
+  virtual unsigned char* get_pixels(unsigned int a_w,unsigned int a_h,bool a_rgbas = true) = 0;
+
+  void after_render() {
+    //WARNING : it does OpenGL. Under Android it should be executed in the OpenGL thread.
+    //WARNING : if having more m_produce_xxx, look exlib/app/iOS/GLView_mm.
+    std::ostream& _out = parent::m_out;
+
+    std::string path;
+    if(parent::m_produce_out_jpeg || parent::m_produce_out_png) {
+      if(parent::m_produce_out_file.empty()) {
+        const std::string& _out_dir = parent::out_dir();
+        if(_out_dir.size()) {
+          if(!inlib::check_dir(_out,_out_dir)) {parent::map_warn_failed();return;}
+          path = _out_dir+inlib::sep();
+        }
+        if(parent::m_produce_out_jpeg) path += "out.jpeg";
+        else path += "out.png";
+      } else {
+        path = parent::m_produce_out_file;
+        parent::m_produce_out_file.clear();
+      }
+    }
+
+    if(parent::m_produce_out_jpeg) {
+      parent::m_produce_out_jpeg = false;
+      if(!m_jpeg_writer) {
+        _out << "inlib::sg::gui_viewer::after_render() : no jpeg writer." << std::endl;
+        parent::map_warn_failed();
+        return;
+      }
+      unsigned char* buffer = get_pixels(parent::m_ww,parent::m_wh,false); //NOTE : jpeg wants bpp=3.
+      if(!buffer) {
+        _out << "inlib::sg::gui_viewer::after_render() : can't get image." << std::endl;
+        parent::map_warn_failed();
+        return;
+      }
+      unsigned int bpp = 3;
+      if(!m_jpeg_writer(_out,path,buffer,parent::m_ww,parent::m_wh,bpp,100)) parent::map_warn_failed();
+      delete [] buffer;
+    }
+
+    if(parent::m_produce_out_png) {
+      parent::m_produce_out_png = false;
+      if(!m_png_writer) {
+        _out << "inlib::sg::gui_viewer::after_render() : no png writer." << std::endl;
+        parent::map_warn_failed();
+        return;
+      }
+      unsigned char* buffer = 0;
+      if(parent::m_produce_out_bpp==4) {
+        buffer = get_pixels(parent::m_ww,parent::m_wh);
+      } else if(parent::m_produce_out_bpp==3) {
+        buffer = get_pixels(parent::m_ww,parent::m_wh,false);
+      } else {
+        _out << "inlib::sg::gui_viewer::after_render() :"
+             << " bad bpp " << parent::m_produce_out_bpp << "." << std::endl;
+        parent::map_warn_failed();
+        return;
+      }
+      if(!buffer) {
+        _out << "inlib::sg::gui_viewer::after_render() : can't get image." << std::endl;
+        parent::map_warn_failed();
+        return;
+      }
+      unsigned int bpp = parent::m_produce_out_bpp;
+      if(!m_png_writer(_out,path,buffer,parent::m_ww,parent::m_wh,bpp)) parent::map_warn_failed();
+      delete [] buffer;
+    }
+  }
+public:
   // actions :
+  static return_action action_insh_source_script(gui_viewer& a_gv,const std::string& a_script) {
+    std::vector<std::string> lines;
+    get_lines(a_script,lines);
+    a_gv.insh().exec_lines_reset_to_stop(lines);
+    return sg::return_to_render;
+  }
+
   static return_action action_none(gui_viewer&) {return return_none;}
-  
+
   static return_action action_hide(gui_viewer&,_switch& a_widget) {
     if(a_widget.which==1) return return_none;
     a_widget.which = 1;
-    return return_to_render;     
+    return return_to_render;
   }
 
   static return_action action_touch_down(gui_viewer& a_gv,const ecbk& a_cbk) {
-    if(!a_cbk.m_node) return return_none;            
+    if(!a_cbk.m_node) return return_none;
     if(base_button* btn = safe_cast<node,base_button>(*a_cbk.m_node)){
       a_gv.arm_button(btn);
       a_cbk.m_event_action->set_done(true);
     } else if(slider* sd = safe_cast<node,slider>(*a_cbk.m_node)){
-      a_gv.add_work_cbks(sd->begs(),true);    
+      a_gv.add_work_cbks(sd->begs(),true);
       a_cbk.m_event_action->set_done(true);
     }
     return return_none;
   }
 
   static return_action action_touch_up(gui_viewer& a_gv,const ecbk& a_cbk) {
-    if(!a_cbk.m_node) return return_none;            
+    if(!a_cbk.m_node) return return_none;
     if(base_button* btn = safe_cast<node,base_button>(*a_cbk.m_node)){
       a_gv.trigger_button(btn);
       a_cbk.m_event_action->set_done(true);
     } else if(slider* sd = safe_cast<node,slider>(*a_cbk.m_node)){
-      a_gv.add_work_cbks(sd->ends(),true);    
+      a_gv.add_work_cbks(sd->ends(),true);
       a_cbk.m_event_action->set_done(true);
     } else if(ghost* gh = safe_cast<node,ghost>(*a_cbk.m_node)){
-      //m_out << "inlib::sg::gui_viewer::touch_up :" 
+      //m_out << "inlib::sg::gui_viewer::touch_up :"
       //      << " pick ghost."
       //      << std::endl;
-      a_gv.add_work_cbks(gh->cbks().callbacks(),true);    
+      a_gv.add_work_cbks(gh->cbks().callbacks(),true);
       a_cbk.m_event_action->set_done(true);
     }
     return return_none;
   }
   static return_action action_touch_move(gui_viewer& a_gv,const ecbk& a_cbk) {
-    if(!a_cbk.m_node) return return_none;            
+    if(!a_cbk.m_node) return return_none;
     if(slider* sd = safe_cast<node,slider>(*a_cbk.m_node)){
       // we have to update the slider pos :
       if(move_event* mevt = event_cast<event,move_event>(*a_cbk.m_event)){
         sd->set_value(a_cbk.m_event_action->saved_state(),*mevt);
       }
-      a_gv.add_work_cbks(sd->drags(),true);      
+      a_gv.add_work_cbks(sd->drags(),true);
       a_gv.m_motion_slider = sd;
       a_cbk.m_event_action->set_done(true);
     }
     return return_none;
   }
 
-  static return_action action_export_png(gui_viewer& a_gv) {
+  static return_action action_window_to_png(gui_viewer& a_gv,const std::vector<std::string>& a_args) {
     a_gv.hide_popup();
     a_gv.hide_main_menu();
-    a_gv.hide_camera_menu();
-    //bool old_border = a_gv.plots().view_border;
-    //a_gv.plots().view_border = false;
+    a_gv.hide_meta_zone();
+    args _args(a_args);
+    if(_args.is_arg("-hide_camera_menu")) a_gv.hide_camera_menu();
+    unsigned int bpp;
+    _args.find("-bpp",bpp,a_gv.produce_out_bpp());
+    std::string path;
+    if(_args.first_not_hyphen(path)) a_gv.set_produce_out_file(path);
     a_gv.set_produce_out_png(true);
-    //send_restore(old_border);
-    return return_to_render;     
+    a_gv.set_produce_out_bpp(bpp);
+    a_gv.win_render();  //it should trigger after_render().
+    return return_to_render;
   }
+  static const std::string& _window_to_png_help() {
+    static const std::string s_help("\
+window_to_png: window_to_png [-hide_camera_menu] [-bpp] [path]\n\
+  Produce a png file from the displayed window contents.\n\
+  If no path is given, a out.png file is produced in the output directory of the application.\n\
+  -hide_camera_menu permits to hide the camera menu panel before writing.\n\
+  -bpp permits to choose to produce three or four bytes per pixel (rgb or rgba).\n\
+  It is four by default. It permits to save transparency/blending in the png.\n\
+  Example:\n\
+    window_to_png -bpp=3 out.png  # to produce an out.png in the current directory\n\
+  See also:\n\
+    app_out_dir\n\
+");
+    return s_help;
+  }
+
+  static return_action action_window_to_jpeg(gui_viewer& a_gv,const std::vector<std::string>& a_args) {
+    a_gv.hide_popup();
+    a_gv.hide_main_menu();
+    a_gv.hide_meta_zone();
+    args _args(a_args);
+    if(_args.is_arg("-hide_camera_menu")) a_gv.hide_camera_menu();
+    std::string path;
+    if(_args.first_not_hyphen(path)) a_gv.set_produce_out_file(path);
+    a_gv.set_produce_out_jpeg(true);
+    a_gv.win_render();  //it should trigger after_render().
+    return return_to_render;
+  }
+  static const std::string& _window_to_jpeg_help() {
+    static const std::string s_help("\
+window_to_jpeg: window_to_jpeg [-hide_camera_menu] [path]\n\
+  Produce a jpeg file from the displayed window contents.\n\
+  If no path is given, a out.jpeg file is produced in the output directory of the application.\n\
+  -hide_camera_menu permits to hide the camera menu panel before writing.\n\
+  Note that no alpha channel is written in the jpeg, if you want it, use the window_to_png command.\n\
+  Example:\n\
+    window_to_jpeg out.jpeg  # to produce an out.jpeg in the current directory\n\
+  See also:\n\
+    app_out_dir\n\
+    window_to_png\n\
+");
+    return s_help;
+  }
+
 
 #define ACTION_GUI_RENDER(a__method) \
   static return_action action_##a__method(gui_viewer& a_gv) {a_gv.a__method();return return_to_render;}
@@ -4118,15 +4292,16 @@ public:
 
   ACTION_GUI_RENDER(toggle_param_single_shoot)      //action_single_shoot
   ACTION_GUI_RENDER(toggle_param_90)                //action_90
-  ACTION_GUI_RENDER(toggle_param_anim_shift)        //action_anim_shift
+  ACTION_GUI_RENDER(toggle_param_anim_mode)         //action_anim_mode
   ACTION_GUI_RENDER(toggle_param_anim_around_focal) //action_anim_around_focal
   ACTION_GUI_RENDER(toggle_param_viewing)           //action_viewing
   ACTION_GUI_RENDER(hide_camera_menu)               //action_hide_camenu
   ACTION_GUI_RENDER(show_camera_menu)               //action_show_camenu
 
-//ACTION_GUI_RENDER(start_anim_around_focal)
-  ACTION_GUI_RENDER(count_points) 
+  ACTION_GUI_RENDER(count_points)
   ACTION_GUI_RENDER(toggle_light)
+  ACTION_GUI_RENDER(toggle_blend)
+  ACTION_GUI_RENDER(toggle_smooth)
   ACTION_GUI_RENDER(toggle_gsto)
   ACTION_GUI_RENDER(toggle_plane_exam)
   ACTION_GUI_RENDER(swap_scene_clear_color)
@@ -4184,7 +4359,7 @@ public:
     node->add_opts(s_ui_style(),a_gv.m_gui_style,opts);}
 
     add_callback(a_gv,*node,action_params_ok,pos_data(false,0,0));
-  
+
     a_gv.set_style(*node);
     a_gv.push_list(node);
 
@@ -4201,18 +4376,18 @@ public:
       else if(a_action==anim_up)    a_gv.m_scene_camera->rotate_around_x_at_focal(-fhalf_pi());
       else if(a_action==anim_down)  a_gv.m_scene_camera->rotate_around_x_at_focal(fhalf_pi());
 
-      return return_to_render;     
+      return return_to_render;
     }
 
     if(a_gv.m_params.m_single_shoot) {
 
-      a_gv.update_anim_motion(a_action,a_gv.m_params.m_anim_shift);
+      a_gv.update_anim_motion(a_action,a_gv.m_params.m_anim_mode);
 
     } else {
       if(a_gv.cam_anim_is_running()) {
         a_gv.stop_cam_anim();
-      } else {             
-        a_gv.start_cam_anim(a_action,a_gv.m_params.m_anim_shift,a_gv.m_params.m_cycle_secs);
+      } else {
+        a_gv.start_cam_anim(a_action,a_gv.m_params.m_anim_mode,a_gv.m_params.m_cycle_secs);
       }
     }
     return return_to_render;
@@ -4230,77 +4405,77 @@ public:
     base_camera* cam = a_gv.scene_camera();
     if(!cam) {
       a_gv.map_warn("no camera found.");
-      return return_to_render;     
+      return return_to_render;
     }
-  
+
    {float x;
     if(!a_gv.tow<float>(a_widget.values[0],x)) return return_to_render;
     float y;
     if(!a_gv.tow<float>(a_widget.values[1],y)) return return_to_render;
     float z;
-    if(!a_gv.tow<float>(a_widget.values[2],z)) return return_to_render;  
+    if(!a_gv.tow<float>(a_widget.values[2],z)) return return_to_render;
     cam->position.value().set_value(x,y,z);}
-  
+
     if(!sqrot<vec3f,vec4f>(a_widget.values[3],cam->orientation.value(),::sinf,::cosf)) return return_to_render;
 
    {float v;
     if(!a_gv.tow<float>(a_widget.values[4],v)) return return_to_render;
     if(v<=0) {
       a_gv.map_warn("must be >0");
-      return return_to_render;     
+      return return_to_render;
     }
     cam->znear = v;}
-  
+
    {float v;
     if(!a_gv.tow<float>(a_widget.values[5],v)) return return_to_render;
     if(v<=0) {
       a_gv.map_warn("must be >0");
-      return return_to_render;     
+      return return_to_render;
     }
     if(v<=cam->znear.value()) {
       a_gv.map_warn("far must be > near");
-      return return_to_render;     
+      return return_to_render;
     }
     cam->zfar = v;}
-  
+
    {float v;
     if(!a_gv.tow<float>(a_widget.values[6],v)) return return_to_render;
     if(v<=0) {
       a_gv.map_warn("must be >0");
-      return return_to_render;     
+      return return_to_render;
     }
     cam->focal = v;}
-  
+
    {float v;
     if(!a_gv.tow<float>(a_widget.values[7],v)) return return_to_render;
     if(v<=0) {
       a_gv.map_warn("must be >0");
-      return return_to_render;     
+      return return_to_render;
     }
     cam->dx = v;}
-  
+
    {float v;
     if(!a_gv.tow<float>(a_widget.values[8],v)) return return_to_render;
     if(v<=0) {
       a_gv.map_warn("must be >0");
-      return return_to_render;     
+      return return_to_render;
     }
     cam->da = v*fdeg2rad();}
-  
+
    {float v;
     if(!a_gv.tow<float>(a_widget.values[9],v)) return return_to_render;
     if(v<=0) {
       a_gv.map_warn("must be >0");
-      return return_to_render;     
+      return return_to_render;
     }
     cam->ds = v;}
-  
+
     if(a_gv.is_wall_screen_app()) {
       float v;
       if(!a_gv.tow<float>(a_widget.values[10],v)) return return_to_render;
       if(v<=0) {
         a_gv.map_warn("must be >0");
-        return return_to_render;     
+        return return_to_render;
       }
       cam->zoom(v);
     } else {
@@ -4308,41 +4483,43 @@ public:
       if(!a_gv.tow<float>(a_widget.values[10],v)) return return_to_render;
       if(v<=0) {
         a_gv.map_warn("must be >0");
-        return return_to_render;     
+        return return_to_render;
       }
       if(ortho* oc = safe_cast<node,ortho>(*cam)) {
         oc->height = v;
       } else if(perspective* pc = safe_cast<node,perspective>(*cam)) {
-        pc->height_angle = v*fdeg2rad();   
+        pc->height_angle = v*fdeg2rad();
       }
     }
-  
+
+    a_gv.set_scene_camera(cam); //to set m_reset_camera and m_params.m_cam_<>
+
     a_gv.hide_main_menu();
-    return return_to_render;  
+    return return_to_render;
   }
 
   static return_action action_cam_set_type(gui_viewer& a_gv,entries& a_widget) {
     //change cam class if needed and present entries for params.
-        
+
     std::string skind = a_widget.values[0];
     //a_gv.out() << "choosen class " << scls << std::endl;
     if(skind.size() && a_gv.m_params.m_camera_type.size() && (skind!=a_gv.m_params.m_camera_type)) {
       if(!a_gv.swap_camera_kind()) {
         a_gv.map_warn("swap_camera_kind() failed.");
-        return return_to_render;     
-      }          
+        return return_to_render;
+      }
     }
 
     base_camera* new_cam = a_gv.scene_camera();
     if(!new_cam) {
       a_gv.map_warn("no camera found.");
-      return return_to_render;     
+      return return_to_render;
     }
-  
+
     entries* _entries = new entries(a_gv.m_ttf);
     _entries->label = "camera";
     a_gv.set_style(*_entries);
-  
+
     _entries->add_float("x",new_cam->position.value().x());    //0
     _entries->add_float("y",new_cam->position.value().y());    //1
     _entries->add_float("z",new_cam->position.value().z());    //2
@@ -4361,17 +4538,17 @@ public:
       if(ortho* oc =
          safe_cast<node,ortho>(*new_cam)){
         _entries->add_float("height",oc->height.value()); //10
-      } else if(perspective* pc = 
+      } else if(perspective* pc =
          safe_cast<node,perspective>(*new_cam)){
         _entries->add_float("height angle (deg)",pc->height_angle.value()*frad2deg()); //10
       } else {
         a_gv.map_warn("unhandled camera type");
-        return return_to_render;     
+        return return_to_render;
       }
     }
-  
+
     add_callback(a_gv,*_entries,action_cam_set_params,pos_data(false,0,0));
-  
+
     a_gv.push_list(_entries);
 
     return return_to_render;
@@ -4380,7 +4557,7 @@ public:
   static return_action action_cam_choose_type(gui_viewer& a_gv) {
     if(a_gv.m_params.m_camera_type.empty()) {
       a_gv.map_warn("no camera");
-      return return_to_render;     
+      return return_to_render;
     }
 
     entries* _entries = new entries(a_gv.m_ttf);
@@ -4405,13 +4582,13 @@ public:
     base_camera* cam = a_gv.scene_camera();
     if(!cam) {
       a_gv.map_warn("no camera found.");
-      return return_to_render;     
+      return return_to_render;
     }
-  
+
     std::string sanim = a_widget.values[0];
 
     unsigned int cycle;
-    if(!a_gv.tow<unsigned int>(a_widget.values[1],cycle)) return return_to_render;     
+    if(!a_gv.tow<unsigned int>(a_widget.values[1],cycle)) return return_to_render;
 
     if(sanim==s_zoom_in_out()) {
       a_gv.start_cam_move(move_zoom_in_out,cycle);
@@ -4429,7 +4606,7 @@ public:
   static return_action action_cam_choose_anim(gui_viewer& a_gv) {
     if(a_gv.m_params.m_camera_type.empty()) {
       a_gv.map_warn("no camera");
-      return return_to_render;     
+      return return_to_render;
     }
 
     entries* _entries = new entries(a_gv.m_ttf);
@@ -4454,10 +4631,10 @@ public:
 
   // old rwc_gui actions id :
 /*
-    static unsigned int action_reset_camera() {return 9;}    
+    static unsigned int action_reset_camera() {return 9;}
     static unsigned int action_single_shoot()      {return 4;}
     static unsigned int action_90()                {return 5;}
-    static unsigned int action_anim_shift()        {return 6;}
+    static unsigned int action_anim_mode()         {return 6;}
     static unsigned int action_anim_around_focal() {return 7;}
     static unsigned int action_viewing()           {return 8;}
     static unsigned int action_clear_scene()             {return 21;}
@@ -4470,7 +4647,7 @@ public:
       } else if(m_action==action_cam_anim_zoom_in_out_rot()) { //from rwc.
         m_gv.start_cam_move(move_zoom_in_out_rot,m_gv.m_params.m_cycle_secs);
         m_gv.hide_main_menu();
-*/  
+*/
 
 protected:
 
@@ -4487,9 +4664,9 @@ protected:
           (*it)->disarm();
           (*it)->arm_color.touch(); //touch something.
         }
-      }    
+      }
       m_gv.m_arm_buttons.clear();
-      return return_to_render;     
+      return return_to_render;
     }
     virtual bcbk* copy() const {return new check_arms_work(*this);}
   public:
@@ -4522,7 +4699,7 @@ protected:
       //} else {
       //  m_gv.out() << "arm_work : warning : anomaly : button does not exist." << std::endl;
       //}
-      return return_to_render;     
+      return return_to_render;
     }
   public:
     arm_work(gui_viewer& a_gv,base_button* a_button)
@@ -4560,7 +4737,7 @@ protected:
       //} else {
       //  m_gv.out() << "disarm_work : warning : anomaly : button does not exist." << std::endl;
       //}
-      return return_to_render;     
+      return return_to_render;
     }
   public:
     disarm_work(gui_viewer& a_gv,base_button* a_button)
@@ -4593,22 +4770,25 @@ protected:
   public:
     virtual return_action action() {
       //m_gv.out() << "debug : anim_work::action" << std::endl;
-      if(m_gv.treat_anim(atime::now())) return return_to_render;     
-      return return_none;     
+      if(m_gv.treat_anim(atime::now())) return return_to_render;
+      //return return_none;
+      // no anim consumer, we stop the anim_work.
+      m_gv.disable_anim();
+      return return_to_render;
     }
   public:
     anim_work(gui_viewer& a_gv)
-    :bcbk()
+    :parent()
     ,m_gv(a_gv)
     {}
     virtual ~anim_work(){}
   public:
     anim_work(const anim_work& a_from)
-    :bcbk(a_from)
+    :parent(a_from)
     ,m_gv(a_from.m_gv)
     {}
     anim_work& operator=(const anim_work& a_from){
-      bcbk::operator=(a_from);
+      parent::operator=(a_from);
       return *this;
     }
   protected:
@@ -4637,9 +4817,10 @@ public:
   void set_argcv(const args& a_args) {m_argcv = a_args;}
   const args& argcv() const {return m_argcv;}
   args& argcv() {return m_argcv;}
-  
-  //const dumpers_t& dumpers() const {return m_dumpers;}
-  //dumpers_t& dumpers() {return m_dumpers;}
+
+//const dumpers_t& dumpers() const {return m_dumpers;}
+  dumpers_t& dumpers() {return m_dumpers;}             //used in nemoview.
+
   void add_dumper(const std::string& a_key,base_dumper* a_dumper) { //take ownership of a_dumper.
     add_unique(m_dumpers,a_key,a_dumper,true); //true=delete existing dumper on a_key.
   }
@@ -4661,195 +4842,1235 @@ public:
   }
 */
 public:
+  //void set_arconf(text& a_text,const std::string& a_s){
+  //  sg::set_arconf(m_params,a_text,a_s);
+  //}
+
   bool set_img_from_res_file(const std::string& a_file,img_byte& a_img) {
-    if(a_file.empty()) {a_img.clear();return true;}
-    std::string path = m_res_dir;
-    path += sep();
-    path += a_file;
-    inlib_vforcit(image::readers::named_reader,m_image_readers.named_readers(),it) {
-      image::ireader* _reader = (*it).second;
-      if(!_reader->is(path)) continue;
-      unsigned int w,h,bpp;
-      unsigned char* buffer = _reader->read(m_out,path,w,h,bpp);
-      if(!buffer) continue;
-      a_img.set(w,h,bpp,buffer,true);
-      return true;
-    }  
-    a_img.clear();
-    return false;
+    return sg::set_img_from_res_file(m_out,m_res_dir,m_image_readers,a_file,a_img);
   }
 
-public: //commands
-  bool insh_exec(const std::string& a_file,bool a_verbose) {
-    if(!file::exists(a_file)) {    
-      m_out << "inlib::sg::gui_viewer::insh_exec : " << a_file << " order file not found." << std::endl;
-      return false;
+  void separator_to_vertices(separator& a_sep) {
+    atb_vertices* pts = new atb_vertices;
+    atb_vertices* lns = new atb_vertices;
+    atb_vertices* trs = new atb_vertices;
+    mem_action action(m_mem_mgr,m_out,*pts,*lns,*trs);
+    a_sep.render(action);
+    a_sep.clear();
+    a_sep.add(pts);
+    a_sep.add(lns);
+    a_sep.add(trs);
+  }
+
+public: //insh:
+  const inlib::insh& insh() const {return m_insh;}
+  inlib::insh& insh() {return m_insh;}
+
+  void source_dot_insh() {
+    // home/.insh :
+    std::string home_path;
+    dir::home(home_path);
+    home_path += sep()+".insh";
+    if(file::exists(home_path)) m_insh.exec_line_reset_to_stop(". "+home_path); //sourced.
+    // doc_dir/.insh :
+    std::string doc_path = doc_dir()+sep()+".insh";
+    if( (doc_path!=home_path) && file::exists(doc_path) ) m_insh.exec_line_reset_to_stop(". "+doc_path); //sourced.
+  }
+  void source_startup_insh() {
+    // a sourced startup file :
+    if(is_doc_res_file("startup.insh")) {  //for app without a startup.insh in doc_res.
+      m_insh.exec_line_reset_to_stop(". startup.insh");
     }
-    std::vector<std::string> lines;
-    if(!file::read(a_file,lines)) {
-      m_out << "inlib::sg::gui_viewer::insh_exec : can't read " << a_file << "." << std::endl;
-      return false;
+  }
+  void exec_insh_startup() {
+    // a not sourced startup file :
+    if(is_doc_res_file("insh_startup")) {  //for app without a insh_startup in doc_res.
+      m_insh.exec_line_reset_to_stop("insh_startup");
     }
-    
-    inlib_vforcit(std::string,lines,it) {
-      if(to_exit()) break;
-      
-      const std::string& line = *it;
-      if(line.empty()) continue;
-      if(line.substr(0,1)=="#") continue;
-      if(a_verbose) m_out << "inlib::sg::gui_viewer::insh_exec : exec line : " << sout(line) << std::endl;
+  }
+protected:
+  INLIB_INSH_VOID_ARGS_CMD(gui_viewer)
+  INLIB_INSH_BOOL_VOID_CMD(gui_viewer)
+  INLIB_INSH_VOID_VOID_CMD(gui_viewer)
 
-      std::vector<std::string> ws;
-      words(line," ",false,ws);
-      std::string cmd = ws[0];
+#define INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(a__name,a__method,a__help)\
+   m_insh.add_command(#a__name,new gui_viewer_void_args_cmd(*this,&gui_viewer::a__method,a__help));
 
-      ws.erase(ws.begin());
+#define INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD_HELP(a__name,a__method,a__help_text)\
+   m_insh.add_command(#a__name,new gui_viewer_void_args_cmd(*this,&gui_viewer::a__method,a__help_text));
 
-     {std::string s_cmd("exec_menu_item");
-      if(cmd==s_cmd) {
-        if(line.size()<(s_cmd.size()+1)) {
-          m_out << "inlib::sg::gui_viewer::insh_exec : empty menu item. Stop." << std::endl;
-	  break;
-	}
-        std::string rest = line.substr(s_cmd.size()+1,line.size()-(s_cmd.size()+1));
-        if(!find_exec_menu_item(rest)) {
-          m_out << "inlib::sg::gui_viewer::insh_exec : menu item " << sout(rest) << " not found. Stop." << std::endl;
-	  break;
-        }
-	continue;
-      }}
+#define INLIB_GUI_VIEWER_ADD_BOOL_VOID_CMD(a__name,a__method,a__help)\
+   m_insh.add_command(#a__name,new gui_viewer_bool_void_cmd(*this,&gui_viewer::a__method,a__help));
 
-      if(!insh_dispatch(cmd,ws)) {
-        m_out << "inlib::sg::gui_viewer::insh_exec : WARNING : command " << sout(cmd) << " not found for line " << line << "."
-	      << " Stop exec file " << sout(a_file) << "." << std::endl;
-        break;
+#define INLIB_GUI_VIEWER_ADD_BOOL_VOID_CMD_HELP(a__name,a__method,a__help_text)\
+   m_insh.add_command(#a__name,new gui_viewer_bool_void_cmd(*this,&gui_viewer::a__method,a__help_text));
+
+#define INLIB_GUI_VIEWER_ADD_VOID_VOID_CMD(a__name,a__method,a__help)\
+   m_insh.add_command(#a__name,new gui_viewer_void_void_cmd(*this,&gui_viewer::a__method,a__help));
+
+#define INLIB_GUI_VIEWER_ADD_VOID_VOID_CMD_HELP(a__name,a__method,a__help_text)\
+   m_insh.add_command(#a__name,new gui_viewer_void_void_cmd(*this,&gui_viewer::a__method,a__help_text));
+
+  void _exec_menu_item(const std::vector<std::string>& a_args) {
+    if(a_args.empty()) {
+      m_insh.warn("inlib::sg::gui_viewer::_exec_menu_item : one argument expected.");
+      return;
+    }
+    if(!find_exec_menu_item(a_args[0])) {
+      m_insh.warn("inlib::sg::gui_viewer::_exec_menu_item : menu item "+sout(a_args[0])+" not found. Stop.");
+      return;
+    }
+  }
+  static const std::string& _exec_menu_item_help() {
+    static const std::string s_help("\
+gui_exec_main_menu_item: gui_exec_main_menu_item menu_item_label\n\
+  Given its label, find a menu item in the\n\
+  current main menu and execute its callback.\n\
+  Example:\n\
+    gui_exec_main_menu_item exit\n\
+");
+    return s_help;
+  }
+
+  void _scene_set_clear_color(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_scene_set_clear_color :");
+    if(a_args.size()==1) {
+      inlib::colorf _value;
+      if(!inlib::sg::find_color(styles().cmaps(),a_args[0],_value)) {
+        m_insh.warn(s_header+" "+sout(a_args[0])+" is not a known color.");
+        return;
       }
-
+      set_scene_clear_color(_value);
+      return;
     }
+    if(a_args.size()==3) {
+      float r;
+      if(!insh().get_arg_float_color(s_header,a_args[0],r)) return;
+      float g;
+      if(!insh().get_arg_float_color(s_header,a_args[1],g)) return;
+      float b;
+      if(!insh().get_arg_float_color(s_header,a_args[2],b)) return;
+      set_scene_clear_color(r,g,b,1);
+      return;
+    }
+    if(a_args.size()==4) {
+      float r;
+      if(!insh().get_arg_float_color(s_header,a_args[0],r)) return;
+      float g;
+      if(!insh().get_arg_float_color(s_header,a_args[1],g)) return;
+      float b;
+      if(!insh().get_arg_float_color(s_header,a_args[2],b)) return;
+      float a;
+      if(!insh().get_arg_float_color(s_header,a_args[3],a)) return;
+      set_scene_clear_color(r,g,b,a);
+      return;
+    }
+    m_insh.warn(s_header+" one, three or four arguments expected");
+  }
 
+  static const std::string& _scene_set_clear_color_help() {
+    static const std::string s_help("\
+scene_set_clear_color: scene_set_clear_color [color name] [colormap/color name] [#rrggbb] [r g b] [r g b a]\n\
+  Set the color of the background of the scene.\n\
+  It can be given by a common color name in the default colormap,\n\
+  by giving the name of a color in a known colormap, by giving an hexa encoding or by giving\n\
+  the three or four r,g,b,a (in [0,1]) of the color.\n\
+  See style_print_colormaps to print the known colormaps with their colors.\n\
+  Example:\n\
+    scene_set_clear_color lightgrey\n\
+    scene_set_clear_color ROOT/kMagenta+3\n\
+    scene_set_clear_color '#FFFF00'\n\
+    scene_set_clear_color 0.2 0.1 0.2\n\
+");
+    return s_help;
+  }
+
+  void _scene_bounding_box(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_scene_bounding_box :");
+    bbox_action action(m_out);
+    m_scene->bbox(action);
+    if(!action.end()) {
+      m_insh.warn(s_header+" bbox_action.end() failed.");
+      return;
+    }
+    const box3f& _box = action.box();
+    if(_box.is_empty()) {
+      m_insh.out("empty");
+      return;
+    }
+    vec3f center;
+    if(!_box.center(center)) {}
+    float dx,dy,dz;
+    if(!_box.get_size(dx,dy,dz)) {}
+
+    std::vector<std::string> ss;
+   {std::string _s;
+    numas(center.x(),_s);
+    _s += " ";
+    numas(center.y(),_s);
+    _s += " ";
+    numas(center.z(),_s);
+    ss.push_back(_s);}
+
+   {std::string _s;
+    numas(dx,_s);
+    _s += " ";
+    numas(dy,_s);
+    _s += " ";
+    numas(dz,_s);
+    ss.push_back(_s);}
+
+    m_insh.out_begin();
+    m_insh.out(ss);
+  }
+
+  static const std::string& _scene_bounding_box_help() {
+    static const std::string s_help("\
+scene_bounding_box: scene_bounding_box\n\
+  Print the center and size of the scene bounding box.\n\
+  Example:\n\
+    scene_bounding_box\n\
+");
+    return s_help;
+  }
+
+  void _scene_remove_nodes(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_scene_remove_nodes :");
+    args _args(a_args);
+    std::string sclass;
+    if(_args.find("-class",sclass)) {
+      search_action sa(m_out);
+      const paths_t& paths = find_paths(sa,*m_scene,sclass);
+      paths_t::const_iterator it;
+      for(it=paths.begin();it!=paths.end();++it) {
+        const path_t& p = *it;
+        group* grp = container<group>(p);
+        if(!grp) {
+          m_insh.warn(s_header+" node parent group not found.");
+        } else {
+          node* _node = p.size()?p[p.size()-1]:0;
+          if(!_node) {
+            m_insh.warn(s_header+" node path with bad tail.");
+          } else {
+            if(!grp->remove(_node)) {
+              m_insh.warn(s_header+" remove in group failed");
+              return;
+            }
+            //::printf("debug : delete node of class %s\n",sclass.c_str());
+            delete _node;
+          }
+        }
+      }
+      return;
+    }
+  }
+  static const std::string& _scene_remove_nodes_help() {
+    static const std::string s_help("\
+scene_remove_nodes: scene_remove_nodes [-class]\n\
+  If -class=string, remove nodes of the given class name in the scene.\n\
+  Example:\n\
+    scene_remove_nodes -class=inlib::sg::cube\n\
+");
+    return s_help;
+  }
+
+  void _style_print_colormaps(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_style_print_colormaps :");
+    // first round trip to get item string sizes :
+    size_t sindex_size = 0;
+    size_t sname_size = 0;
+  //size_t scolor_size = 0;
+    std::string _s;
+   {inlib_mforcit(std::string,style_colormap,styles().cmaps(),it) {
+      inlib_mforcit(unsigned int,style_color,(*it).second,itc) {
+        unsigned int index = (*itc).first;
+        num2s(index,_s);
+        sindex_size = mx(sindex_size,_s.size());
+
+        const std::string& name = (*itc).second.first;
+        sname_size = mx(sname_size,name.size());
+        /*
+        const colorf& _color = (*itc).second.second;
+        _s .clear();
+        numas(_color.r(),_s);
+        _s += " ";
+        numas(_color.g(),_s);
+        _s += " ";
+        numas(_color.b(),_s);
+        _s += " ";
+        numas(_color.a(),_s);
+        scolor_size = mx(scolor_size,_s.size());
+        */
+      }
+    }}
+    // print :
+    m_insh.out_begin();
+   {inlib_mforcit(std::string,style_colormap,styles().cmaps(),it) {
+      m_insh.out((*it).first+" :",true);
+      inlib_mforcit(unsigned int,style_color,(*it).second,itc) {
+        unsigned int index = (*itc).first;
+        num2s(index,_s);
+        justify(_s,sindex_size,side_left);
+        m_insh.out("  "+_s,true,false);
+
+        std::string name = (*itc).second.first;
+        justify(name,sname_size,side_left);
+        m_insh.out(" "+name,true,false);
+
+        const colorf& _color = (*itc).second.second;
+        _s .clear();
+        numas(_color.r(),_s);
+        _s += " ";
+        numas(_color.g(),_s);
+        _s += " ";
+        numas(_color.b(),_s);
+        _s += " ";
+        numas(_color.a(),_s);
+        m_insh.out(" "+_s,true,true);
+      }
+    }}
+  }
+
+  static const std::string& _style_print_colormaps_help() {
+    static const std::string s_help("\
+style_print_colormaps: style_print_colormaps\n\
+  Print the known colormaps.\n\
+");
+    return s_help;
+  }
+
+
+  void _open(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_open :");
+    args _args(a_args);
+    std::string file;
+    if(!_args.first_not_hyphen(file)) {
+      m_insh.warn(s_header+" no output file given.");
+      return;
+    }
+    _args.remove(file);
+    if(_args.is_arg("-doc_res")) {
+      std::string path;
+      if(!find_doc_res_file(file,path)) {
+        m_insh.warn(s_header+" file "+inlib::sout(file)+" not found in doc and res dirs.");
+        return;
+      }
+      file = path;
+      _args.remove("-doc_res");
+    } else if(_args.is_arg("-doc")) {
+      std::string path;
+      if(!find_doc_file(file,path)) {
+        m_insh.warn(s_header+" file "+inlib::sout(file)+" not found in doc dir.");
+        return;
+      }
+      file = path;
+      _args.remove("-doc");
+    } else if(_args.is_arg("-res")) {
+      std::string path;
+      if(!find_res_file(file,path)) {
+        m_insh.warn(s_header+" file "+inlib::sout(file)+" not found in res dir.");
+        return;
+      }
+      file = path;
+      _args.remove("-res");
+    }
+    bool done;
+    if(!opener().open(file,file::s_format_guessed(),_args,done)) {
+      m_insh.warn(s_header+" opener.open() failed for "+inlib::sout(file)+".");
+      return;
+    }
+    if(!done) {
+      //gui_text(const std::vector<std::string>& a_data);
+      m_insh.warn(s_header+" app opener can't open "+inlib::sout(file)+".");
+      return;
+    }
+  }
+  static const std::string& _open_help() {
+    static const std::string s_help("\
+open: open [-doc,-res,-doc_res] path\n\
+  Attempt to open a file. The known file types depend of the \"openers\" declared to the app.\n\
+  If no directory is given in path, the -doc_res option permits to search a file first\n\
+  in the document directory declared to the app, and then in the app (internal) resource directory.\n\
+  -res for the resource directory only, -doc for the document directory only.\n\
+  See also:\n\
+    app_dir -res\n\
+    app_dir -doc.\n\
+");
+    return s_help;
+  }
+
+  void _openers(const std::vector<std::string>& a_args) {
+    args _args(a_args);
+    std::vector<std::string> vs;
+    if(_args.is_arg("-exts")) {
+      inlib_vforcit(std::string,m_opener.exts(),it) {vs.push_back(*it);}
+    } else {
+      inlib_vforcit(opener::named_opener_t,m_opener.openers(),it) {vs.push_back((*it).first);}
+    }
+    m_insh.out_begin();
+    m_insh.out(vs,true);
+  }
+  static const std::string& _openers_help() {
+    static const std::string s_help("\
+openers: openers [-exts]\n\
+  List operners known by the application. -exts permits to list the known file extensions.\n\
+");
+    return s_help;
+  }
+
+  bool _camera_yaw(const std::vector<std::string>& a_args) {
+    if((a_args.size()!=1)&&(a_args.size()!=2)) {
+      m_insh.warn("inlib::sg::gui_viewer::_camera_yaw : one or two argument expected");
+      return true;
+    }
+    float angle;
+    if((a_args.size()==1)) {
+      if(!m_insh.get_arg_float("inlib::sg;:gui_viewer::_camera_yaw",a_args[0],angle)) return true;
+    } else { //two args.
+      if(!m_insh.get_arg_float("inlib::sg;:gui_viewer::_camera_yaw",a_args[1],angle)) return true;
+      if((a_args[0]!="-deg")&&(a_args[0]!="-degree")) {
+        m_insh.warn("inlib::sg::gui_viewer::_camera_yaw : -deg or -degree exepected for first argument.");
+        return false;
+      }
+      angle *= fdeg2rad();
+    }
+    if(!m_scene_camera) return false;
+    m_scene_camera->rotate_around_up(angle);
+    _set_params_camera();
+  //m_scene_camera->rotate_around_x(da);
+  //m_scene_camera->translate_along_side(dx);
+  //m_scene_camera->translate_along_up(dx);
+  //m_scene_camera->translate_along_dir(dx);
+  //m_scene_camera->rotate_around_y_at_focal(-da);
+  //m_scene_camera->rotate_around_x_at_focal(-da);
+    return true;
+  }
+  bool _camera_pitch(const std::vector<std::string>& a_args) {
+    if((a_args.size()!=1)&&(a_args.size()!=2)) {
+      m_insh.warn("inlib::sg::gui_viewer::_camera_pitch : one or two argument expected");
+      return true;
+    }
+    float angle;
+    if((a_args.size()==1)) {
+      if(!m_insh.get_arg_float("inlib::sg;:gui_viewer::_camera_pitch",a_args[0],angle)) return true;
+    } else { //two args.
+      if(!m_insh.get_arg_float("inlib::sg;:gui_viewer::_camera_pitch",a_args[1],angle)) return true;
+      if((a_args[0]!="-deg")&&(a_args[0]!="-degree")) {
+        m_insh.warn("inlib::sg::gui_viewer::_camera_pitch : -deg or -degree exepected for first argument.");
+        return false;
+      }
+      angle *= fdeg2rad();
+    }
+    if(!m_scene_camera) return false;
+    m_scene_camera->rotate_around_x(angle);
+    _set_params_camera();
+    return true;
+  }
+  bool _camera_roll(const std::vector<std::string>& a_args) {
+    if((a_args.size()!=1)&&(a_args.size()!=2)) {
+      m_insh.warn("inlib::sg::gui_viewer::_camera_roll : one or two argument expected");
+      return true;
+    }
+    float angle;
+    if((a_args.size()==1)) {
+      if(!m_insh.get_arg_float("inlib::sg;:gui_viewer::_camera_roll",a_args[0],angle)) return true;
+    } else { //two args.
+      if(!m_insh.get_arg_float("inlib::sg;:gui_viewer::_camera_roll",a_args[1],angle)) return true;
+      if((a_args[0]!="-deg")&&(a_args[0]!="-degree")) {
+        m_insh.warn("inlib::sg::gui_viewer::_camera_roll : -deg or -degree exepected for first argument.");
+        return false;
+      }
+      angle *= fdeg2rad();
+    }
+    if(!m_scene_camera) return false;
+    m_scene_camera->rotate_around_direction(-angle);
+    _set_params_camera();
     return true;
   }
 
-#define DISPATCH_COMMAND(a__name) \
-    if(a_cmd==#a__name) {\
-      a__name();\
-      return true;\
-    }
-    
-  virtual bool insh_dispatch(const std::string& a_cmd,const std::vector<std::string>& a_args) {
-    DISPATCH_COMMAND(adapt_camera_to_scene)
-    DISPATCH_COMMAND(swap_camera_kind)
-    DISPATCH_COMMAND(hide_console)
-    DISPATCH_COMMAND(show_console)
-    DISPATCH_COMMAND(hide_main_menu)
-    DISPATCH_COMMAND(show_main_menu)
-    DISPATCH_COMMAND(hide_camera_menu)
-    DISPATCH_COMMAND(show_camera_menu)
-    DISPATCH_COMMAND(clear_scene)
-    DISPATCH_COMMAND(push_home)
-    DISPATCH_COMMAND(push_back_item)
-
-    if(a_cmd=="open_res") {
-      if(a_args.size()==1) {
-        std::string path = res_dir()+sep()+a_args[0];
-        bool done;
-        if(!opener().open(path,file::s_format_guessed(),args(),done)) {
-          m_out << "inlib::sg::gui_viewer::insh_exec : opener.open() failed for " << sout(path) << "." << std::endl;
-          set_to_exit();
-	}
+  bool _camera_rotate(const std::vector<std::string>& a_args) {
+    base_camera* _cam = scene_camera();
+    if(!_cam) return false;
+    inlib::args args(a_args);
+    float angle;
+    args.find("-angle",angle,0.0f);
+    if(args.is_arg("-deg")||args.is_arg("-degree")) angle *= fdeg2rad();
+    bool at_focal = args.is_arg("-at_focal");
+    if(args.is_arg("-x")) {
+      if(at_focal) {
+        _cam->rotate_around_x_at_focal(angle);
       } else {
-        m_out << "inlib::sg::gui_viewer::insh_exec : command " << sout(a_cmd) << " expects one orgument." << std::endl;
-	set_to_exit();
+        _cam->rotate_around_x(angle);
       }
-      return true;      
-    }
-
-    if(a_cmd=="open") {
-      if(a_args.size()==1) {
-        const std::string& path = a_args[0];
-        bool done;
-        if(!opener().open(path,file::s_format_guessed(),args(),done)) {
-          m_out << "inlib::sg::gui_viewer::insh_exec : opener.open() failed for " << sout(path) << "." << std::endl;
-          set_to_exit();
-	}
+    } else if(args.is_arg("-y")) {
+      if(at_focal) {
+        _cam->rotate_around_y_at_focal(angle);
       } else {
-        m_out << "inlib::sg::gui_viewer::insh_exec : command " << sout(a_cmd) << " expects one orgument." << std::endl;
-        set_to_exit();
+        _cam->rotate_around_up(angle);
       }
-      return true;
-    }
-    
-    if(a_cmd=="light_on") {
-      set_scene_light_on(true);
-      return true;      
-    }
-
-    if(a_cmd=="light_off") {
-      set_scene_light_on(false);
-      return true;
-    }
-
-    if(a_cmd=="camera_rotate_around_y_half_pi") {
-      base_camera* _cam = scene_camera();
-      if(_cam) _cam->rotate_around_y_at_focal(fhalf_pi());
-      return true;      
-    }
-
-    if(a_cmd=="camera_rotate_around_y_minus_half_pi") {
-      base_camera* _cam = scene_camera();
-      if(_cam) _cam->rotate_around_y_at_focal(-fhalf_pi());
-      return true;      
-    }
-
-    if(a_cmd=="camera_rotate_around_y_fourth_pi") {
-      base_camera* _cam = scene_camera();
-      if(_cam) _cam->rotate_around_y_at_focal(fhalf_pi()*0.5f);
-      return true;      
-    }
-
-
-    if(a_cmd=="camera_zoom") {
-      if(a_args.size()==1) {
-        const std::string& arg_0 = a_args[0];
-        float factor;
-	if(!to(arg_0,factor)) {
-          m_out << "inlib::sg::gui_viewer::insh_exec : for command " << sout(a_cmd)
-	        << ", first argument " << sout(arg_0) << " is not a float." << std::endl;
-          set_to_exit();
-	} else {
-	  if(factor<=0) {
-            m_out << "inlib::sg::gui_viewer::insh_exec : for command " << sout(a_cmd)
-                  << ", first argument " << sout(arg_0) << " must be >0." << std::endl;
-            set_to_exit();
-	  } else {
-            //  factor = 0.99f is a zoom in
-            //  factor = 1.01f is a zoom out
-            base_camera* _cam = scene_camera();
-            if(_cam) _cam->zoom(factor);
-          }
-	}
+    } else if(args.is_arg("-z")) {
+      if(at_focal) {
+        _cam->rotate_around_z_at_focal(angle);
       } else {
-        m_out << "inlib::sg::gui_viewer::insh_exec : command " << sout(a_cmd) << " expects one orgument." << std::endl;
-        set_to_exit();
+        _cam->rotate_around_z(angle);
       }
-      return true;      
+    } else {
+      m_insh.warn("inlib::sg::gui_viewer::_camera_rotate : -x or -y or -z expected.");
+      return false;
     }
-
-    //0.1 is more close than 0.2.
-   {for(unsigned int index=1;index<=9;index++) {
-      std::string sindex;
-      if(!num2s(index,sindex)){}
-      if(a_cmd=="camera_zoom_0_"+sindex) {
-        base_camera* _cam = scene_camera();
-        if(_cam) _cam->zoom(0.1f*index);
-        return true;      
-      }
-    }}
-    
-    return false;
+    set_scene_camera(_cam);
+    return true;
+  }
+  static const std::string& _camera_rotate_help() {
+    static const std::string s_help("\
+camera_rotate: camera_rotate [-x,-y,-z] [-at_focal] [-deg,-degree] [-angle=angle]\n\
+  Rotate the camera around an axis of the given angle.\n\
+  If -deg or -degree is specified, the angle is in degree (default is then radian).\n\
+  If -at_focal is given, the center of rotation if the focal point, else\n\
+  it is the current camera position.\n\
+  -x or -y or -z specifies the axis of rotation (one must be specified).\n\
+  The frame follows the usual OpenGL convention : x axis points to the right,\n\
+  y axis points to the up direction and the z axis is pointing off the screen.\n\
+  Example:\n\
+    camera_rotate -z -deg -angle=-20  # to roll by -20 degrees.\n\
+");
+    return s_help;
   }
 
-#undef DISPATCH_COMMAND
+  void _count_points() {
+    count_action ca(m_out);
+    m_scene->bbox(ca);
+    m_insh.out_begin();
+    std::string _s;
+    num2s(ca.number_of_points(),_s);
+    m_insh.out(_s);
+  }
+
+
+#define INLIB_INSH_CAMERA_SET(a__field)\
+  void _camera_set_##a__field(const std::vector<std::string>& a_args) {\
+    static const std::string s_header("inlib::sg::gui_viewer::_camera_set_"+std::string(#a__field)+" :");\
+    if(a_args.size()!=1) {\
+      m_insh.warn(s_header+" one argument expected");\
+      return;\
+    }\
+    float _value;\
+    if(!insh().get_arg_float(s_header,a_args[0],_value)) return;\
+    base_camera* _cam = scene_camera();\
+    if(!_cam) return;\
+    _cam->a__field = _value;\
+    set_scene_camera(_cam);\
+  }
+  INLIB_INSH_CAMERA_SET(znear)
+  INLIB_INSH_CAMERA_SET(zfar)
+  INLIB_INSH_CAMERA_SET(focal)
+  INLIB_INSH_CAMERA_SET(da)
+  INLIB_INSH_CAMERA_SET(dx)
+  INLIB_INSH_CAMERA_SET(ds)
+
+#undef INLIB_INSH_CAMERA_SET
+
+  void _camera_set_orientation(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_camera_set_orientation :");
+    base_camera* _cam = scene_camera();
+    if(!_cam) return;
+    if(a_args.size()!=4) {
+      m_insh.warn(s_header+" three argument expected");
+      return;
+    }
+    float x;
+    if(!insh().get_arg_float(s_header,a_args[0],x)) return;
+    float y;
+    if(!insh().get_arg_float(s_header,a_args[1],y)) return;
+    float z;
+    if(!insh().get_arg_float(s_header,a_args[2],z)) return;
+    float angle;
+    if(!insh().get_arg_float(s_header,a_args[3],angle)) return;
+    _cam->orientation = rotf(vec3f(x,y,z),angle);
+    set_scene_camera(_cam);
+  }
+  static const std::string& _camera_set_orientation_help() {
+    static const std::string s_help("\
+camera_set_orientation: camera_set_orientation x y z angle\n\
+  Set camera.orientation = rotf(vec3f(x,y,z),angle).\n\
+");
+    return s_help;
+  }
+
+  void _camera_set_position(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_camera_set_position :");
+    if(a_args.size()!=3) {
+      m_insh.warn(s_header+" three argument expected");
+      return;
+    }
+    float tx;
+    if(!insh().get_arg_float(s_header,a_args[0],tx)) return;
+    float ty;
+    if(!insh().get_arg_float(s_header,a_args[1],ty)) return;
+    float tz;
+    if(!insh().get_arg_float(s_header,a_args[2],tz)) return;
+    base_camera* _cam = scene_camera();
+    if(!_cam) return;
+    _cam->position = vec3f(tx,ty,tz);
+    set_scene_camera(_cam);
+  }
+  static const std::string& _camera_set_position_help() {
+    static const std::string s_help("\
+camera_set_position: camera_set_position x y z\n\
+  Set camera.position to be x,y,z.\n\
+  Example:\n\
+    camera_set_position 0 0 10\n\
+");
+    return s_help;
+  }
+
+  void _camera_translate_position(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_camera_translate_position :");
+    if(a_args.size()!=3) {
+      m_insh.warn(s_header+" three argument expected");
+      return;
+    }
+    float tx;
+    if(!insh().get_arg_float(s_header,a_args[0],tx)) return;
+    float ty;
+    if(!insh().get_arg_float(s_header,a_args[1],ty)) return;
+    float tz;
+    if(!insh().get_arg_float(s_header,a_args[2],tz)) return;
+    base_camera* _cam = scene_camera();
+    if(!_cam) return;
+    _cam->position += vec3f(tx,ty,tz);
+    set_scene_camera(_cam);
+  }
+  static const std::string& _camera_translate_position_help() {
+    static const std::string s_help("\
+camera_translate_position: camera_translate_position x y z\n\
+  Translate the camera.position by x,y,z.\n\
+  Example:\n\
+    camera_translate_position 10 20 30\n\
+");
+    return s_help;
+  }
+
+  void _camera_zoom(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_camera_zoom :");
+    if(a_args.size()!=1) {
+      m_insh.warn(s_header+" one argument expected");
+      return;
+    }
+    float factor;
+    if(!insh().get_arg_float(s_header,a_args[0],factor)) return;
+    if(factor<=0) {
+      m_insh.warn(s_header+" first argument "+sout(a_args[0])+" must be >0.");
+      return;
+    }
+    //  factor = 0.99f is a zoom in
+    //  factor = 1.01f is a zoom out
+    base_camera* _cam = scene_camera();
+    if(!_cam) return;
+    _cam->zoom(factor);
+    set_scene_camera(_cam);
+  }
+  static const std::string& _camera_zoom_help() {
+    static const std::string s_help("\
+camera_zoom: camera_zoom factor\n\
+  Zoom in or out camera.\n\
+  Example:\n\
+    camera_zoom 0.99  # is a zoom in.\n\
+    camera_zoom 1.01  # is a zoom out.\n\
+");
+    return s_help;
+  }
+
+  void _camera_start_anim(const std::vector<std::string>& a_args) {
+    if((a_args.size()!=1)&&(a_args.size()!=2)) {
+      m_insh.warn("inlib::sg::gui_viewer::_camera_start_anim : one or two argument expected");
+      return;
+    }
+    std::string smove = a_args[0];
+    if(a_args.size()==2) smove = a_args[1];
+    move_type _move;
+    if(!smove_type(smove,_move)) {
+      m_insh.warn("inlib::sg::gui_viewer::_camera_start_anim : "+sout(smove)+" is not a move_type.");
+      return;
+    }
+    unsigned int cycle_secs = 10; //idem m_params.m_cycle_secs default.
+    if(a_args.size()==2) {
+      std::string opt,value;
+      if(!cmd_arg(a_args[0],opt,value)) {
+        m_insh.warn("inlib::sg::gui_viewer::_camera_start_anim : "+sout(a_args[0])+" is not -<string>=<string>.");
+        return;
+      }
+      if(opt!="cycle_secs") {
+        m_insh.warn("inlib::sg::gui_viewer::_camera_start_anim : "+sout(opt)+" is an unknow option.");
+        return;
+      }
+      if(!m_insh.get_arg_uint("inlib::sg;:gui_viewer::_camera_start_anim",value,cycle_secs)) return;
+    }
+    start_cam_move(_move,cycle_secs);
+  }
+  static const std::string& _camera_start_anim_help() {
+    static const std::string s_help("\
+camera_start_anim: camera_start_anim [-cycle_secs=secs] anim\n\
+  Start a camera animation. The anim argument could be :\n\
+    move_rotate_right\n\
+    move_rotate_left\n\
+    move_rotate_up\n\
+    move_rotate_down\n\
+    move_roll_plus\n\
+    move_roll_minus\n\
+    move_translate_right\n\
+    move_translate_left\n\
+    move_up\n\
+    move_down\n\
+    move_forward\n\
+    move_backward\n\
+    move_zoom_in\n\
+    move_zoom_out\n\
+    move_rotate_around_focal_right\n\
+    move_rotate_around_focal_left\n\
+    move_rotate_around_focal_up\n\
+    move_rotate_around_focal_down\n\
+    move_roll_around_focal_plus\n\
+    move_roll_around_focal_minus\n\
+    move_zoom_in_out\n\
+    move_zoom_in_out_rot\n\
+    move_curve\n\
+  For move_zoom_in_out, move_zoom_in_out_rot and move_curve, the -cycle_secs option\n\
+  permits to set the cycle time in seconds (it is 10 secs by default).\n\
+  Use camera_stop_anim to stop the animation.\n\
+");
+    return s_help;
+  }
+
+  void _show_console(const std::vector<std::string>& a_args) {
+    std::string sa;
+    conc(a_args," ",sa);
+    show_console(sa);
+  }
+
+  void _set_console_layout(const std::vector<std::string>& a_args) {
+    if(a_args.empty()) {
+      set_console_size();
+      return;
+    }
+    args _args(a_args);
+    bool changed = false;
+   {float value;
+    if(_args.find("-width",value)) {
+      if(value!=m_params.m_console_width) {
+        m_params.m_console_width = value;
+        if(m_params.m_console_width<=0) m_params.m_console_width = 0.3F;
+        changed = true;
+      }
+    }}
+   {float value;
+    if(_args.find("-height",value)) {
+      if(value!=m_params.m_console_height) {
+        m_params.m_console_height = value;
+        if(m_params.m_console_height<=0) m_params.m_console_height = 0.05F;
+        changed = true;
+      }
+    }}
+   {float value;
+    if(_args.find("-scale",value)) {
+      if(value!=m_params.m_console_scale) {
+        m_params.m_console_scale = value;
+        if(m_params.m_console_scale<=0) m_params.m_console_scale = 1;
+        changed = true;
+      }
+    }}
+    if(changed) set_console_layout();
+  }
+  static const std::string& _set_console_layout_help() {
+    static const std::string s_help("\
+gui_set_console_layout: gui_set_console_layout [width] [height] [scale]\n\
+  Set the console width and/or height. -scale can set an extra scaling factor.\n\
+  Width and height are in normal window coordinates (in [0,1]).\n\
+  Example:\n\
+    gui_set_console_layout -width=0.5 -height=0.06 -scale=1.2\n\
+    gui_set_console_layout -width=0.5  # half window width.\n\
+    gui_set_console_layout -scale=2\n\
+    gui_set_console_layout  # reset default layout (width=0.3, height=0.05, scale=1) \n\
+");
+    return s_help;
+  }
+
+  void _app_dir(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_app_dir :");
+    if(a_args.empty()) {
+      m_insh.out_begin();
+      m_insh.out(m_res_dir,true);
+      m_insh.out(m_doc_dir,true);
+      m_insh.out(m_out_dir,true);
+      m_insh.out(m_start_dir,true);
+      m_insh.out(m_tmp_dir,true);
+      return;
+    }
+    const std::string& arg0 = a_args[0];
+    if(arg0=="-res") {
+      m_insh.out(m_res_dir);
+      return;
+    }
+    if(arg0=="-doc") {
+      m_insh.out(m_doc_dir);
+      return;
+    }
+    if(arg0=="-out") {
+      m_insh.out(m_out_dir);
+      return;
+    }
+    if(arg0=="-start") {
+      m_insh.out(m_start_dir);
+      return;
+    }
+    if(arg0=="-tmp") {
+      m_insh.out(m_tmp_dir);
+      return;
+    }
+    m_insh.warn(s_header+" unknown option "+sout(arg0)+".");
+  }
+  static const std::string& _app_dir_help() {
+    static const std::string s_help("\
+app_dir: app_dir [-res,-doc,-out,-tmp,-start]\n\
+  Print the application [resource,document,output,startup,temporary] directory.\n\
+  If no option given, print all of them in this order.\n\
+  Example:\n\
+    app_dir\n\
+    app_dir -res.\n\
+");
+    return s_help;
+  }
+
+  void _app_color_value(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_app_color_value :");
+    inlib::args _args(a_args);
+    std::string scolor;
+    if(!_args.first_not_hyphen(scolor)) {
+      m_insh.warn(s_header+" no color given.");
+      return;
+    }
+    colorf _value;
+    if(!find_color(m_styles.cmaps(),scolor,_value)) {
+      m_insh.warn(s_header+" "+sout(scolor)+" is not a color.");
+      return;
+    }
+    if(_args.is_arg("-r")) {
+      std::string _s;
+      num2s(_value.r(),_s);
+      m_insh.out(_s);
+      return;
+    }
+    if(_args.is_arg("-g")) {
+      std::string _s;
+      num2s(_value.g(),_s);
+      m_insh.out(_s);
+      return;
+    }
+    if(_args.is_arg("-b")) {
+      std::string _s;
+      num2s(_value.b(),_s);
+      m_insh.out(_s);
+      return;
+    }
+    if(_args.is_arg("-a")) {
+      std::string _s;
+      num2s(_value.a(),_s);
+      m_insh.out(_s);
+      return;
+    }
+    if(_args.is_arg("-rgb")) {
+      std::string _s;
+      numas(_value.r(),_s);
+      _s += " ";
+      numas(_value.g(),_s);
+      _s += " ";
+      numas(_value.b(),_s);
+      m_insh.out(_s);
+      return;
+    }
+    std::string _s;
+    numas(_value.r(),_s);
+    _s += " ";
+    numas(_value.g(),_s);
+    _s += " ";
+    numas(_value.b(),_s);
+    _s += " ";
+    numas(_value.a(),_s);
+    m_insh.out(_s);
+  }
+  static const std::string& _app_color_value_help() {
+    static const std::string s_help("\
+app_color_value: app_color_value [-r,-g,-b,-a,-rgba] colorname\n\
+  Print the rgba of a color given its name.\n\
+  -r to print only the red value (in [0,1]).\n\
+  -g to print only the green value (in [0,1]).\n\
+  -b to print only the blue value (in [0,1]).\n\
+  -a to print only the alpha value (in [0,1]).\n\
+  -rgb to print only red, green, blue.\n\
+  Example:\n\
+    app_color_value red\n\
+    app_color_value -r red\n\
+    app_color_value -rgb red\n\
+");
+    return s_help;
+  }
+
+public:
+  static bool _write_scene_to_paper(gui_viewer& a_gv,const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::_write_scene_to_paper :");
+    inlib::args _args(a_args);
+    std::string path;
+    if(_args.is_arg("-out_dir")) {
+      if(a_gv.out_dir().empty()) {
+        a_gv.insh().warn(s_header+" out_dir() is empty.");
+        return false;
+      }
+      if(!check_dir(a_gv.out(),a_gv.out_dir())) {
+        a_gv.insh().warn(s_header+" can't get out_dir.");
+        return false;
+      }
+      path = a_gv.out_dir()+sep();
+    }
+    std::string file;
+    if(!_args.first_not_hyphen(file)) {
+      a_gv.insh().warn(s_header+" no output file given.");
+      return false;
+    }
+    path += file;
+    std::string format;
+    _args.find("-format",format,"guessed");
+    if(format=="guessed") {
+      if(!inlib::file::extension_paper_format(path,format)) {
+        a_gv.insh().warn(s_header+" can't guess format from extension of "+inlib::sout(path)+".");
+        return false;
+      }
+    } else {
+      if(!inlib::file::is_paper_format(format)) {
+        a_gv.insh().warn(s_header+" unknown format "+inlib::sout(format)+".");
+        return false;
+      }
+    }
+    unsigned int scale;
+    _args.find<unsigned int>("-scale",scale,1);
+    if(!a_gv.write_scene_to_paper(path,format,scale)) {
+      a_gv.insh().warn(s_header+" write_scene_to_paper() failed for format "+inlib::sout(format)+".");
+      return false;
+    }
+    if(_args.is_arg("-show_console")) a_gv.show_console(path+" produced.");
+    return true;
+  }
+  static const std::string& _scene_write_to_paper_help() {
+    static const std::string s_help("\
+scene_write_to_paper: scene_write_to_paper [-out_dir] [-scale] [-format] [-show_console] file\n\
+  Produce an output file from the current scene.\n\
+  -out_dir permits to write the file in the output directory of the application.\n\
+  -scale permits to scale the viewport; it allows to have a better rendering for freetype fonts.\n\
+  -show_console prints the name of the output file in the console.\n\
+  -format permits to choose the output format and the tool to produce the file.\n\
+  If 'guessed', which is the default, the format is choosen/deduced from the file extension.\n\
+  For example for out.png, the format will be inzb_png.\n\
+  The known formats are:\n\
+    inzb_[ps,png,jpeg] : pixmap of the scene is put in a PostScript, png or jpeg file\n\
+  by using the inlib::sg::zb_action.\n\
+    gl2ps_[eps,ps,pdf,svg,tex,pdg] : primitives of the scene (vector graphices) is put in an\n\
+  encapsulated PostScript, PostScript, PDF, SVG, LaTeX or PDG file by using gl2ps.\n\
+  If 'guessed' is used as format, then according to the file extension, the tool used is:\n\
+    .ps, .eps: inzb_ps\n\
+    .png : inzb_png\n\
+    .jpg, .jpeg: inzb_jpeg\n\
+    .pdf, .svg, .pgf, .tex: gl2ps_[pdf,svg,pgf,tex]\n\
+  Example:\n\
+    scene_write_to_paper out.jpeg  # produce a out.jpeg file in current directory by using inzb_jpeg.\n\
+    scene_write_to_paper -out_dir -format=inzb_png -scale=2 out.png\n\
+    scene_write_to_paper -format=gl2ps_pdf out.pdf\n\
+    scene_write_to_paper -format=guessed -show_console out.pgf\n\
+  See also:\n\
+    app_out_dir\n\
+");
+    return s_help;
+  }
+
+  static bool _node_to_bsg(gui_viewer& a_gv,const std::vector<std::string>& a_args,node& a_node) { //used also in exlib/cbk/out.
+    static const std::string s_header("inlib::sg::gui_viewer::_node_to_bsg :");
+    inlib::args _args(a_args);
+    std::string path;
+    if(_args.is_arg("-out_dir")) {
+      if(a_gv.out_dir().empty()) {
+        a_gv.insh().warn(s_header+" out_dir() is empty.");
+        return false;
+      }
+      if(!check_dir(a_gv.out(),a_gv.out_dir())) {
+        a_gv.insh().warn(s_header+" can't get out_dir.");
+        return false;
+      }
+      path = a_gv.out_dir()+sep();
+    }
+    std::string file;
+    if(!_args.first_not_hyphen(file)) {
+      a_gv.insh().warn(s_header+" no output file given.");
+      return false;
+    }
+    path += file;
+  //if(_args.is_arg("-exsg")) write_exsg _action(a_gv.out());
+    write_bsg _action(a_gv.out());
+    if(!_action.open_buffer()) {
+      a_gv.insh().warn(s_header+" open_buffer() failed.");
+      return false;
+    }
+    if(!a_node.write(_action)) {
+      a_gv.insh().warn(s_header+" write() failed.");
+      return false;
+    }
+    if(!_action.close_buffer()) {
+      a_gv.insh().warn(s_header+" close_buffer() failed.");
+      return false;
+    }
+    if(!_action.write_file(path)) {
+      a_gv.insh().warn(s_header+" write_file() failed.");
+      return false;
+    }
+    a_gv.show_console(path+" produced.");
+    return true;
+  }
+  static const std::string& _scene_write_to_bsg_help() {
+    static const std::string s_help("\
+scene_write_to_bsg: scene_write_to_bsg [-out_dir] file\n\
+  Write the scene scene graph to a bsg (binary file format) file.\n\
+  If no directory is given in file, the -out_dir option permits to prepend the\n\
+  application output directory to file.\n\
+  See also: app_dir -out_dir\n\
+  Example:\n\
+    scene_write_to_bsg -out_dir my_scene.bsg\n\
+");
+    return s_help;
+  }
+
+  static void setup_anims(std::ostream& a_out,node& a_from,float a_time_min,float a_time_max,float a_delay,bool a_end_begin) {
+    search_action sa(a_out);
+    typedef search_action::path_t path_t;
+    const std::vector<path_t>& paths = find_paths(sa,a_from,slice_anim::s_class());
+    inlib_vforcit(path_t,paths,it) {
+      const path_t& p = *it;
+      node* _node = p.size()?p[p.size()-1]:0;
+      if(!_node) continue;
+      slice_anim* _anim = safe_cast<node,slice_anim>(*_node);
+      if(!_anim) continue;
+      _anim->time_min = a_time_min;
+      _anim->time_max = a_time_max;
+      _anim->delay = a_delay;
+      _anim->end_begin = a_end_begin;
+      _anim->set_start(atime::now());
+      //::printf("debug : start anim %lu\n",_anim);
+    }
+  }
+
+#define INLIB_GUI_VIEWER__GET_ARG_FLOAT(a__variable)\
+   {std::string svalue;\
+    if(_args.find(std::string("-")+#a__variable,svalue)) {\
+      float _value;\
+      if(!inlib::to<float>(svalue,_value)) {\
+        m_insh.warn(s_header+" : "+svalue+" is not a float.");\
+        return;\
+      }\
+      a__variable  = _value;\
+    }}
+
+//#define INLIB_GUI_VIEWER__GET_ARG_DOUBLE(a__variable)\
+//   {std::string svalue;\
+//    if(_args.find(std::string("-")+#a__variable,svalue)) {\
+//      double _value;\
+//      if(!inlib::to<double>(svalue,_value)) {\
+//        m_insh.warn(s_header+" : "+svalue+" is not a double.");\
+//        return;\
+//      }\
+//      a__variable  = _value;\
+//    }}
+
+#define INLIB_GUI_VIEWER__GET_ARG_BOOL(a__variable)\
+   {std::string svalue;\
+    if(_args.find(std::string("-")+#a__variable,svalue)) {\
+      bool _value;\
+      if(!inlib::to(svalue,_value)) {\
+        m_insh.warn(s_header+" : "+svalue+" is not a bool.");\
+        return;\
+      }\
+      a__variable  = _value;\
+    }}
+
+  void scene_start_anim(const std::vector<std::string>& a_args) {
+    static const std::string s_header("inlib::sg::gui_viewer::scene_start_anim :");
+    args _args(a_args);
+    float time_min = FLT_MAX;
+    INLIB_GUI_VIEWER__GET_ARG_FLOAT(time_min)
+    float time_max = FLT_MIN;
+    INLIB_GUI_VIEWER__GET_ARG_FLOAT(time_max)
+    float delay = 0;
+    INLIB_GUI_VIEWER__GET_ARG_FLOAT(delay)
+    bool end_begin = false;
+    INLIB_GUI_VIEWER__GET_ARG_BOOL(end_begin)
+    setup_anims(m_out,scene(),time_min,time_max,delay,end_begin);
+    enable_anim();
+  }
+#undef INLIB_GUI_VIEWER__GET_ARG_DOUBLE
+#undef INLIB_GUI_VIEWER__GET_ARG_BOOL
+
+  static const std::string& scene_start_anim_help() {
+    static const std::string s_help("\
+scene_start_anim: scene_start_anim [-tim_min,-time_max,-delay,-end_begin]\n\
+  Start scene animation. It operates on all nodes in the scene inheriting sg::slice_anim\n\
+  as xyzt_anim, cone_anim, show_time_anim.\n\
+  -time_min=real event time start (in app specific unit).\n\
+  -time_max=real event time end (in app specific unit).\n\
+  -delay=real user elapsed time of the anim in secs.\n\
+  -end_begin=bool if true, start again at end (default is false).\n\
+  Example:\n\
+    scene_start_anim -tim_min=0 -time_max=20 -delay=10\n\
+");
+    return s_help;
+  }
+
+private:
+  INLIB_INSH_CLASS_CMD(gui_viewer,camera_rotate,m_holder._camera_rotate(a_args),_camera_rotate_help())
+  INLIB_INSH_CLASS_CMD(gui_viewer,camera_yaw,m_holder._camera_yaw(a_args),"camera_yaw: camera_yaw [-deg,-degree] value\n  Rotate the camera around the up axis.\n  If specifying -deg or -degree, the value is taken in degrees.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,camera_pitch,m_holder._camera_pitch(a_args),"camera_pitch: camera_pitch [-deg,-degree] value\n  Rotate the camera around the left-right/x axis.\n  If specifying -deg or -degree, the value is taken in degrees.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,camera_roll,m_holder._camera_roll(a_args),"camera_roll: camera_roll [-deg,-degree] value\n  Rotate the camera around the direction of view axis.\n  If specifying -deg or -degree, the value is taken in degrees.\n")
+
+  INLIB_INSH_CLASS_CMD(gui_viewer,scene_write_to_paper,_write_scene_to_paper(m_holder,a_args),_scene_write_to_paper_help())
+  INLIB_INSH_CLASS_CMD(gui_viewer,scene_write_to_bsg,_node_to_bsg(m_holder,a_args,m_holder.scene()),_scene_write_to_bsg_help())
+  INLIB_INSH_CLASS_CMD(gui_viewer,scene_count_points,m_holder._count_points(),"scene_count_points: scene_count_points\n Count number of points in the scene.\n")
+//INLIB_INSH_CLASS_CMD(gui_viewer,scene_clear,m_holder.clear_scene(),insh::no_help())
+
+  INLIB_INSH_CLASS_CMD(gui_viewer,event_stop_anim,m_holder.stop_event_anim(),"event_stop_anim: event_stop_anim\n  Stop the looping on events animation.\n")
+
+  INLIB_INSH_CLASS_CMD(gui_viewer,scene_light_on,m_holder.set_scene_light_on(true),"scene_light_on: scene_light_on\n  Switch on the overall light.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,scene_light_off,m_holder.set_scene_light_on(false),"scene_light_off: scene_light_off\n  Switch off the overall light.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,scene_blend_on,m_holder.set_scene_blend_on(true),"scene_blend_on: scene_blend_on\n  Switch on the overall blending (and then transparency).\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,scene_blend_off,m_holder.set_scene_blend_on(false),"scene_blend_off: scene_blend_off\n  Switch off the overall blending (and then transparency).\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,scene_smooth_on,m_holder.set_scene_smooth_on(true),"scene_smooth_on: scene_smooth_on\n  Switch the overall shade model to smooth.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,scene_smooth_off,m_holder.set_scene_smooth_on(false),"scene_smooth_off: scene_smooth_off\n  Switch the overall shade model to flat.\n")
+
+  INLIB_INSH_CLASS_CMD(gui_viewer,window_render,m_holder.win_render(),"window_render: window_render\n  Enforce an immediate rendering of the window.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,window_to_png,action_window_to_png(m_holder,a_args),_window_to_png_help())
+  INLIB_INSH_CLASS_CMD(gui_viewer,window_to_jpeg,action_window_to_jpeg(m_holder,a_args),_window_to_jpeg_help())
+
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_hide_console,m_holder.hide_console(),"gui_hide_console: gui_hide_console\n  Hide the upper left console text.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_hide_main_menu,m_holder.hide_main_menu(),"gui_hide_main_menu: gui_hide_main_menu\n  Hide the main menu and show the scene.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_show_main_menu,m_holder.show_main_menu(),"gui_show_main_menu: gui_show_main_menu\n  Show the main menu.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_hide_camera_menu,m_holder.hide_camera_menu(),"gui_hide_camera_menu: gui_hide_camera_menu\n  Hide the camera menu items.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_show_camera_menu,m_holder.show_camera_menu(),"gui_show_camera_menu: gui_show_camera_menu\n  Show the camera menu items.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_push_home,m_holder.push_home(),"gui_push_home: gui_push_home\n  Show the top list items in the main menu.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_push_back_item,m_holder.push_back_item(),"gui_push_back_item: gui_push_back_item\n  If being in a submenu of the main menu, return to the parent menu.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_hide_meta_zone,m_holder.hide_meta_zone(),"gui_hide_meta_zone: gui_hide_meta_zone\n  Hide the light blue area at the bottom of the window that permits to switch between scene mode and main menu mode.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_set_viewing_mode,m_holder.set_param_viewing(true),"gui_set_viewing_mode: gui_set_viewing_mode\n  When in scene mode, pass the cursor/touching in viewing mode.\n  It permits to move the camera with the mouse/touches.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_set_picking_mode,m_holder.set_param_viewing(false),"gui_set_picking_mode: gui_set_picking_mode\n  When in scene mode, pass the cursor/touching in picking mode.\n  It permits to pick an object and have a contextual popup on it.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_set_to_exit,m_holder.set_to_exit(),"gui_set_to_exit: gui_set_to_exit\n  Raise the application exit flag.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_text,m_holder.gui_text(a_args),"gui_text: gui_text [strings]\n  Show strings in a text widget.\n  gui_text line_1 line_2 line_3\n  gui_show_main_menu\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_scroll_text,m_holder.gui_scroll_text(a_args),"gui_scroll_text: gui_scroll_text [strings]\n  Show strings in a scrolling text widget.\n  gui_scroll_text line_1 line_2 line_3 line_4 line_5 line_6\n  gui_show_main_menu\n")
+
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_enable_anim,m_holder.enable_anim(),"gui_enable_anim: gui_enable_anim\n  Enable animations.\n")
+  INLIB_INSH_CLASS_CMD(gui_viewer,gui_disable_anim,m_holder.disable_anim(),"gui_disable_anim: gui_disable_anim\n  Disable animations.\n")
+
+  INLIB_INSH_CLASS_CMD(gui_viewer,sys_home_dir,{std::string s;dir::home(s);m_holder.insh().out(s);},sys_home_dir_help())
+  INLIB_INSH_CLASS_CMD(gui_viewer,sys_file_sep,m_holder.insh().out(sep()),sys_file_sep_help())
+  INLIB_INSH_CLASS_CMD(gui_viewer,sys_path_sep,m_holder.insh().out(psep()),sys_path_sep_help())
+  INLIB_INSH_CLASS_CMD(gui_viewer,ls,inlib::insh_ls(m_holder.insh(),a_args),inlib::insh_ls_help())
+  INLIB_INSH_CLASS_CMD(gui_viewer,tput,inlib::insh_tput(m_holder.m_insh,a_args),inlib::insh_tput_help())
+
+  void insh_add_cmds() {
+  //INLIB_GUI_VIEWER_ADD_BOOL_VOID_CMD(camera_adapt_to_scene,adapt_camera_to_scene,insh::no_help)
+    INLIB_GUI_VIEWER_ADD_BOOL_VOID_CMD_HELP(camera_view_all,adapt_camera_to_scene,"camera_view_all: camera_view_all\n  Arrange the camera so that all the scene elements are viewed.\n")
+    INLIB_GUI_VIEWER_ADD_VOID_VOID_CMD_HELP(camera_reset,reset_camera,"camera_reset: camera_reset\n  Reset camera parameters.\n  It is usefull if being lost in space.\n")
+    INLIB_GUI_VIEWER_ADD_BOOL_VOID_CMD_HELP(camera_swap_kind,swap_camera_kind,"camera_swap_kind: camera_swap_kind\n  Swap camera between ortho and perspective.\n")
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(camera_start_anim,_camera_start_anim,_camera_start_anim_help)
+    INLIB_GUI_VIEWER_ADD_VOID_VOID_CMD_HELP(camera_stop_anim,stop_cam_anim,"camera_stop_anim: camera_stop_anim,\n  If any on, stop a camera animation.\n")
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(camera_translate_position,_camera_translate_position,_camera_translate_position_help)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(camera_set_position,_camera_set_position,_camera_set_position_help)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(camera_set_orientation,_camera_set_orientation,_camera_set_orientation_help)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(camera_zoom,_camera_zoom,_camera_zoom_help)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(camera_set_znear,_camera_set_znear,"camera_set_znear: camera_set_znear value\n  Set the camera znear (default 1).\n  znear is the distance toward the forward cut plan.\n")
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(camera_set_zfar,_camera_set_zfar,"camera_set_zfar: camera_set_zfar value\n  Set the camera zfar (default 10).\n  zfar is the distance toward the backward cut plan.\n")
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(camera_set_focal,_camera_set_focal,"camera_set_focal: camera_set_focal value\n  Set the camera focal length (default 1).\n")
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(camera_set_da,_camera_set_da,"camera_set_da: camera_set_da value\n  Set the rotation step factor in radians (default 0.017).\n")
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(camera_set_dx,_camera_set_dx,"camera_set_dx: camera_set_dx value\n  Set the translation step factor (default 0.01).\n")
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD_HELP(camera_set_ds,_camera_set_ds,"camera_set_ds: camera_set_ds value\n  Set the zoom step factor (default 0.99).\n")
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(gui_set_console_layout,_set_console_layout,_set_console_layout_help)
+
+    INLIB_INSH_ADD_CMD(m_insh,*this,camera_rotate)
+    INLIB_INSH_ADD_CMD(m_insh,*this,camera_yaw)
+    INLIB_INSH_ADD_CMD(m_insh,*this,camera_pitch)
+    INLIB_INSH_ADD_CMD(m_insh,*this,camera_roll)
+
+    INLIB_INSH_ADD_CMD(m_insh,*this,window_render)
+    INLIB_INSH_ADD_CMD(m_insh,*this,window_to_png)
+    INLIB_INSH_ADD_CMD(m_insh,*this,window_to_jpeg)
+
+    INLIB_INSH_ADD_CMD(m_insh,*this,scene_light_on)
+    INLIB_INSH_ADD_CMD(m_insh,*this,scene_light_off)
+    INLIB_INSH_ADD_CMD(m_insh,*this,scene_blend_on)
+    INLIB_INSH_ADD_CMD(m_insh,*this,scene_blend_off)
+    INLIB_INSH_ADD_CMD(m_insh,*this,scene_smooth_on)
+    INLIB_INSH_ADD_CMD(m_insh,*this,scene_smooth_off)
+    INLIB_INSH_ADD_CMD(m_insh,*this,scene_write_to_paper)
+    INLIB_INSH_ADD_CMD(m_insh,*this,scene_write_to_bsg)
+  //INLIB_INSH_ADD_CMD(m_insh,*this,clear_scene)
+    INLIB_INSH_ADD_CMD(m_insh,*this,scene_count_points)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(scene_set_clear_color,_scene_set_clear_color,_scene_set_clear_color_help)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(scene_bounding_box,_scene_bounding_box,_scene_bounding_box_help)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(scene_remove_nodes,_scene_remove_nodes,_scene_remove_nodes_help)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(scene_start_anim,scene_start_anim,scene_start_anim_help)
+
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(style_print_colormaps,_style_print_colormaps,_style_print_colormaps_help)
+
+    INLIB_INSH_ADD_CMD(m_insh,*this,event_stop_anim)
+
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_hide_console)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_hide_main_menu)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_show_main_menu)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_hide_camera_menu)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_show_camera_menu)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_push_home)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_push_back_item)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_hide_meta_zone)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_text)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_scroll_text)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_set_viewing_mode)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_set_picking_mode)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_set_to_exit)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(gui_show_console,_show_console,"gui_show_console: gui_show_console\n  Show the upper left console text.\n")
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(gui_exec_main_menu_item,_exec_menu_item,_exec_menu_item_help)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_enable_anim)
+    INLIB_INSH_ADD_CMD(m_insh,*this,gui_disable_anim)
+
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(app_open,_open,_open_help)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(app_openers,_openers,_openers_help)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(app_dir,_app_dir,_app_dir_help)
+    INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD(app_color_value,_app_color_value,_app_color_value_help)
+
+    INLIB_INSH_ADD_CMD(m_insh,*this,sys_home_dir)
+    INLIB_INSH_ADD_CMD(m_insh,*this,sys_file_sep)
+    INLIB_INSH_ADD_CMD(m_insh,*this,sys_path_sep)
+    INLIB_INSH_ADD_CMD(m_insh,*this,ls)
+    INLIB_INSH_ADD_CMD(m_insh,*this,tput)
+  }
+
+#undef INLIB_GUI_VIEWER_ADD_VOID_ARGS_CMD
+#undef INLIB_GUI_VIEWER_ADD_BOOL_VOID_CMD
+#undef INLIB_GUI_VIEWER_ADD_VOID_VOID_CMD
+
+protected:
+  class gui_insh : public insh {
+    typedef insh parent;
+  public:
+    virtual void map_warn(const std::string& a_msg,bool a_warn = true) {m_gv.map_warn(a_msg,a_warn);}
+  public:
+    gui_insh(gui_viewer& a_gv):parent(a_gv.out()),m_gv(a_gv) {}
+    virtual ~gui_insh() {}
+  public:
+    gui_insh(const gui_insh& a_from):parent(a_from),m_gv(a_from.m_gv) {}
+    gui_insh& operator=(const gui_insh& a_from) {parent::operator=(a_from);return *this;}
+  protected:
+    gui_viewer& m_gv;
+  };
 
 protected:
 
@@ -4879,13 +6100,29 @@ protected:
     ptrs_t::const_iterator it;
     for(it=objs.begin();it!=objs.end();++it) {
       if(a_node==(*it)) return true;
-    }    
-    return false;    
+    }
+    return false;
+  }
+protected:
+  bool touch_direction(int& a_x,int& a_y) {
+    size_t num_touch = 4;
+    if(m_touches.size()<num_touch) {a_x = 0;a_y = 0;return false;}
+    size_t ibeg = m_touches.size()-num_touch;
+    size_t iend = m_touches.size()-1;
+    int beg_x = m_touches[ibeg].first;
+    int beg_y = m_touches[ibeg].second;
+    int end_x = m_touches[iend].first;
+    int end_y = m_touches[iend].second;
+    a_x = end_x-beg_x;
+    a_y = end_y-beg_y;
+    return true;
   }
 protected:
   render_manager& m_render_manager;
   const base_freetype& m_ttf;
   sg::zb_manager m_zb_mgr; //sg is needed.
+  sg::gl2ps_manager m_gl2ps_mgr;
+  mem_manager m_mem_mgr;
 
 private:
   selection* m_scene;
@@ -4895,6 +6132,8 @@ protected:
   base_camera* m_scene_camera;
   node* m_reset_camera;
   torche* m_scene_light;
+  blend* m_scene_blend;
+  shade_model* m_scene_shade_model;
 
 private:
   selection* m_gui;
@@ -4906,15 +6145,29 @@ protected:
   _switch m_camenu_switch;
   separator m_camenu_sep;
 
-  text_button m_camenu_shift_button;
+  text_button m_camenu_anim_mode_button;
   image_button m_camenu_sshoot_image_button;
   text_button m_camenu_sshoot_text_button;
   image_button m_camenu_90_image_button;
   text_button m_camenu_90_text_button;
-  text_button m_camenu_focal_button;  
-  text_button m_camenu_viewing_button;  
-  text_button m_camenu_gsto_button;  
+  text_button m_camenu_focal_button;
+  text_button m_camenu_viewing_button;
   text_button m_camenu_plane_exam_button;
+
+  image_button m_camenu_gsto_image_button;
+  text_button m_camenu_gsto_text_button;
+
+  image_button m_camenu_light_image_button;
+  text_button m_camenu_light_text_button;
+
+  image_button m_camenu_blend_image_button;
+  text_button m_camenu_blend_text_button;
+
+  image_button m_camenu_smooth_image_button;
+  text_button m_camenu_smooth_text_button;
+
+  image_button m_camenu_disable_anim_image_button;
+  text_button m_camenu_disable_anim_text_button;
 
   _switch m_gui_sliders_switch;
   _switch m_sliders_switch;
@@ -4946,12 +6199,14 @@ protected:
 
   std::vector<base_button*> m_tab_buttons;
   int m_tab_current; //could be (-1)
- 
+
   std::vector<base_button*> m_arm_buttons;
 
   bool m_touch_in_motion; // X11, Android :
   int m_touch_prev_x;
   int m_touch_prev_y;
+  typedef std::pair<int,int> one_touch;
+  std::vector<one_touch> m_touches;
 
   unsigned int m_gesture_begin_x;
   unsigned int m_gesture_begin_y;
@@ -4959,7 +6214,7 @@ protected:
 
   slider* m_motion_slider;
 
-  bool m_treat_mouse_motion;
+  //bool m_treat_mouse_motion;
 
   //wall :
   separator m_cursor;
@@ -4970,15 +6225,20 @@ protected:
   bool m_memory_warning;
   group m_tmp_group; //to deposit sg::holder to data.
 
-  action_prots_t m_action_prots;
+  //action_prots_t m_action_prots;
   //end wall.
 
-  dumpers_t m_dumpers;  
+  dumpers_t m_dumpers;
   inlib::opener m_opener; //inlib:: needed.
   image::readers m_image_readers;
+  png_writer m_png_writer;
+  jpeg_writer m_jpeg_writer;
 
   bool m_vr_mode;
   args m_argcv;
+
+  gui_insh m_insh;
+  sg::object_manager m_object_manager; //for histos created with insh commands.
 };
 
 inline gui_viewer* cast_gui_viewer(viewer& a_viewer) {
@@ -5018,7 +6278,6 @@ template <class FUNC>
 inline void add_item_before(gui_viewer& a_gv,list& a_widget,const std::string& a_before,const std::string& a_label,FUNC a_func) {
   a_widget.add_before(a_before,a_label,new fundata_cbk<gui_viewer,list,pos_data>(a_gv,a_widget,a_func,pos_data(false,0,0)));
 }
-
 
 template <class FUNC,class DATA>
 inline void add_image_item(gui_viewer& a_gv,list& a_widget,const std::string& a_label,const std::string& a_img_file,
@@ -5116,6 +6375,77 @@ inline void add_white_item(gui_viewer& a_gv,list& a_widget,const std::string& a_
   add_white_item<FUNC,pos_data>(a_gv,a_widget,a_label,a_func,pos_data(false,0,0));
 }
 
+/////////////////////////////////////////////////////////////////////////////
+/// insh : //////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
+inline void add_item_insh(gui_viewer& a_gv,ilist& a_widget,const std::string& a_label,const std::string& a_script) {
+  add_item(a_gv,a_widget,a_label,gui_viewer::action_insh_source_script,a_script);
+}
+inline void add_image_item_insh(gui_viewer& a_gv,list& a_widget,const std::string& a_label,const std::string& a_img_file,const std::string& a_script) {
+  add_image_item(a_gv,a_widget,a_label,a_img_file,gui_viewer::action_insh_source_script,a_script);
+}
+
+inline void add_white_item_insh(gui_viewer& a_gv,list& a_widget,const std::string& a_label,const std::string& a_script) {
+  add_image_item_insh(a_gv,a_widget,a_label,s_white_jpg(),a_script);
+}
+
+inline void add_image_item_insh_before(gui_viewer& a_gv,list& a_widget,const std::string& a_before,
+                                  const std::string& a_label,const std::string& a_img_file,const std::string& a_script) {
+  add_image_item_before(a_gv,a_widget,a_before,a_label,a_img_file,gui_viewer::action_insh_source_script,a_script);
+}
+
+inline void add_image_item_insh_after(gui_viewer& a_gv,list& a_widget,const std::string& a_before,
+                                  const std::string& a_label,const std::string& a_img_file,const std::string& a_script) {
+  add_image_item_after(a_gv,a_widget,a_before,a_label,a_img_file,gui_viewer::action_insh_source_script,a_script);
+}
+inline void add_image_item_insh_at_top(gui_viewer& a_gv,list& a_widget,
+                                  const std::string& a_label,const std::string& a_img_file,const std::string& a_script) {
+  add_image_item_at_top(a_gv,a_widget,a_label,a_img_file,gui_viewer::action_insh_source_script,a_script);
+}
+
+
+inline void create_main_button_insh(gui_viewer& a_gv,
+                                    float a_wcw,float a_wch,float a_wb,float a_hb,float a_roffset,
+                                    unsigned int a_col,unsigned int a_row,
+                                    const std::string& a_label,const std::string& a_img_label,const std::string& a_img,
+                                    const std::string& a_script) {
+  create_main_button(a_gv.out(),a_gv.res_dir(),a_gv.m_params,a_gv.image_readers(),a_gv.ttf(),
+                     a_gv.camenu_sep(),a_wcw,a_wch,a_wb,a_hb,a_roffset,a_col,a_row,
+                     a_label,a_img_label,a_img,
+                     new gv_data_cbk<std::string>(a_gv,gui_viewer::action_insh_source_script,a_script));
+}
+
+inline void create_main_button_insh(gui_viewer& a_gv,
+                                    float a_wcw,float a_wch,float a_wb,float a_hb,float a_roffset,
+                                    unsigned int a_col,unsigned int a_row,
+                                    image_button& a_img_button,text_button& a_button,
+                                    const std::string& a_label,const std::string& a_img,
+                                    const std::string& a_script) {
+  create_main_button(a_gv.out(),a_gv.res_dir(),a_gv.m_params,a_gv.image_readers(),
+                     a_gv.camenu_sep(),a_wcw,a_wch,a_wb,a_hb,a_roffset,a_col,a_row,
+                     a_img_button,a_button,a_label,a_img,
+                     new gv_data_cbk<std::string>(a_gv,gui_viewer::action_insh_source_script,a_script));
+}
+
+inline void gui_push_list_insh(gui_viewer& a_gv,const std::vector<std::string>& a_text){
+  if(a_text.empty()) {
+    a_gv.map_warn_empty();
+    return;
+  }
+  size_t nitem = a_text.size()/2;
+  if(nitem*2!=a_text.size()) {
+    a_gv.map_warn("even number of arguments expected.");
+    return;
+  }
+  list* _list = new list(a_gv.ttf());
+  a_gv.set_style(*_list);
+  for(size_t index=0;index<nitem;index++) {
+    add_white_item_insh(a_gv,*_list,a_text[2*index+0],a_text[2*index+1]);
+  }
+  a_gv.push_list(_list);
+}
+
 }}
 
 /////////////////////////////////////////////////////////////////////////////
@@ -5149,6 +6479,7 @@ inline return_action action_##a__method(gui_viewer& a_gv) {\
 
 ACTION_GV_NONE(set_to_exit)
 ACTION_GV_NONE(clear_caches)
+ACTION_GV_NONE(clear_doc_dir)
 ACTION_GV_NONE(stop_event_anim)
 
 ACTION_GV_RENDER(clear_scene)
@@ -5156,6 +6487,7 @@ ACTION_GV_RENDER(console_mag_two)
 ACTION_GV_RENDER(adapt_camera_to_scene)
 ACTION_GV_RENDER(toggle_gsto)
 ACTION_GV_RENDER(toggle_light)
+ACTION_GV_RENDER(toggle_blend)
 
 ACTION_GV_HIDE_MAIN_MENU(reset_camera)
 ACTION_GV_HIDE_MAIN_MENU(start_anim_around_focal)
@@ -5168,17 +6500,7 @@ ACTION_GV_HIDE_MAIN_MENU(disable_anim)
 #undef ACTION_GV_HIDE_MAIN_MENU
 
 inline return_action action_about(gui_viewer& a_gv,const std::vector<std::string>& a_data) {
-
-  sg::text* text = new sg::text(a_gv.ttf());
-  a_gv.set_style(*text);
-
-  text->strings = a_data;
-
-  text->confine = true;
-  text->hjust = sg::center;
-
-  a_gv.push_list(text);
-
+  a_gv.gui_text(a_data);
   return return_to_render;
 }
 
@@ -5189,27 +6511,27 @@ inline return_action action_infos(gui_viewer& a_gv) {
   text.push_back(" ");
   text.push_back("data_dirs :");
   append(text,a_gv.data_dirs());
-  
+
   text.push_back(" ");
   text.push_back("res_dir :");
   text.push_back(a_gv.res_dir());
-  
+
   text.push_back(" ");
   text.push_back("out_dir :");
   text.push_back(a_gv.out_dir());
-  
+
   text.push_back(" ");
   text.push_back("tmp_dir :");
   text.push_back(a_gv.tmp_dir());
-  
+
   text.push_back(" ");
-  text.push_back("pwd :");
-  text.push_back(a_gv.pwd());
-  
+  text.push_back("start dir :");
+  text.push_back(a_gv.start_dir());
+
   text.push_back(" ");
   text.push_back("home :");
   text.push_back(dir::home());
-  
+
   text.push_back(" ");
   text.push_back("sizeof(void*) :");
   text.push_back(to(int(sizeof(void*))));
@@ -5221,42 +6543,40 @@ inline return_action action_infos(gui_viewer& a_gv) {
   text.push_back(" ");
   text.push_back("little endian :");
   text.push_back(to(is_little_endian()));
-  
+
   a_gv.gui_text(text);
 */
 
   sg::list* list = new sg::list(a_gv.ttf());
   a_gv.set_style(*list);
 
- {std::string _s("data : ");
-  std::string fdir;
-  a_gv.first_data_dir(fdir);
-  _s += fdir;
+ {std::string _s("doc : ");
+  _s += a_gv.doc_dir();
   add_item(a_gv,*list,_s,action_none);}
-  
+
 // too long !
 //   {std::string _s("res : ");
 //    _s += a_gv.res_dir();
 //    add_item(a_gv,*list,_s,action_none);}
-  
+
  {std::string _s("out : ");
   _s += a_gv.out_dir();
   add_item(a_gv,*list,_s,action_none);}
-  
+
  {std::string _s("tmp : ");
   _s += a_gv.tmp_dir();
   add_item(a_gv,*list,_s,action_none);}
-  
- {std::string _s("pwd : ");
-  _s += a_gv.pwd();
+
+ {std::string _s("start : ");
+  _s += a_gv.start_dir();
   add_item(a_gv,*list,_s,action_none);}
-  
+
  {std::string _s("home : ");
   std::string sh;
   dir::home(sh);
   _s += sh;
   add_item(a_gv,*list,_s,action_none);}
-  
+
  {std::string _s("void* : ");
   if(!numas<uint32>(sizeof(void*),_s)){}
   add_item(a_gv,*list,_s,action_none);}
@@ -5276,16 +6596,16 @@ inline return_action action_infos(gui_viewer& a_gv) {
  {std::vector<std::string> _v;
   a_gv.gl_infos(_v);
   inlib_vforcit(std::string,_v,it) add_item(a_gv,*list,*it,action_none);}
-  
+
   a_gv.push_list(list);
-    
-  return return_to_render;     
+
+  return return_to_render;
 }
 
 inline return_action action_set_console(gui_viewer& a_gv,keyboard& a_widget) {
   a_gv.hide_main_menu();
   a_gv.show_console(a_widget.value.value());
-  return return_to_render;     
+  return return_to_render;
 }
 
 inline return_action action_console(gui_viewer& a_gv) {
@@ -5293,13 +6613,13 @@ inline return_action action_console(gui_viewer& a_gv) {
   a_gv.set_style(*node);
   add_callback(a_gv,*node,action_set_console);
   a_gv.push_list(node);
-  return return_to_render;     
+  return return_to_render;
 }
 
 inline return_action action_show_styles(gui_viewer& a_gv) {
   std::vector<std::string> ltext;
   std::vector<std::string> rtext;
-  
+
  {typedef xml::styles::style_t style_t;
   typedef xml::styles::named_style_t named_style_t;
   const std::vector<named_style_t>& nstys = a_gv.styles().named_styles();
@@ -5324,14 +6644,14 @@ inline return_action action_show_styles(gui_viewer& a_gv) {
     }
   }}
 
-  a_gv.gui_text(ltext,rtext);
+  a_gv.gui_scroll_infos(ltext,rtext);
   return return_to_render;
 }
 
 inline return_action action_utils(gui_viewer& a_gv) {
   sg::list* list = new sg::list(a_gv.ttf());
   a_gv.set_style(*list);
-  
+
   sg::add_white_item(a_gv,*list,"clear cache",action_clear_caches);
   sg::add_white_item(a_gv,*list,"remove manips",action_remove_manips);
   sg::add_white_item(a_gv,*list,"disable anim",action_disable_anim);
@@ -5340,10 +6660,11 @@ inline return_action action_utils(gui_viewer& a_gv) {
   sg::add_image_item(a_gv,*list,"set console","console.jpg",action_console);
   sg::add_image_item(a_gv,*list,"infos","routing_step.jpg",action_infos);
   sg::add_white_item(a_gv,*list,"styles",action_show_styles);
+  sg::add_white_item(a_gv,*list,"clear doc dir",action_clear_doc_dir);
 
   a_gv.push_list(list);
-    
-  return return_to_render;     
+
+  return return_to_render;
 }
 
 inline return_action action_open_open_panel(gui_viewer& a_gv,const pos_data& a_data) {
@@ -5358,7 +6679,11 @@ inline return_action action_open_open_panel(gui_viewer& a_gv,const pos_data& a_d
     _args.add(sg::s_ey(),sv);}
 
     bool done;
-    a_gv.opener().open(path,file::s_format_guessed(),_args,done);
+    if(a_gv.opener().open(path,file::s_format_guessed(),_args,done)) {
+      if(!done) {
+        a_gv.warn("don't know how to open "+path);
+      }
+    }
   }
   return return_to_render;
 }
@@ -5372,7 +6697,9 @@ inline return_action action_toggle_camera_menu_at_pos(gui_viewer& a_gv,const pos
 INLIB_GLOBAL_STRING(files)
 INLIB_GLOBAL_STRING(export)
 INLIB_GLOBAL_STRING(ftp)
-INLIB_GLOBAL_STRING(wall)
+//INLIB_GLOBAL_STRING(wall)
+INLIB_GLOBAL_STRING(to_serv)
+INLIB_GLOBAL_STRING(sg_serv)
 
 }}
 
@@ -5403,6 +6730,7 @@ inline base_camera* astro_pimg_camera(gui_viewer& a_gv,double a_sky_radius) {
   //float near_height = 2 * znear * ftan(angle*0.5F);
   float near_height = 5;
   base_camera* camera = a_gv.create_camera(camera_ortho,near_height,znear);
+  if(!camera) return 0;
   camera->zfar = float(10*a_sky_radius);
   //camera->position = vec3f(0,0,-20); //at center of the sphere
   camera->position = vec3f(0,0,0); //at center of the sphere
@@ -5414,6 +6742,98 @@ inline base_camera* astro_pimg_camera(gui_viewer& a_gv,double a_sky_radius) {
   camera->da = 0.002f*fdeg2rad();
   return camera;
 }
+
+#define INLIB_GUI_VIEWER_GET_ARG_STRING(a__variable)\
+  INLIB_ISHELL_GET_ARG_STRING(_args,a__variable)
+
+#define INLIB_GUI_VIEWER_GET_ARG_FLOAT(a__where,a__variable,a__return)\
+  INLIB_ISHELL_GET_ARG_FLOAT(a_gv.insh(),_args,a__where,a__variable,a__return)
+
+#define INLIB_GUI_VIEWER_GET_ARG_DOUBLE(a__where,a__variable,a__return)\
+  INLIB_ISHELL_GET_ARG_DOUBLE(a_gv.insh(),_args,a__where,a__variable,a__return)
+
+#define INLIB_GUI_VIEWER_GET_ARG_UINT(a__where,a__variable,a__return)\
+  INLIB_ISHELL_GET_ARG_UINT(a_gv.insh(),_args,a__where,a__variable,a__return)
+
+#define INLIB_GUI_VIEWER_GET_ARG_BOOL(a__where,a__variable,a__return)\
+  INLIB_ISHELL_GET_ARG_BOOL(a_gv.insh(),_args,a__where,a__variable,a__return)
+
+#define INLIB_GUI_VIEWER_GET_ARG_COLOR(a__where,a__variable,a__return)\
+   {std::string svalue;\
+    std::string _key = std::string("-")+#a__variable;\
+    if(_args.find(_key,svalue)) {\
+      inlib::colorf _value;\
+      if(!inlib::sg::find_color(a_gv.styles().cmaps(),svalue,_value)) {\
+        a_gv.insh().warn(std::string(#a__where)+" : "+svalue+" is not a color.");\
+        return a__return;\
+      }\
+      a__variable  = _value;\
+      _args.remove(_key);\
+    }}
+
+#define INLIB_GUI_VIEWER_GET_ARG_GL_PRIM(a__where,a__variable,a__return)\
+   {std::string svalue;\
+    std::string _key = std::string("-")+#a__variable;\
+    if(_args.find(_key,svalue)) {\
+      inlib::gl::mode_t _value;\
+      if(!inlib::gl::s2glprim(svalue,_value)) {\
+        a_gv.insh().warn(std::string(#a__where)+" : "+svalue+" is not a gl primitive mode.");\
+        return a__return;\
+      }\
+      a__variable  = _value;\
+      _args.remove(_key);\
+    }}
+
+#define INLIB_GUI_VIEWER_GET_ARG_VEC3F(a__where,a__variable,a__return)\
+   {std::string svalue;\
+    std::string _key = std::string("-")+#a__variable;\
+    if(_args.find(_key,svalue)) {\
+      float x,y,z;\
+      if(!inlib::to_3(svalue,x,y,z)) {\
+        a_gv.insh().warn(std::string(#a__where)+" : "+svalue+" is not three floats.");\
+        return a__return;\
+      }\
+      a__variable.set_value(x,y,z);\
+      _args.remove(_key);\
+    }}
+
+#define INLIB_GUI_VIEWER_GET_ARG_VEC4F(a__where,a__variable,a__return)\
+   {std::string svalue;\
+    std::string _key = std::string("-")+#a__variable;\
+    if(_args.find(_key,svalue)) {\
+      float x,y,z,t;\
+      if(!inlib::to_4(svalue,x,y,z,t)) {\
+        a_gv.insh().warn(std::string(#a__where)+" : "+svalue+" is not four floats.");\
+        return a__return;\
+      }\
+      a__variable.set_value(x,y,z,t);\
+      _args.remove(_key);\
+    }}
+
+#define INLIB_GUI_VIEWER_GET_WIDGET_UINT(a__header,a__index,a__variable)\
+   {const std::string& svalue = a_widget.values[a__index];\
+    if(!inlib::to<unsigned int>(svalue,a__variable)) {\
+      a_gv.insh().warn(std::string(#a__header)+" : "+svalue+" is not a uint.");\
+      return inlib::sg::return_to_render;\
+    }}
+#define INLIB_GUI_VIEWER_GET_WIDGET_FLOAT(a__header,a__index,a__variable)\
+   {const std::string& svalue = a_widget.values[a__index];\
+    if(!inlib::to<float>(svalue,a__variable)) {\
+      a_gv.insh().warn(std::string(#a__header)+" : "+svalue+" is not a float.");\
+      return inlib::sg::return_to_render;\
+    }}
+#define INLIB_GUI_VIEWER_GET_WIDGET_DOUBLE(a__header,a__index,a__variable)\
+   {const std::string& svalue = a_widget.values[a__index];\
+    if(!inlib::to<double>(svalue,a__variable)) {\
+      a_gv.insh().warn(std::string(#a__header)+" : "+svalue+" is not a double.");\
+      return inlib::sg::return_to_render;\
+    }}
+#define INLIB_GUI_VIEWER_GET_WIDGET_BOOL(a__header,a__index,a__variable)\
+   {const std::string& svalue = a_widget.values[a__index];\
+    if(!inlib::to(svalue,a__variable)) {\
+      a_gv.insh().warn(std::string(#a__header)+" : "+svalue+" is not a bool.");\
+      return inlib::sg::return_to_render;\
+    }}
 
 }}
 

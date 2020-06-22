@@ -57,7 +57,7 @@ public:
   }
 public:
   //std::vector<srv> srvs() {return m_srvs;}
-  const std::vector<srv>& _srvs() const {return m_srvs;}  
+  const std::vector<srv>& _srvs() const {return m_srvs;}
   void add_srv(const std::string& a_name,const std::string& a_host,unsigned int a_port) {
     //look if already in the list :
     inlib_vforcit(srv,m_srvs,it) {
@@ -76,7 +76,7 @@ public:
       if(!num2s((*it).port(),stmp)) {}
       lines.push_back("    <port>"+stmp+"</port>");
       lines.push_back("  </srv>");
-    }    
+    }
     lines.push_back("</srvs>");
     return file::write(a_path,lines);
   }
@@ -86,19 +86,19 @@ public:
 
     const std::string& tag = a_tree.tag_name();
     if(tag=="srvs") {
-    } else if(tag=="srv") {   
+    } else if(tag=="srv") {
       load(a_tree);
     }
-  
+
     // scan children :
    {looper _for(a_tree);
     while(tree* _tree = _for.next_tree()) {
       if(!scan_tree(*_tree)) return false;
     }}
-  
+
     return true;
   }
-  
+
 protected:
   void load(const tree& a_tree) {
     std::string name;
@@ -116,7 +116,7 @@ protected:
         to<unsigned int>(_elem->value(),port,0);
       }
 
-    }}  
+    }}
 
     //NOTE : port can be 0 (for exa for the "local" srv).
     if(name.size() && host.size()) add_srv(name,host,port);

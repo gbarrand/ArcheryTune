@@ -29,33 +29,33 @@ public: //operators
                  m_data[1]*a_v,
                  m_data[2]*a_v,
                  m_data[3]*a_v);
-  }    
+  }
   vec4d operator+(const vec4d& a_v) const {
     return vec4d(m_data[0]+a_v.m_data[0],
                  m_data[1]+a_v.m_data[1],
                  m_data[2]+a_v.m_data[2],
                  m_data[3]+a_v.m_data[3]);
-  }    
+  }
   vec4d operator-(const vec4d& a_v) const {
     return vec4d(m_data[0]-a_v.m_data[0],
                  m_data[1]-a_v.m_data[1],
                  m_data[2]-a_v.m_data[2],
                  m_data[3]-a_v.m_data[3]);
-  }    
-  vec4d& operator+=(const vec4d& a_v) {   
+  }
+  vec4d& operator+=(const vec4d& a_v) {
     m_data[0] += a_v.m_data[0];
     m_data[1] += a_v.m_data[1];
     m_data[2] += a_v.m_data[2];
     m_data[3] += a_v.m_data[3];
     return *this;
-  }    
-  vec4d& operator*=(double a_v) {   
+  }
+  vec4d& operator*=(double a_v) {
     m_data[0] *= a_v;
     m_data[1] *= a_v;
     m_data[2] *= a_v;
     m_data[3] *= a_v;
     return *this;
-  }    
+  }
   vec4d operator-() const {
     return vec4d(-m_data[0],-m_data[1],-m_data[2],-m_data[3]);
   }
