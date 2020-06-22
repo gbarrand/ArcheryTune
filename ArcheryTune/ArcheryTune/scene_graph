@@ -142,8 +142,8 @@ inline void rep_rings(inlib::sg::group& a_parent,
   mat->color = inlib::colorf_black();
   _sep->add(mat);
   inlib::sg::draw_style* ds = new inlib::sg::draw_style;
-  ds->style = inlib::sg::draw_style::lines;
-  ds->line_width = a_is_wall_screen_app?5:1;
+  ds->style = inlib::sg::draw_lines;
+  ds->line_width = a_is_wall_screen_app?5.0f:1.0f;
   _sep->add(ds);
   inlib::sg::matrix* m = new inlib::sg::matrix;
   m->set_translate(0,0,z_borders());
@@ -168,8 +168,8 @@ inline void rep_rings(inlib::sg::group& a_parent,
     }
     _sep->add(mat);
     inlib::sg::draw_style* ds = new inlib::sg::draw_style;
-    ds->style = inlib::sg::draw_style::lines;
-    ds->line_width = a_is_wall_screen_app?5:1;
+    ds->style = inlib::sg::draw_lines;
+    ds->line_width = a_is_wall_screen_app?5.0f:1.0f;
     _sep->add(ds);
     inlib::sg::matrix* m = new inlib::sg::matrix;
     m->set_translate(0,0,z_borders());
@@ -210,8 +210,8 @@ inline void rep_rings(inlib::sg::group& a_parent,
   mat->color = inlib::colorf_black();
   _sep->add(mat);
   inlib::sg::draw_style* ds = new inlib::sg::draw_style;
-  ds->style = inlib::sg::draw_style::lines;
-  ds->line_width = a_is_wall_screen_app?5:1;
+  ds->style = inlib::sg::draw_lines;
+  ds->line_width = a_is_wall_screen_app?5.0f:1.0f;
   _sep->add(ds);
   inlib::sg::vertices* node = new inlib::sg::vertices;
   node->mode = inlib::gl::lines(); //segments
@@ -261,7 +261,7 @@ inline void rep_nature(std::ostream& a_out,
   inlib::sg::tex_rect* node = new inlib::sg::tex_rect();
   //tex_rect* node = new tex_rect(*mtx);
   node->img.value().set(w,h,bpp,buffer,true);
-  node->height = a_h;
+  node->height = float(a_h);
   node->expand = true;
   node->nearest = false; //to have antialiasing on texture.
 
@@ -409,7 +409,7 @@ inline void create_cursor_sg(inlib::sg::gui_viewer& a_gv,inlib::sg::separator& a
   sep->add(mat);
 
   inlib::sg::draw_style* ds = new inlib::sg::draw_style;
-  ds->style = inlib::sg::draw_style::lines;
+  ds->style = inlib::sg::draw_lines;
   ds->line_width = 2;
   sep->add(ds);
 
@@ -796,8 +796,8 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
     if(image.size()) {
       rep_nature(a_gv.out(),a_gv.res_dir(),*target_grp,image,h,a_gv.is_wall_screen_app());
     }
-    wta = h; //should use img aspect ratio.
-    hta = h;
+    wta = float(h); //should use img aspect ratio.
+    hta = float(h);
 
   } else {
     // unknown blason.
@@ -911,7 +911,7 @@ inline void create_scope_sg(inlib::sg::gui_viewer& a_gv,
 
   //vertical slider : distance :
  {inlib::sg::slider& sld = a_gv.slider_3();
-  sld.value = (a_dCible-a_slider_dist_min)/(a_slider_dist_max-a_slider_dist_min);
+  sld.value = float((a_dCible-a_slider_dist_min)/(a_slider_dist_max-a_slider_dist_min));
   sld.clear_cbks();
   sld.add_begin_callback(new inlib::sg::fundata_cbk<inlib::sg::gui_viewer,inlib::sg::slider,unsigned int>(a_gv,sld,action_slider,action_begin()));
   sld.add_drag_callback(new inlib::sg::fundata_cbk<inlib::sg::gui_viewer,inlib::sg::slider,unsigned int>(a_gv,sld,action_slider,action_drag()));
@@ -1087,8 +1087,8 @@ inline void create_ruler_sg(inlib::sg::gui_viewer& a_gv,const std::vector< std::
 #else
   _axis->modeling = inlib::sg::tick_modeling_hplot();
   _axis->divisions = ndiv;
-  _axis->minimum_value = inlib::mn(a_ticks.front().first,a_ticks.back().first);
-  _axis->maximum_value = inlib::mx(a_ticks.front().first,a_ticks.back().first);
+  _axis->minimum_value = float(inlib::mn(a_ticks.front().first,a_ticks.back().first));
+  _axis->maximum_value = float(inlib::mx(a_ticks.front().first,a_ticks.back().first));
   _axis->labels_enforced = true;
 #endif
   _axis->tick_length = dist_axes*0.5F;
@@ -1155,8 +1155,8 @@ inline void create_ruler_sg(inlib::sg::gui_viewer& a_gv,const std::vector< std::
   _axis->modeling = inlib::sg::tick_modeling_hplot();
   _axis->divisions = ndiv;
   //[min,max]imum_value same as first/left axis.
-  _axis->minimum_value = inlib::mn(a_ticks.front().first,a_ticks.back().first);
-  _axis->maximum_value = inlib::mx(a_ticks.front().first,a_ticks.back().first);
+  _axis->minimum_value = float(inlib::mn(a_ticks.front().first,a_ticks.back().first));
+  _axis->maximum_value = float(inlib::mx(a_ticks.front().first,a_ticks.back().first));
   _axis->labels_enforced = true;
 #endif
   _axis->tick_length = dist_axes*0.5F;
@@ -1216,7 +1216,7 @@ inline void create_sight_chart_sg(inlib::sg::gui_viewer& a_gv,
                                   double a_qpDegreeRef,double a_qpDegree,double a_v0,double a_auTomm,
                                   double a_xFmin,double a_xFmax,double a_xFstep,
                                   const std::string& a_infos = "") {
-  unsigned int ncase = (a_xFmax-a_xFmin)/a_xFstep;
+  unsigned int ncase = (unsigned int)((a_xFmax-a_xFmin)/a_xFstep);
   unsigned int ntick = ncase+1;
   typedef std::pair<double,double> item;
   std::vector<item> ticks;
