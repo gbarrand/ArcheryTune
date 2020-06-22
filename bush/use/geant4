@@ -42,23 +42,23 @@ if [ "${use_sys_geant4}" = "yes" ] ; then
     if [ "${G4INSTALL}" = "" ] ; then
       echo "bush/use/geant4 : G4INSTALL not defined. You have to source setup geant4."
       exit
-    fi  
+    fi
     if [ "${G4SYSTEM}" = "" ] ; then
       echo "bush/use/geant4 : G4SYSTEM not defined. You have to source setup geant4."
       exit
-    fi  
-  
+    fi
+
     if [ ! -d ${G4INSTALL}/include ] ; then
       echo "bush/use/geant4 : ${G4INSTALL}/include not found. geant4 not properly installed."
       exit
     fi
-  
+
     if [ ! -e ${G4INSTALL}/lib/${G4SYSTEM}/libG4processes.${shex} ] ; then
       echo "bush/use/geant4 : ${G4INSTALL}/lib/${G4SYSTEM}/libG4processes.${shex} not found."
       echo " geant4 not installed with global libs. Stop."
       exit
     fi
-  
+
     cppflags="${cppflags} -I${G4INSTALL}/include"
 
     geant4_cppflags="${geant4_cppflags} -I${G4INSTALL}/include"

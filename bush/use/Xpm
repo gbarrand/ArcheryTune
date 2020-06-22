@@ -9,7 +9,7 @@ if [ "${use_Xpm}" = "yes" ] ; then
 
   # WARNING : it must be consitent with X11. Else you may have at app startup :
   #             Error : Unresolved inheritance operation
-  
+
   #//////////////////////////////////////////////
   #//////////////////////////////////////////////
   #//////////////////////////////////////////////

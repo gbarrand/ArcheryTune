@@ -3,11 +3,15 @@
 
 if [ "${use_GL}" = "yes" ] ; then
   if [ ${build_visual} = "yes" ] ; then
-    libs="${libs} glu32.lib opengl32.lib"
+    libs="${libs} opengl32.lib"
+
   elif [ ${build_sdk_android} = "yes" ] ; then
-    echo 'bush/use/GL : done in build_plugin' > /dev/null
+    echo dummy > /dev/null
+
   else
     if [ `uname` = Darwin ] ; then
+      ccflags="${ccflags} -DGL_SILENCE_DEPRECATION"  # since 10.14 (Mojave). Sigh.
+      cppflags="${cppflags} -DGL_SILENCE_DEPRECATION"  # since 10.14 (Mojave). Sigh.
       if [ "${build_ios}" = "yes" -o "${build_ios_gnu}" = "yes" -o "${build_iossim}" = "yes" ] ; then
         libs="${libs} -framework OpenGLES"
       else
@@ -20,8 +24,6 @@ if [ "${use_GL}" = "yes" ] ; then
       . ${bush_home}/find_inc
 
       lib_dirs="/usr/${lib} /usr/lib/x86_64-linux-gnu"
-      lib_to_find=GLU
-      . ${bush_home}/find_lib
       lib_to_find=GL
       . ${bush_home}/find_lib
     fi

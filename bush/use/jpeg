@@ -36,7 +36,7 @@ if [ "${use_our_jpeg}" = "yes" ] ; then
     echo 'bush/use/jpeg : variable ourex_home not defined.';exit
   fi
   jpeg_home=${ourex_home}/jpeg
-  
+
   ccflags="${ccflags} -I${jpeg_home}/jpeg"
   cppflags="${cppflags} -I${jpeg_home}/jpeg"
   ourex_pack_name=jpeg

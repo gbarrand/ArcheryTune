@@ -41,10 +41,10 @@ if [ "${use_sys_hdf5}" = "yes" ] ; then
         echo "bush/use/hdf5 : use_archive requested but ${hdf5_sys_home}/libhdf5.a not found, try with -lhdf5."
         libs="${libs} -L${hdf5_sys_home}/lib -lhdf5"
       fi
-    else     
+    else
       libs="${libs} -L${hdf5_sys_home}/lib -lhdf5"
     fi
-   
+
   fi
 fi
 

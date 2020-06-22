@@ -11,7 +11,7 @@ else
 fi
 fi
 
-if [ "${use_sys_SOPHYA}" = "yes" ] ; then  
+if [ "${use_sys_SOPHYA}" = "yes" ] ; then
   if [ ${build_visual} = "yes" ] ; then
     echo "bush/use/SOPHYA : headers do not compile with cl.exe."
     exit
@@ -32,7 +32,7 @@ if [ "${use_sys_SOPHYA}" = "yes" ] ; then
   fi
 fi
 
-if [ "${use_our_SOPHYA}" = "yes" ] ; then  
+if [ "${use_our_SOPHYA}" = "yes" ] ; then
   if [ "${ourex_home}" = "" ] ; then
     echo 'bush/use/SOPHYA : variable ourex_home not defined.';exit
   fi

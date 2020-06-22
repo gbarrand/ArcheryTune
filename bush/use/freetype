@@ -12,7 +12,7 @@ fi
 fi
 
 if [ "${use_sys_freetype}" = "yes" ] ; then
-  if [ `uname` = Darwin ] ; then  
+  if [ `uname` = Darwin ] ; then
     if [ -d /usr/X11/include/freetype2  ] ; then
       cppflags="${cppflags} -I/usr/X11/include -I/usr/X11/include/freetype2"
       libs="${libs} -L/usr/X11/lib -lfreetype"
@@ -30,7 +30,7 @@ if [ "${use_our_freetype}" = "yes" ] ; then
     echo 'bush/use/freetype : variable ourex_home not defined.';exit
   fi
   freetype_home=${ourex_home}/freetype
-  
+
   ourex_pack_name=freetype
   . ${bush_home}/use/ourex_use
 fi

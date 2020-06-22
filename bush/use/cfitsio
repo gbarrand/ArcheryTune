@@ -29,7 +29,7 @@ if [ "${use_our_cfitsio}" = "yes" ] ; then
     echo 'bush/use/cfitsio : variable ourex_home not defined.';exit
   fi
   cfitsio_home=${ourex_home}/cfitsio
-  
+
   ourex_pack_name=cfitsio
   . ${bush_home}/use/ourex_use
   cppflags="${cppflags} -D_REENTRANT"

@@ -32,8 +32,8 @@ if [ "${use_sys_Python}" = "yes" ] ; then
   #/////////////////////////////////////////////////////////////
   #/////////////////////////////////////////////////////////////
   #/////////////////////////////////////////////////////////////
-  is_lx2=no
-  #if [ "`uname -n | grep lx2`" != "" ] ; then is_lx2=yes;fi
+  on_lx_lal=no
+  #if [ "`uname -n | grep lal.in2p3.fr | grep lx`" != "" ] ; then on_lx_lal=yes; fi
   #/////////////////////////////////////////////////////////////
   #/////////////////////////////////////////////////////////////
   #/////////////////////////////////////////////////////////////
@@ -43,14 +43,14 @@ if [ "${use_sys_Python}" = "yes" ] ; then
 
   if [ ${build_visual} = "yes" ] ; then
 
-    if [ -d "c:/usr/local/Python27" ] ; then
-      Python_home=c:/usr/local/Python27
+    if [ -d "${c_drive}/usr/local/Python27" ] ; then
+      Python_home=${c_drive}/usr/local/Python27
       cppflags="${cppflags} -I${Python_home}/include"
       libs="${libs} ${Python_home}/libs/python27.lib"
       py_exe="${Python_home}/python.exe"
 
-    elif [ -d "c:/Python27" ] ; then
-      Python_home=c:/Python27
+    elif [ -d "${c_drive}/Python27" ] ; then
+      Python_home=${c_drive}/Python27
       cppflags="${cppflags} -I${Python_home}/include"
       libs="${libs} ${Python_home}/libs/python27.lib"
       py_exe="${Python_home}/python.exe"
@@ -62,7 +62,7 @@ if [ "${use_sys_Python}" = "yes" ] ; then
       libs="${libs} /usr/lib/libpython2.7.dll.a"
       py_exe="/usr/bin/python"
 
-    else      
+    else
       echo "bush/use/Python : WARNING : Python not found."
       exit
     fi
@@ -81,23 +81,21 @@ if [ "${use_sys_Python}" = "yes" ] ; then
     #  Python_home=/System/Library/Frameworks/Python.framework/Versions/Current
     #fi
 
+    #Python_home=/System/Library/Frameworks/Python.framework/Versions/2.7
+
     # if working with boost/python from MacPorts, you have to use :
     Python_home=/opt/local/Library/Frameworks/Python.framework/Versions/2.7
 
     #Python_home=/usr/local/Python/2.7.8
-  
+
     if [ ! -d "${Python_home}" ] ; then
       echo "bush/use/Python : WARNING : not found under ${Python_home}"
       exit
     fi
 
-    ccflags="${ccflags}   -I${Python_home}/Headers"
-    cppflags="${cppflags} -I${Python_home}/Headers"
-    libs="${libs} ${Python_home}/Python"
-
-   #ccflags="${ccflags}   -I${Python_home}/include/python2.7"
-   #cppflags="${cppflags} -I${Python_home}/include/python2.7"
-   #libs="${libs} -L${Python_home}/lib -lpython2.7"
+    ccflags="${ccflags}   -I${Python_home}/include/python2.7"
+    cppflags="${cppflags} -I${Python_home}/include/python2.7"
+    libs="${libs} -L${Python_home}/lib -lpython2.7"
 
     py_exe="${Python_home}/bin/pythonw"
 
@@ -127,7 +125,7 @@ if [ "${use_sys_Python}" = "yes" ] ; then
     fi
 
     # NOTE : at run time python-config needs a correct LD_LIBRARY_PATH
-    #        to attach libpython<version>.so. It complicates. 
+    #        to attach libpython<version>.so. It complicates.
     #        Moreover the --cflags option returns options that
     #        induces pedantic warnings. Then we prefer to set
     #        ccflags, cppflags, libs ourself.
@@ -148,9 +146,10 @@ if [ "${use_sys_Python}" = "yes" ] ; then
 
     Python_lib="${Python_home}/${lib}"
 
-    if [ "${is_lx2}" = "yes" ] ; then
+    if [ "${on_lx_lal}" = "yes" -a -f /usr/local/include/python2.7/Python.h ] ; then
+      # It is unusable. The python lib is related to a libgc not corresponding to the default g++.
       Python_vers=2.7
-      Python_home=/usr/local/python-2.7.1
+      Python_home=/usr/local
       Python_lib="${Python_home}/lib"
 
     elif [ -f /usr/include/python2.7/Python.h ] ; then
@@ -173,7 +172,16 @@ if [ "${use_sys_Python}" = "yes" ] ; then
     ccflags="${ccflags}   -I${Python_home}/include/python${Python_vers}"
     cppflags="${cppflags} -I${Python_home}/include/python${Python_vers}"
 
-    libs="${libs} -L${Python_lib} -lpython${Python_vers}"
+    if [ "${use_archive}" = "yes" ] ; then
+      if [ -f ${Python_lib}/libpython${Python_vers}.a ] ; then
+        libs="${libs} ${Python_lib}/libpython${Python_vers}.a"
+      else
+        echo "bush/use/Python : use_archive requested but ${Python_lib}/libpython${Python_vers}.a not found, try with -lpython${Python_vers}."
+        libs="${libs} -L${Python_lib} -lpython${Python_vers}"
+      fi
+    else
+      libs="${libs} -L${Python_lib} -lpython${Python_vers}"
+    fi
 
     py_exe="${Python_home}/bin/python"
 
@@ -215,15 +223,8 @@ if [ "${use_our_Python}" = "yes" ] ; then
     exit
   fi
 
-  if [ "${use_archive}" = "yes" ] ; then
-    libs="${libs} ${Python_build_dir}/libourex_Python.a"
-  else
-    if [ ${build_visual} = "yes" ] ; then
-      libs="${libs} ${Python_build_dir}/ourex_Python.lib"
-    else
-      libs="${libs} -L${Python_build_dir} -lourex_Python"
-    fi
-  fi
+  ourex_pack_name=Python
+  . ${bush_home}/use/ourex_use
 
   if [ ${build_visual} = "yes" ] ; then
     libs="${libs} shell32.lib"

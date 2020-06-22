@@ -26,7 +26,7 @@ if [ "${use_our_expat}" = "yes" ] ; then
     echo 'bush/use/expat : variable ourex_home not defined.';exit
   fi
   expat_home=${ourex_home}/expat
-  
+
   ourex_pack_name=expat
   . ${bush_home}/use/ourex_use
 fi
