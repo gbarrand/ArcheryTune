@@ -1,8 +1,0 @@
-#!/bin/sh -f
-
-bush_home=../../bush
-
-. ${bush_home}/args
-. ${bush_home}/app_header_use
-. ${bush_home}/app_trailer_use
-. ${bush_home}/app_trailer
