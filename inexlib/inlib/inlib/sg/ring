@@ -126,6 +126,8 @@ public:
     }
     a_action.add_points_xy(m_xys);
   }
+public:  
+  virtual void clear_gstos() {gstos::clean_gstos();}
 public:
   ring()
   :parent()

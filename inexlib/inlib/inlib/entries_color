@@ -41,7 +41,7 @@ inline bool entries_color(const std::string& a_s,T& a_r,T& a_g,T& a_b,T& a_a) {
     a_g = 0.5f;
     a_b = 0.5f;
     a_a = 1;
-    return true; //?
+    return false;
   }
 }
 

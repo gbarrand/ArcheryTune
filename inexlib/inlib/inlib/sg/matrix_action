@@ -6,7 +6,7 @@
 
 #include "win_action"
 
-#include "../mat4f"
+#include "../lina/mat4f"
 #include "states"
 
 namespace inlib {

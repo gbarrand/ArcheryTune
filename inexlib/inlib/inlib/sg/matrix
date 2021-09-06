@@ -6,7 +6,7 @@
 
 #include "node"
 #include "sf_mat4f"
-#include "../mat4f"
+#include "../lina/mat4f"
 #include "render_action"
 #include "pick_action"
 #include "bbox_action"

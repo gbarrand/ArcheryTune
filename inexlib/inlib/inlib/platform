@@ -43,6 +43,12 @@ inline bool is_Android() {return true;}
 inline bool is_Android() {return false;}
 #endif
 
+#ifdef EMSCRIPTEN
+inline bool is_emscripten() {return true;}
+#else
+inline bool is_emscripten() {return false;}
+#endif
+
 
 #if defined(ANDROID) || TARGET_OS_IPHONE
 inline bool small_screen()     {return true;}

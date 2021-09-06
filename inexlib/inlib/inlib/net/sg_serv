@@ -5,8 +5,8 @@
 #define inlib_net_sg_serv
 
 #include "../net/inet_socket"
-
 #include "../press_func"
+#include "../S_STRING"
 
 namespace inlib {
 namespace net {

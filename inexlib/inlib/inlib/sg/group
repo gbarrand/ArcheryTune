@@ -76,6 +76,11 @@ public:
       (*it)->is_visible(a_action);
     }
   }
+  virtual void clear_gstos() {
+    inlib_vforcit(node*,m_children,it) {
+      (*it)->clear_gstos();
+    }
+  }
 public:
   group():node(){}
   virtual ~group(){clear();}

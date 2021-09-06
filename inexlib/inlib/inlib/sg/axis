@@ -17,7 +17,7 @@
 #include "tools"
 #include "nodekit"
 
-#include "../vec3f"
+#include "../lina/vec3f"
 #include "../mnmx"
 #include "../hplot"
 
@@ -783,9 +783,7 @@ public: //style
         labels_gap = v;
 
       } else {
-        a_out << "axis::set_from_style :"
-              << " unknown key " << key << "."
-              << std::endl;
+        a_out << "axis::set_from_style : unknown key " << sout(key) << "." << std::endl;
       }
     }
     return true;
@@ -795,6 +793,38 @@ public: //style
     labels_style().encoding = a_value;
     mag_style().encoding = a_value;
     title_style().encoding = a_value;
+  }
+
+public:
+  bool set_from_string(std::ostream& a_out,cmaps_t& a_cmaps,const std::string& a_field,const std::string& a_value) {
+    std::string::size_type pos = a_field.find('.');
+    bool status = true;
+    if(pos==std::string::npos) {
+      style_t _style;
+      _style.push_back(style_item_t(a_field,a_value));
+      if(!set_from_style(a_out,_style)) status = false;
+    } else {
+      std::vector<std::string> _words;
+      words(a_field,".",false,_words);
+      if(_words.size()==2) {
+        const std::string& word0 = _words[0];
+        const std::string& word1 = _words[1];
+        std::string _s = word1+" "+std::string(a_value);
+             if(word0=="line_style")   {if(!line_style().from_string(a_out,a_cmaps,_s)) status = false;}
+        else if(word0=="ticks_style")  {if(!ticks_style().from_string(a_out,a_cmaps,_s)) status = false;}
+        else if(word0=="labels_style") {if(!labels_style().from_string(a_out,a_cmaps,_s)) status = false;}
+        else if(word0=="mag_style")    {if(!mag_style().from_string(a_out,a_cmaps,_s)) status = false;}
+        else if(word0=="title_style")  {if(!title_style().from_string(a_out,a_cmaps,_s)) status = false;}
+        else {
+          a_out << "inlib::sg::axis::set_from_string : unexpected style field " << word0 << "." << std::endl;
+          status = false;
+        }
+      } else {
+        a_out << "inlib::sg::axis::set_from_string : unexpected number of fields " << _words.size() << "." << std::endl;
+        status = false;
+      }
+    }
+    return status;
   }
 protected:
   float get_overlap(std::ostream& a_out,bool& a_overlap) {

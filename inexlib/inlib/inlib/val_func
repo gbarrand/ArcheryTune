@@ -167,7 +167,7 @@ public:
   typedef bool(*domain_func)(double);
 public:
   virtual bool eval(const args& a_args,value& a_return,std::string& a_error) {
-    if(a_args.size()!=m_num_args) return false;
+    if(a_args.size()<m_num_args) return false;
     return parent::eval0(a_args[0],a_return,a_error,m_cfunc,m_domain);
   }
   virtual ival_func* copy() const { return new val_func_cfunc(*this);}

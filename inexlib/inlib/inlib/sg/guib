@@ -12,6 +12,8 @@
 
 #include "../sys/atime"
 #include "../file_finder"
+#include "../file_std"
+#include "../find_file"
 #include "../dirs"
 #include "../dirmanip" //windows.h
 
@@ -122,6 +124,7 @@ public:
 public:
   void map_warn_failed() {warn("failed");}
   void map_warn_fit_failed() {warn("fit failed");}
+  void map_warn_not_existing_file() {warn("not existing file");}
   void map_warn_no_plot() {warn("no plot");}
   void map_warn_empty() {warn("empty");}
   void map_warn_no_vis() {warn("no vis");}

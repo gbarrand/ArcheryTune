@@ -92,6 +92,7 @@ public:
   virtual void protocol_one_fields(std::vector<field*>& a_fields) const {a_fields = m_fields;}
 
   virtual bool draw_in_frame_buffer() const {return false;}  // marker nodes return true.
+  virtual void clear_gstos() {}
 public:
   virtual bool touched() { //virtual for plotter.
     inlib_vforcit(field*,m_fields,it) {

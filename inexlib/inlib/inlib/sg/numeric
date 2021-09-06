@@ -277,7 +277,6 @@ protected:
   INLIB_CLASS_STRING(Cancel)
 
   INLIB_CLASS_STRING(del)
-  INLIB_CLASS_STRING_VALUE(empty,)
 
   class button_cbk : public bcbk {
     typedef bcbk parent;
@@ -675,7 +674,7 @@ protected:
       m_pow.set_label(s_double_dot());
       m_pow.add_callback(new button_cbk(*this,s_double_dot()));
     } else if(number_type.value()==number_ip) {
-      m_pow.set_label(s_empty());
+      m_pow.set_label(std::string());
     } else {
       m_pow.set_label(s_pow());
       m_pow.add_callback(new button_cbk(*this,s_pow()));

@@ -9,10 +9,10 @@
 #include "../vdata"
 
 // for texture :
-#include "../vec2f"
-#include "../vec3f"
+#include "../lina/vec2f"
+#include "../lina/vec3f"
 #include "../img"
-#include "../geom2"
+#include "../lina/geom2"
 
 namespace inlib {
 namespace sg {

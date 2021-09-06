@@ -43,7 +43,7 @@ public:
 
     } else if(m_action==action_manip_move()) {
 
-      sg::move_event* mevt = sg::event_cast<sg::event,sg::move_event>(*m_event);
+      sg::mouse_move_event* mevt = sg::event_cast<sg::event,sg::mouse_move_event>(*m_event);
       if(!mevt) return sg::return_none;
 
       // m_node is the manip.

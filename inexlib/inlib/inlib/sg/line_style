@@ -4,7 +4,7 @@
 #ifndef inlib_sg_line_style
 #define inlib_sg_line_style
 
-#include "../vec3f"
+#include "../lina/vec3f"
 
 #include "sf_vec"
 #include "node"

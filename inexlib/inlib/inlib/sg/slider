@@ -153,7 +153,7 @@ public:
     m_ends.clear();
   }
 
-  bool set_value(const state& a_state,const move_event& a_event) {
+  bool set_value(const state& a_state,const mouse_move_event& a_event) {
     float ox,oy,oz;
     if(!a_state.screen2wc(a_event.ox(),a_event.oy(),ox,oy,oz)) return false;
     float x,y,z;

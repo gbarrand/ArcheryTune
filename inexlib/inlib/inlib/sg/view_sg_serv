@@ -4,8 +4,8 @@
 #ifndef inlib_sg_view_sg_serv
 #define inlib_sg_view_sg_serv
 
+#include "view_evd"
 #include "../net/sg_serv_thread"
-#include "gui_viewer"
 #include "../num2s"
 #include "../sbeg"
 
@@ -131,13 +131,19 @@ public:
       m_viewer.win_render();
 
     } else if(prot==inlib::sg::s_protocol_clear_static_sg()) {
-      m_viewer.insh().exec_line_new_state(s_insh_clear_static_scene());
+    //m_viewer.insh().exec_line_new_state(s_insh_clear_static_scene());
+      inlib::sg::view_evd* _evd = inlib::sg::cast_view_evd(m_viewer);
+      if(_evd) _evd->static_sg().clear();
       m_viewer.win_render();
     } else if(prot==inlib::sg::s_protocol_clear_dynamic_sg()) {
-      m_viewer.insh().exec_line_new_state(s_insh_clear_dynamic_scene());
+    //m_viewer.insh().exec_line_new_state(s_insh_clear_dynamic_scene());
+      inlib::sg::view_evd* _evd = inlib::sg::cast_view_evd(m_viewer);
+      if(_evd) _evd->dynamic_sg().clear();
       m_viewer.win_render();
     } else if(prot==inlib::sg::s_protocol_clear_screen_sg()) {
-      m_viewer.insh().exec_line_new_state(s_insh_clear_screen_scene());
+    //m_viewer.insh().exec_line_new_state(s_insh_clear_screen_scene());
+      inlib::sg::view_evd* _evd = inlib::sg::cast_view_evd(m_viewer);
+      if(_evd) _evd->screen_sg().clear();
       m_viewer.win_render();
 
     } else if(prot==inlib::sg::s_protocol_zdoc()) {

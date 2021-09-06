@@ -73,7 +73,7 @@ inline bool open_image_file(sg::gui_viewer& a_gv,
 
     inlib::img<inlib::byte> img(w,h,bpp,buffer,true);
 
-    load_img(a_gv,img,colorf_lightgrey());
+    load_img(a_gv,img,colorf_default());
 
     //if(!a_args.is_arg(sg::s_no_hide_menu())) a_gv.hide_main_menu();
     a_gv.hide_main_menu();

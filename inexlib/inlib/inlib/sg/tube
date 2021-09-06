@@ -77,9 +77,9 @@ protected: //gstos
     const float* xyzs = vec_data<float>(m_front);
     const float* nms = vec_data<float>(m_front_nms);
     if(m_tube) {
-      gl::triangle_strip_to_triangles(num,xyzs,nms,pxyzs,pnms);
+      gl::triangle_strip_to_triangles_nms(num,xyzs,nms,pxyzs,pnms);
     } else {
-      gl::triangle_fan_to_triangles(num,xyzs,nms,pxyzs,pnms);
+      gl::triangle_fan_to_triangles_nms(num,xyzs,nms,pxyzs,pnms);
     }
     m_front_elems = ntri*3;
     offset += ngsto;}
@@ -98,9 +98,9 @@ protected: //gstos
     const float* xyzs = vec_data<float>(m_back);
     const float* nms = vec_data<float>(m_back_nms);
     if(m_tube) {
-      gl::triangle_strip_to_triangles(num,xyzs,nms,pxyzs,pnms);
+      gl::triangle_strip_to_triangles_nms(num,xyzs,nms,pxyzs,pnms);
     } else {
-      gl::triangle_fan_to_triangles(num,xyzs,nms,pxyzs,pnms);
+      gl::triangle_fan_to_triangles_nms(num,xyzs,nms,pxyzs,pnms);
     }
     m_back_elems = ntri*3;
     offset += ngsto;}
@@ -119,7 +119,7 @@ protected: //gstos
     pnms = pxyzs+nxyz;
     const float* xyzs = vec_data<float>(m_inner_side);
     const float* nms = vec_data<float>(m_inner_side_nms);
-    gl::triangle_strip_to_triangles(num,xyzs,nms,pxyzs,pnms);
+    gl::triangle_strip_to_triangles_nms(num,xyzs,nms,pxyzs,pnms);
     m_inner_side_elems = ntri*3;
     offset += ngsto;
     }
@@ -137,7 +137,7 @@ protected: //gstos
     pnms = pxyzs+nxyz;
     const float* xyzs = vec_data<float>(m_outer_side);
     const float* nms = vec_data<float>(m_outer_side_nms);
-    gl::triangle_strip_to_triangles(num,xyzs,nms,pxyzs,pnms);
+    gl::triangle_strip_to_triangles_nms(num,xyzs,nms,pxyzs,pnms);
     m_outer_side_elems = ntri*3;
     offset += ngsto;}
 
@@ -266,6 +266,8 @@ public:
     a_action.add_points(m_outer_side);
     a_action.add_points(m_sides);
   }
+public:  
+  virtual void clear_gstos() {gstos::clean_gstos();}
 public:
   tube()
   :parent()

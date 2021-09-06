@@ -50,6 +50,11 @@ inline bool cd(const std::string& a_path){
   return true;
 }
 
+inline bool cd_up(){
+  if(::chdir("..")!=0) return false;
+  return true;
+}
+
 inline bool create(const std::string& a_name){
   // a_name should be a single directory name, and not a file system path.
   // Then it must not contain : ., .., /, \ etc...
@@ -58,6 +63,11 @@ inline bool create(const std::string& a_name){
 #else
   return (::mkdir(a_name.c_str(), 0755)==0 ? true : false);
 #endif
+}
+
+inline bool remove(const std::string& a_path){
+  // the directory must be empty.
+  return (::rmdir(a_path.c_str())==0 ? true : false);
 }
 
 inline bool home(std::string& a_s) {

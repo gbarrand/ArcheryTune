@@ -88,6 +88,8 @@ public: //node
     visit(a_action,state.m_draw_type);
   }
 public:
+  virtual void clear_gstos() {gstos::clean_gstos();}
+public:
   sphere()
   :parent()
   ,render_gstos()

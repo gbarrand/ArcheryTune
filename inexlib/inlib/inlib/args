@@ -89,6 +89,8 @@ public:
   const std::vector<arg>& get_args() const {return m_args;}
   //std::vector<arg>& get_args() {return m_args;}
 
+  void clear() {m_args.clear();}
+
   bool is_arg(const std::string& a_string) const {
     inlib_vforcit(arg,m_args,it) {
       if((*it).first==a_string) return true;
@@ -258,6 +260,12 @@ public:
     return int(nbeg) - int(m_args.size());
   }
 
+  int remove(const std::vector<std::string>& a_keys){
+    size_t nbeg = m_args.size();
+    inlib_vforcit(std::string,a_keys,it) remove(*it);
+    return int(nbeg) - int(m_args.size());
+  }
+
   void remove_first(){if(m_args.size()) m_args.erase(m_args.begin());}
   void remove_last(){if(m_args.size()) m_args.erase(m_args.end()-1);}
 
@@ -308,18 +316,43 @@ public:
     }
   }
 
-  void not_hyphens(std::vector<std::string>& a_not_hyphens,bool a_skip_first = false) const {
+  bool find_hyphen_next(const std::string& a_key,std::string& a_value,const std::string& a_def = std::string(),bool a_remove=false) {
+    inlib_vforit(arg,m_args,it) {
+      if(((*it).first==a_key)&&a_key.size()&&(a_key[0]=='-')) {
+        if(it==m_args.end()) break;
+	const arg& next = *(it+1);
+        a_value = next.first;
+	if(a_remove) {
+          it = m_args.erase(it);
+          it = m_args.erase(it);
+	}
+        return true;
+      }
+    }
+    a_value = a_def;
+    return false;
+  }
+
+//template <class aT>
+//bool find_hyphen_next(const std::string& a_string,aT& a_value,const aT& a_def = aT(),bool a_remove = false) {
+//  std::string _s;
+//  if(!find_hyphen_next(a_string,_s,std::string(),a_remove)) {a_value = a_def;return false;}
+//  return to<aT>(_s,a_value,a_def);
+//}
+
+  void not_hyphens(std::vector<std::string>& a_not_hyphens,bool a_skip_first = false,bool a_only_ends = true) const {
     a_not_hyphens.clear();
-    // Get the serie of trailing args not beginning with '-'
+    // Get the serie of args not beginning with '-'
     // and without a value (not of the form [-]xxx=yyy).
     // Note that an argument like that in between arguments
     // is NOT taken into account.
+    // If a_only_ends is true, only trailing args are taken.
     if(m_args.empty()) return;
     std::vector<arg>::const_iterator it = m_args.begin();
     if(a_skip_first) it++;
     for(;it!=m_args.end();++it) {
       if( ((*it).first.find('-')==0) || (*it).second.size() ) {
-        a_not_hyphens.clear();
+        if(a_only_ends) a_not_hyphens.clear();
       } else {
         a_not_hyphens.push_back((*it).first);
       }
@@ -330,9 +363,9 @@ public:
     return not_hyphens(a_files,a_skip_first);
   }
 
-  bool first_not_hyphen(std::string& a_first,bool a_skip_first = false) const {
+  bool first_not_hyphen(std::string& a_first,bool a_skip_first = false,bool a_only_ends = true) const {
     std::vector<std::string> _ss;
-    not_hyphens(_ss,a_skip_first);
+    not_hyphens(_ss,a_skip_first,a_only_ends);
     if(_ss.empty()) {a_first.clear();return false;}
     a_first = _ss[0];
     return true;

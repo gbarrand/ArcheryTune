@@ -582,6 +582,8 @@ inline bool find_color(const cmaps_t& a_cmaps,const std::string& a_s,colorf& a_c
 
     //a_s of the form : <real:r> <real:g> <real:b>
     //a_s of the form : <real:r> <real:g> <real:b> <real:a>
+    //a_s of the form : <real:r> <real:g> <real:b> <string:name>          (output of a sg::entries::color)
+    //a_s of the form : <real:r> <real:g> <real:b> <real:a> <string:name> (output of a sg::entries::color)
 
    {std::vector<std::string> ws;
     words(a_s," ",false,ws);
@@ -603,7 +605,24 @@ inline bool find_color(const cmaps_t& a_cmaps,const std::string& a_s,colorf& a_c
         a_col = colorf(r,g,b,a);
         return true;
       }
-
+      //a_s of the form : <real:r> <real:g> <real:b> <string:name>
+      if( to<float>(ws[0],r) && ((0<=r)&&(r<=1)) &&
+          to<float>(ws[1],g) && ((0<=g)&&(g<=1)) &&
+          to<float>(ws[2],b) && ((0<=b)&&(b<=1)) &&
+         !to<float>(ws[3],a) ){
+        a_col = colorf(r,g,b,1);
+        return true;
+      }
+      
+    } else if(ws.size()==5) {  //a_s of the form : <real:r> <real:g> <real:b> <real:a> <string:name>
+      float r,g,b,a;
+      if( to<float>(ws[0],r) && ((0<=r)&&(r<=1)) &&
+          to<float>(ws[1],g) && ((0<=g)&&(g<=1)) &&
+          to<float>(ws[2],b) && ((0<=b)&&(b<=1)) &&
+          to<float>(ws[3],a) && ((0<=a)&&(a<=1)) ){
+        a_col = colorf(r,g,b,a);
+        return true;
+      }
     }}
 
     // search in default colormap :

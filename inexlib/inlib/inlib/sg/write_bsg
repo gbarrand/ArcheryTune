@@ -12,7 +12,6 @@
 #include "../io/bwbuf"
 
 #include "../platform"
-#include "../file"
 #include "../version"
 #include "../num2s"
 

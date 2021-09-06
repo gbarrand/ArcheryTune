@@ -8,7 +8,7 @@
 #include "../rcmp"
 #include "../tos_deprec"
 #include "../entries_color"
-#include "../rotf"
+#include "../lina/rotf"
 #include "../sqrot"
 #include "../num2s"
 #include "enum2s"
@@ -101,8 +101,12 @@ public:
 //,m_gui_font(font_arialbd_ttf())         //antialiasing problem.
 //,m_gui_font(font_courbd_ttf())          //beurk
 //,m_gui_font(font_lucidagrandebd_ttf())  //Apple.
+#ifdef tools_sg_gui_params
+  ,m_gui_font(font_lato_bold_ttf())
+#else
   ,m_gui_font(font_helveticabd_ttf())     //I find this one nicer.
-  ,m_gui_font_modeling(font_pixmap)
+#endif  
+  ,m_gui_font_modeling(font_filled) //font_filled to be consistent with sg/[style,text_style,base_freetype] defaults.
   ,m_console_scale(1)
   ,m_console_width(0.3F)   //percent of gui width
   ,m_console_height(0.05F) //percent of gui height
@@ -732,8 +736,12 @@ public:
     // used (for exa in exlib/geant4/viewer) in case of having no style file.
 
     m_gui_screen_color = colorf(0.9f,0.9f,0.9f);
+#ifdef tools_sg_gui_params
+    m_gui_font = font_lato_bold_ttf();
+#else
     m_gui_font = font_helveticabd_ttf();
-    m_gui_font_modeling = font_pixmap;
+#endif
+    m_gui_font_modeling = font_filled;
     m_gui_back_color = colorf_white();
     m_gui_front_color = colorf_black();
     m_gui_dir_color = colorf(0.95f,0.95f,0.95f);

@@ -232,7 +232,9 @@ public:
       if(!TO_D(a_args[2],d_2,a_return,a_error)) return false;
 
       func::expo func(d_1,d_2);
-      a_return.set(func.value(x));
+      double v;
+      if(!func.value(x,v)) {a_return.set_none();return false;}
+      a_return.set(v);
       return true;
 
     }
@@ -272,7 +274,9 @@ public:
       if(!TO_D(a_args[3],d_3,a_return,a_error)) return false;
 
       func::gaussian func(d_1,d_2,d_3);
-      a_return.set(func.value(x));
+      double v;
+      if(!func.value(x,v)) {a_return.set_none();return false;}
+      a_return.set(v);
       return true;
 
     }
@@ -305,7 +309,9 @@ public:
       double d_3;
       if(!TO_D(a_args[3],d_3,a_return,a_error)) return false;
       func::bw func(d_1,d_2,d_3);
-      a_return.set(func.value(x));
+      double v;
+      if(!func.value(x,v)) {a_return.set_none();return false;}
+      a_return.set(v);
       return true;
     }
     return false;
@@ -338,7 +344,9 @@ public:
       double d_3;
       if(!TO_D(a_args[3],d_3,a_return,a_error)) return false;
       func::bw func(d_1,d_2,d_3);
-      a_return.set(func.value(x));
+      double v;
+      if(!func.value(x,v)) {a_return.set_none();return false;}
+      a_return.set(v);
       return true;
     }
     return false;
@@ -373,7 +381,9 @@ public:
       if(!TO_D(a_args[3],d_3,a_return,a_error)) return false;
 
       func::cauchy func(d_1,d_2,d_3);
-      a_return.set(func.value(x));
+      double v;
+      if(!func.value(x,v)) {a_return.set_none();return false;}
+      a_return.set(v);
       return true;
 
     }
@@ -414,7 +424,9 @@ public:
       params[0] = d_1;
       params[1] = d_2;
       func::polynomial func(params);
-      a_return.set(func.value(x));
+      double v;
+      if(!func.value(x,v)) {a_return.set_none();return false;}
+      a_return.set(v);
       return true;
 
     }
@@ -454,7 +466,9 @@ public:
       params[1] = d_2;
       params[2] = d_3;
       func::polynomial func(params);
-      a_return.set(func.value(x));
+      double v;
+      if(!func.value(x,v)) {a_return.set_none();return false;}
+      a_return.set(v);
       return true;
 
     }
@@ -497,7 +511,9 @@ public:
       params[2] = d_3;
       params[3] = d_4;
       func::polynomial func(params);
-      a_return.set(func.value(x));
+      double v;
+      if(!func.value(x,v)) {a_return.set_none();return false;}
+      a_return.set(v);
       return true;
 
     }
@@ -543,7 +559,9 @@ public:
       params[3] = d_4;
       params[4] = d_5;
       func::polynomial func(params);
-      a_return.set(func.value(x));
+      double v;
+      if(!func.value(x,v)) {a_return.set_none();return false;}
+      a_return.set(v);
       return true;
 
     }

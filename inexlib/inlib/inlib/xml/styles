@@ -54,7 +54,14 @@ public:
     }
     return 0;
   }
-
+  
+  style_t* find_style_not_const(const std::string& a_name) {
+    inlib_vforit(named_style_t,m_named_styles,it){
+      if((*it).first==a_name) return &((*it).second);
+    }
+    return 0;
+  }
+  
 /*
   style_t* find_style(const std::string& a_name) {
     inlib_vforit(named_style_t,m_named_styles,it){
@@ -84,6 +91,17 @@ public:
     }
     //::printf("debug : styles::add_style : push_back \"%s\"\n",a_name.c_str());
     m_named_styles.push_back(named_style_t(a_name,a_style));
+  }
+
+  void remove(const std::string& a_name) {
+    std::vector<named_style_t>::iterator it;
+    for(it=m_named_styles.begin();it!=m_named_styles.end();) {
+      if((*it).first==a_name) {
+        it = m_named_styles.erase(it);
+      } else {
+        it++;
+      }
+    }
   }
 
   void remove_styles(const std::string& a_pattern) {

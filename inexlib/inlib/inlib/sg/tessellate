@@ -372,32 +372,58 @@ protected:
     }
 
     virtual bool add_triangle(float a_p1x,float a_p1y,float a_p1z,float a_p1w,
-                                float,float,float,float,
+                              float,float,float,float,
                               float a_p2x,float a_p2y,float a_p2z,float a_p2w,
-                                float,float,float,float,
+                              float,float,float,float,
                               float a_p3x,float a_p3y,float a_p3z,float a_p3w,
-                                float,float,float,float){
+                              float,float,float,float){
       return add_prm::add_triangle(a_p1x,a_p1y,a_p1z,a_p1w,
                                    a_p2x,a_p2y,a_p2z,a_p2w,
                                    a_p3x,a_p3y,a_p3z,a_p3w);
     }
 
-    virtual bool project_normal(float& a_x,float& a_y,float& a_z) {return true;}
+    virtual bool project_normal(float& a_x,float& a_y,float& a_z) {
+      (void)a_x;(void)a_y;(void)a_z;
+      return true;
+    }
     virtual bool add_point_normal(float a_x,float a_y,float a_z,float a_w,
-                                  float a_nx,float a_ny,float a_nz) {return false;}
+                                  float a_nx,float a_ny,float a_nz) {
+      (void)a_x;(void)a_y;(void)a_z;(void)a_w;
+      (void)a_nx;(void)a_ny;(void)a_nz;
+      return false;
+    }
     virtual bool add_point_normal(float a_x,float a_y,float a_z,float a_w,
                                   float a_nx,float a_ny,float a_nz,
-                                  float a_r,float a_g,float a_b,float a_a) {return false;}
+                                  float a_r,float a_g,float a_b,float a_a) {
+      (void)a_x;(void)a_y;(void)a_z;(void)a_w;
+      (void)a_nx;(void)a_ny;(void)a_nz;
+      (void)a_r;(void)a_g;(void)a_b;(void)a_a;
+      return false;
+    }
     virtual bool add_line_normal(float a_bx,float a_by,float a_bz,float a_bw,
                                  float a_bnx,float a_bny,float a_bnz,
                                  float a_ex,float a_ey,float a_ez,float a_ew,
-                                 float a_enx,float a_eny,float a_enz) {return false;}
+                                 float a_enx,float a_eny,float a_enz) {
+      (void)a_bx;(void)a_by;(void)a_bz;(void)a_bw;
+      (void)a_bnx;(void)a_bny;(void)a_bnz;
+      (void)a_ex;(void)a_ey;(void)a_ez;(void)a_ew;
+      (void)a_enx;(void)a_eny;(void)a_enz;
+      return false;
+    }
     virtual bool add_line_normal(float a_bx,float a_by,float a_bz,float a_bw,
                                  float a_bnx,float a_bny,float a_bnz,
                                  float a_br,float a_bg,float a_bb,float a_ba,
                                  float a_ex,float a_ey,float a_ez,float a_ew,
                                  float a_enx,float a_eny,float a_enz,
-                                 float a_er,float a_eg,float a_eb,float a_ea){return false;}
+                                 float a_er,float a_eg,float a_eb,float a_ea){
+      (void)a_bx;(void)a_by;(void)a_bz;(void)a_bw;
+      (void)a_bnx;(void)a_bny;(void)a_bnz;
+      (void)a_br;(void)a_bg;(void)a_bb;(void)a_ba;
+      (void)a_ex;(void)a_ey;(void)a_ez;(void)a_ew;
+      (void)a_enx;(void)a_eny;(void)a_enz;
+      (void)a_er;(void)a_eg;(void)a_eb;(void)a_ea;
+      return false;
+    }
     virtual bool add_triangle_normal(
       float a_p1x,float a_p1y,float a_p1z,float a_p1w,
       float a_n1x,float a_n1y,float a_n1z,
@@ -411,6 +437,9 @@ protected:
     //m_this.m_triangles.add_normal(a_n1x,a_n1y,a_n1z);
     //m_this.m_triangles.add_normal(a_n2x,a_n2y,a_n2z);
     //m_this.m_triangles.add_normal(a_n3x,a_n3y,a_n3z);
+      (void)a_n1x;(void)a_n1y;(void)a_n1z;
+      (void)a_n2x;(void)a_n2y;(void)a_n2z;
+      (void)a_n3x;(void)a_n3y;(void)a_n3z;
       return true;
     }
     virtual bool add_triangle_normal(
@@ -432,6 +461,9 @@ protected:
     //m_this.m_triangles.add_normal(a_n1x,a_n1y,a_n1z);
     //m_this.m_triangles.add_normal(a_n2x,a_n2y,a_n2z);
     //m_this.m_triangles.add_normal(a_n3x,a_n3y,a_n3z);
+      (void)a_n1x;(void)a_n1y;(void)a_n1z;
+      (void)a_n2x;(void)a_n2y;(void)a_n2z;
+      (void)a_n3x;(void)a_n3y;(void)a_n3z;
       return true;
     }
   public:

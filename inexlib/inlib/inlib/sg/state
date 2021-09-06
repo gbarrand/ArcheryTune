@@ -6,10 +6,10 @@
 
 #include <string>
 
-#include "../rotf"  //m_camera_orientation
-#include "../mat4f"
-#include "../vec3f"
-#include "../vec4f"
+#include "../lina/rotf"  //m_camera_orientation
+#include "../lina/mat4f"
+#include "../lina/vec3f"
+#include "../lina/vec4f"
 #include "../colorf"
 
 #ifdef INLIB_MEM

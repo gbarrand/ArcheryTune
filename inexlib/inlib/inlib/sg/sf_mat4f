@@ -6,9 +6,9 @@
 
 #include "sf_vec"
 
-#include "../mat4f"
-#include "../vec3f"
-#include "../rotf"
+#include "../lina/mat4f"
+#include "../lina/vec3f"
+#include "../lina/rotf"
 
 #include "../HEADER"
 

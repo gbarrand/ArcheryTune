@@ -25,11 +25,11 @@ typedef unsigned __int64 uint64;
 inline const char* uint32_format() {static const char s[] = "%u";return s;}
 inline const char* uint64_format() {static const char s[] = "%lu";return s;}
 
-#ifdef _WIN64
-typedef unsigned long long diff_pointer_t;
-#else
-typedef unsigned long diff_pointer_t;
-#endif
+//#ifdef _WIN64
+//typedef unsigned long long diff_pointer_t;
+//#else
+//typedef unsigned long diff_pointer_t;
+//#endif
 
 #ifdef _WIN64
 typedef unsigned long long upointer;
@@ -54,7 +54,7 @@ typedef unsigned long uint64;
 inline const char* uint32_format() {static const char s[] = "%u";return s;}
 inline const char* uint64_format() {static const char s[] = "%lu";return s;}
 
-typedef unsigned long diff_pointer_t;
+//typedef unsigned long diff_pointer_t;
 
 typedef unsigned long upointer;
 inline const char* upointer_format() {static const char s[] = "%lu";return s;}
@@ -73,7 +73,7 @@ typedef unsigned long long uint64;
 inline const char* uint32_format() {static const char s[] = "%u";return s;}
 inline const char* uint64_format() {static const char s[] = "%llu";return s;}
 
-typedef unsigned long diff_pointer_t;
+//typedef unsigned long diff_pointer_t;
 
 typedef unsigned long upointer;
 inline const char* upointer_format() {static const char s[] = "%lu";return s;}
@@ -127,6 +127,8 @@ inline const char* type_format(unsigned char)  {static const char s[] = "%u";ret
 inline const char* type_format(unsigned short) {static const char s[] = "%u";return s;}
 inline const char* type_format(unsigned int)   {static const char s[] = "%u";return s;}
 inline const char* type_format(uint64)         {return uint64_format();}
+
+typedef unsigned int key_code;
 
 }
 

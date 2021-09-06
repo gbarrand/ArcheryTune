@@ -4,7 +4,7 @@
 #ifndef inlib_sg_plotter
 #define inlib_sg_plotter
 
-#include "../vec2f"
+#include "../lina/vec2f"
 
 #include "render_action"
 #include "plottables"
@@ -30,12 +30,12 @@
 #include "../hatcher"
 #include "../clist_contour"
 #include "../tess_contour"
-#include "../geom3"
+#include "../lina/geom3"
 #include "../spline"
 #include "../rtausmef"
 
-//#define INLIBS_SG_PLOTTER_TIMING
-#ifdef INLIBS_SG_PLOTTER_TIMING
+//#define INLIB_SG_PLOTTER_TIMING
+#ifdef INLIB_SG_PLOTTER_TIMING
 #include "../sys/atime"
 #endif
 
@@ -735,6 +735,18 @@ public: //style
    {inlib_vforit(style,m_legend_style,it) {(*it) = style();(*it).visible = false;}}
   }
 
+#define INLIB_SG_PLOTTER_ELSE_IF_KEY_BOOL(a__key)\
+      } else if(key==#a__key) {\
+        bool v;\
+        if(!to(sv,v)) {style_failed(a_out,key,sv);return false;}\
+        a__key = v;
+	
+#define INLIB_SG_PLOTTER_ELSE_IF_KEY(a__key,a__type)\
+      } else if(key==#a__key) {\
+        a__type v;\
+        if(!to<a__type>(sv,v)) {style_failed(a_out,key,sv);return false;}\
+        a__key = v;
+	
   typedef std::pair<std::string,std::string> style_item_t;
   typedef std::vector<style_item_t> style_t;
   bool set_from_style(std::ostream& a_out,const style_t& a_style) {
@@ -751,43 +763,16 @@ public: //style
 
 
       //width,height,depth : could set from style (for exa for lego).
-      } else if(key=="width") {
-        float v;
-        if(!to<float>(sv,v)) {style_failed(a_out,key,sv);return false;}
-        width = v;
-      } else if(key=="height") {
-        float v;
-        if(!to<float>(sv,v)) {style_failed(a_out,key,sv);return false;}
-        height = v;
-      } else if(key=="depth") {
-        float v;
-        if(!to<float>(sv,v)) {style_failed(a_out,key,sv);return false;}
-        depth = v;
-
-      } else if(key=="left_margin") {
-        float v;
-        if(!to<float>(sv,v)) {style_failed(a_out,key,sv);return false;}
-        left_margin = v;
-      } else if(key=="right_margin") {
-        float v;
-        if(!to<float>(sv,v)) {style_failed(a_out,key,sv);return false;}
-        right_margin = v;
-      } else if(key=="bottom_margin") {
-        float v;
-        if(!to<float>(sv,v)) {style_failed(a_out,key,sv);return false;}
-        bottom_margin = v;
-      } else if(key=="top_margin") {
-        float v;
-        if(!to<float>(sv,v)) {style_failed(a_out,key,sv);return false;}
-        top_margin = v;
-      } else if(key=="down_margin") {
-        float v;
-        if(!to<float>(sv,v)) {style_failed(a_out,key,sv);return false;}
-        down_margin = v;
-      } else if(key=="up_margin") {
-        float v;
-        if(!to<float>(sv,v)) {style_failed(a_out,key,sv);return false;}
-        up_margin = v;
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(width,float)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(height,float)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(depth,float)
+      
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(left_margin,float)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(right_margin,float)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(bottom_margin,float)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(top_margin,float)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(down_margin,float)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(up_margin,float)
 
       } else if(key=="title") {
         title = sv;
@@ -921,30 +906,30 @@ public: //style
       } else if(key=="infos_what") {
         infos_what = sv;
 
-//      } else if(key=="legends_visible") {
-//        bool v;
-//        if(!to(sv,v)) {style_failed(a_out,key,sv);return false;}
-//        legends_visible = v;
       } else if(key=="legends_automated") {
         bool v;
         if(!to(sv,v)) {style_failed(a_out,key,sv);return false;}
         legends_automated = v;
+      } else if(key=="legends_string") {
+        std::vector<std::string> vs;
+        words(sv,"\n",true,vs);
+        legends_string = vs;
 //    } else if(key=="legends_attached_to_infos") {
 //      bool v;
 //      if(!to(sv,v)) {style_failed(a_out,key,sv);return false;}
 //      legends_attached_to_infos = v;
       } else if(key=="legends_origin") {
-        vec2f v;
-        if(!sto(sv,v)) {style_failed(a_out,key,sv);return false;}
-        legends_origin.setValue(v);
+        std::vector<vec2f> vs;
+        if(!sto(sv,vs)) {style_failed(a_out,key,sv);return false;}
+        legends_origin = vs;
       } else if(key=="legends_size") {
-        vec2f v;
-        if(!sto(sv,v)) {style_failed(a_out,key,sv);return false;}
-        legends_size.setValue(v);
+        std::vector<vec2f> vs;
+        if(!sto(sv,vs)) {style_failed(a_out,key,sv);return false;}
+        legends_size = vs;
       } else if(key=="legends_origin_unit") {
-        unit_type v;
-        if(!sto(sv,v)) {style_failed(a_out,key,sv);return false;}
-        legends_origin_unit.setValue(v);
+        std::vector<unit_type> vs;
+        if(!sto(sv,vs)) {style_failed(a_out,key,sv);return false;}
+        legends_origin_unit = vs;
 
       } else if(key=="shape_automated") {
         bool v;
@@ -960,9 +945,15 @@ public: //style
           style_failed(a_out,key,sv);return false;
         }
 
-      //legends_string
-      //legends_color
-      //legends_string mf_string
+      INLIB_SG_PLOTTER_ELSE_IF_KEY_BOOL(func2D_borders_visible)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(curve_number_of_points,uint32)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(theta,float)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(phi,float)
+      INLIB_SG_PLOTTER_ELSE_IF_KEY(tau,float)
+
+#undef  INLIB_SG_PLOTTER_ELSE_IF_KEY
+
+
       //legends_color mf_vec<colorf,float>
 
       } else {
@@ -3982,11 +3973,11 @@ protected: //vis bins
       else
         list_contour.set_field_fcn(bins2D_to_contour,(void*)&sbFunc);
 
-#ifdef INLIBS_SG_PLOTTER_TIMING
+#ifdef INLIB_SG_PLOTTER_TIMING
       atime _start = atime::now();
 #endif
       list_contour.ccontour::generate();
-#ifdef INLIBS_SG_PLOTTER_TIMING
+#ifdef INLIB_SG_PLOTTER_TIMING
       a_out << "inlib::sg::update_bins2D_xy : contour generate elapsed " << atime::elapsed(_start) << "." << std::endl;
       _start = atime::now();
 #endif
@@ -3994,7 +3985,7 @@ protected: //vis bins
       if(!list_contour.compact_strips ()) {
         a_out << "inlib::sg::plotter::updateBins2D_XY : clist_contour::compact_strips () : failure." << std::endl;
       } else {
-#ifdef INLIBS_SG_PLOTTER_TIMING
+#ifdef INLIB_SG_PLOTTER_TIMING
         a_out << "inlib::sg::update_bins2D_xy : contour compact strips elapsed " << atime::elapsed(_start) << "." << std::endl;
 #endif
         if( (painting==painting_by_level) || (painting==painting_by_value) ){
@@ -4357,12 +4348,12 @@ protected: //vis bins
         list_contour.set_field_fcn(function_to_contour,(void*)&sbFunc);
       }
 
-#ifdef INLIBS_SG_PLOTTER_TIMING
+#ifdef INLIB_SG_PLOTTER_TIMING
       atime _start = atime::now();
 #endif
       list_contour.ccontour::generate();
 
-#ifdef INLIBS_SG_PLOTTER_TIMING
+#ifdef INLIB_SG_PLOTTER_TIMING
       a_out << "inlib::sg::update_func2D_xy : contour generate elapsed " << atime::elapsed(_start) << "." << std::endl;
       _start = atime::now();
 #endif
@@ -4370,7 +4361,7 @@ protected: //vis bins
       if(!list_contour.compact_strips ()) {
         a_out << "inlib::sg::plotter::update_func2D_xy : clist_contour::compact_strips () : failure." << std::endl;
       } else {
-#ifdef INLIBS_SG_PLOTTER_TIMING
+#ifdef INLIB_SG_PLOTTER_TIMING
         a_out << "inlib::sg::update_func2D_xy : contour compact strips elapsed " << atime::elapsed(_start) << "." << std::endl;
 #endif
         if( (painting==painting_by_level) || (painting==painting_by_value) ){
@@ -4508,8 +4499,8 @@ protected: //vis bins
     } else {
       a_out << "inlib::sg::plotter::update_func2D_xy :"
             << " modeling " << modeling
-  	  << " does not apply on Functi  on2D in XY. Valid modelings ared curve, filled_curve and polygon."
-	  << std::endl;
+            << " does not apply on function 2D in XY. Valid modelings ared curve, filled_curve and polygon."
+            << std::endl;
     }
 
   }
@@ -4862,13 +4853,13 @@ protected: //vis bins
     float xmx = m_x_axis_data.max_value();
 
     unsigned int nx = a_func.x_steps();
-    nx = !nx?20:nx;
+    nx = nx <=0 ? curve_number_of_points.value() : nx;
 
     float ymn = m_y_axis_data.min_value();
     float ymx = m_y_axis_data.max_value();
 
     unsigned int ny = a_func.y_steps();
-    ny = !ny?20:ny;
+    ny = ny <=0 ? curve_number_of_points.value() : ny;
 
     float dfx = (xmx - xmn)/nx;
     float dfy = (ymx - ymn)/ny;
@@ -5597,11 +5588,14 @@ protected: //vis bins
     m_legend_sep.add(_tsf);}
 
     size_t number = m_legend_strings.size();
-    //::printf("debug : update_legends : 001 %lu\n",number);
+    //::printf("debug : update_legends : number %lu\n",number);
     for(size_t index=0;index<number;index++) {
       const style& _style = legend_style(index);
       if(!_style.visible) continue;
-      //::printf("debug : update_legends : 002 %lu |%s|\n",index,m_legend_strings[index].c_str());
+      //::printf("debug : update_legends :   %lu : |%s|\n",index,m_legend_strings[index].c_str());
+      //::printf("debug : update_legends :   %lu : unit : %d\n",index,legends_origin_unit[index]);
+      //::printf("debug : update_legends :   %lu : origin : %g %g\n",index,legends_origin[index][0],legends_origin[index][1]);
+      //::printf("debug : update_legends :   %lu : size : %g %g\n",index,legends_size[index][0],legends_size[index][1]);
 
       separator* sep = new separator;
       m_legend_sep.add(sep);
@@ -5618,7 +5612,8 @@ protected: //vis bins
       text->color = _style.color;
       text->marker_style = _style.marker_style;
       text->marker_size = _style.marker_size;
-      text->back_visible = false;
+      text->back_visible = _style.back_visible;
+      text->back_area::color = _style.back_color;
       sep->add(text);
 
       //legends_size is in NDC of [0,width][0,height].
@@ -8356,20 +8351,14 @@ protected: //rep
   void update_primitive_text(const plottable_text& a_obj){
     if(a_obj.m_TEXT.empty()) return;
 
-    float z = xy_depth.value()*1.1F;
-
     vec3f pos;
-    axis_2_data_frame(vec3f(a_obj.m_X,a_obj.m_Y,z),pos); //FIXME return FALSE
+    axis_2_data_frame(vec3f(a_obj.m_X,a_obj.m_Y,0),pos); //FIXME return FALSE
     xx_2_yy(pos,pos);
-
+    
     separator* sep = new separator;
 
-    rgba* mat = new rgba();
-    mat->color = a_obj.m_TXCI;
-    sep->add(mat);
-
     matrix* _tsf = new matrix;
-    _tsf->set_translate(pos);
+    _tsf->set_translate(pos[0],pos[1],_zprims());
     _tsf->mul_rotate(0,0,1,a_obj.m_ANGLE*fpi()/180.0f);
     _tsf->mul_scale(a_obj.m_SCALE,a_obj.m_SCALE,1);
     sep->add(_tsf);
@@ -8382,10 +8371,10 @@ protected: //rep
     //    a_obj.m_TEXT.c_str(),a_obj.m_X,a_obj.m_Y,a_obj.m_SCALE,a_obj.m_SIZE,
     //    pos[0],pos[1],pos[2]);
 
-    if(a_obj.m_text_mode==plottable_text::text_enforce_width) {  // not tested yet.
+    if(a_obj.m_text_mode==text_enforce_width) {  // not tested yet.
 
       vec3f pos2;
-      axis_2_data_frame(vec3f(a_obj.m_X+a_obj.m_SIZE,a_obj.m_Y,z),pos2);  //m_SIZE is taken as text width in this text_mode.
+      axis_2_data_frame(vec3f(a_obj.m_X+a_obj.m_SIZE,a_obj.m_Y,0),pos2);  //m_SIZE is taken as text width in this text_mode.
       xx_2_yy(pos2,pos2);
 
       float _width = pos2.x()-pos.x();
@@ -8393,14 +8382,18 @@ protected: //rep
       text* _text = new text(m_ttf);
       _text->enforce_front_width = true;  //it will set _text->width, height.
       _text->front_width = _width;
-      _text->back_visible = false;
 
+      _text->color = a_obj.m_TXCI;
+      _text->back_visible = a_obj.m_back_visible;
+      _text->back_area::color = a_obj.m_back_color;
+      _text->back_area::shadow = a_obj.m_back_shadow;
+      
       _text->encoding = encoding_PAW();
       _text->strings.add(a_obj.m_TEXT);
       _text->line_width = a_obj.m_line_width;
       _text->font = a_obj.m_FONT;
       _text->font_modeling = a_obj.m_font_modeling;
-
+      
       if(a_obj.m_HJUST=='R') {
         _text->hjust = right;
       } else if(a_obj.m_HJUST=='C') {
@@ -8416,21 +8409,30 @@ protected: //rep
         _text->vjust = bottom;
       }
 
+      if(_text->back_visible) {
+        _text->update_sg();
+        _text->map_back_area_to_text();
+      }
+
       sep->add(_text);
 
-    } else if(a_obj.m_text_mode==plottable_text::text_enforce_height) { // for EsbRootView neard, fard 2D plot.
+    } else if(a_obj.m_text_mode==text_enforce_height) { // for EsbRootView neard, fard 2D plot.
 
       vec3f pos2;
-      axis_2_data_frame(vec3f(a_obj.m_X,a_obj.m_Y+a_obj.m_SIZE,z),pos2);  //m_SIZE is taken as text height in this text_mode.
+      axis_2_data_frame(vec3f(a_obj.m_X,a_obj.m_Y+a_obj.m_SIZE,0),pos2);  //m_SIZE is taken as text height in this text_mode.
       xx_2_yy(pos2,pos2);
 
       float _height = pos2.y()-pos.y();
 
       text* _text = new text(m_ttf);
-      _text->enforce_front_height = true;  //it will set _text->width, height.
+      _text->enforce_front_height = true;
       _text->front_height = _height;
-      _text->back_visible = false;  //if true, we should adapt back_area::width, height to inside text size.
 
+      _text->color = a_obj.m_TXCI;
+      _text->back_visible = a_obj.m_back_visible;
+      _text->back_area::color = a_obj.m_back_color;
+      _text->back_area::shadow = a_obj.m_back_shadow;
+      
       _text->encoding = encoding_PAW();
       _text->strings.add(a_obj.m_TEXT);
       _text->line_width = a_obj.m_line_width;
@@ -8452,10 +8454,54 @@ protected: //rep
         _text->vjust = bottom;
       }
 
+      if(_text->back_visible) {
+        _text->update_sg();
+        _text->map_back_area_to_text();
+      }
+
       sep->add(_text);
 
-    } else { //text_as_it (for gopaw/pagpri.cpp).
+    } else { //text_as_is (for gopaw/pagpri.cpp).
       _tsf->mul_scale(a_obj.m_SIZE,a_obj.m_SIZE,1);
+
+      if(a_obj.m_back_visible) {
+      
+      text* _text = new text(m_ttf);
+      _text->color = a_obj.m_TXCI;
+      _text->back_visible = a_obj.m_back_visible;
+      _text->back_area::color = a_obj.m_back_color;
+      _text->back_area::shadow = a_obj.m_back_shadow;
+      
+      _text->encoding = encoding_PAW();
+      _text->strings.add(a_obj.m_TEXT);
+      _text->line_width = a_obj.m_line_width;
+      _text->font = a_obj.m_FONT;
+      _text->font_modeling = a_obj.m_font_modeling;
+    //_text->smooting = a_obj.m_SMOOTHING;
+    //_text->hinting = a_obj.m_HINTING;
+
+      if(a_obj.m_HJUST=='R') {
+        _text->hjust = right;
+      } else if(a_obj.m_HJUST=='C') {
+        _text->hjust = center;
+      } else {
+        _text->hjust = left;
+      }
+      if(a_obj.m_VJUST=='T') {
+        _text->vjust = top;
+      } else if(a_obj.m_VJUST=='M') {
+        _text->vjust = middle;
+      } else {
+        _text->vjust = bottom;
+      }
+
+      sep->add(_text);
+      
+      } else {
+
+      rgba* mat = new rgba();
+      mat->color = a_obj.m_TXCI;
+      sep->add(mat);
 
       if(a_obj.m_FONT==font_hershey()) {
         //::printf("debug : inlib::sg::plotter::update_primitive_text : hershey\n");
@@ -8468,6 +8514,7 @@ protected: //rep
         sep->add(ds);
 
         text_hershey* text = new text_hershey;
+	
         text->encoding = encoding_PAW();
         text->strings.add(a_obj.m_TEXT);
         if(a_obj.m_HJUST=='R') {
@@ -8508,16 +8555,13 @@ protected: //rep
 
         text->modeling = a_obj.m_font_modeling;
 
-        //text->encoding = encoding_PAW()
-        //text->smooting = a_obj.m_SMOOTHING;
-        //text->hinting = a_obj.m_HINTING;
         text->strings.add(a_obj.m_TEXT);
-        //text->hjust.value(a_hjust);
-        //text->vjust.value(a_vjust);
 
         sep->add(text);
       }
 
+      } //back_visible
+      
     } //text_mode.
 
     m_primitives_sep.add(sep);
@@ -8684,17 +8728,15 @@ protected: //rep
 
   void update_primitive_box(std::ostream& a_out,const plottable_box& a_obj){
 
-    float z = xy_depth.value()*1.1F;
-
     vec3f pos1;
-    axis_2_data_frame(vec3f(a_obj.m_X1,a_obj.m_Y1,z),pos1);
+    axis_2_data_frame(vec3f(a_obj.m_X1,a_obj.m_Y1,0),pos1);
     xx_2_yy(pos1,pos1);
 
     vec3f pos2;
-    axis_2_data_frame(vec3f(a_obj.m_X2,a_obj.m_Y2,z),pos2);
+    axis_2_data_frame(vec3f(a_obj.m_X2,a_obj.m_Y2,0),pos2);
     xx_2_yy(pos2,pos2);
 
-    z = pos1[2];
+    float z = _zprims();
 
 //    ::printf("debug : inlib::sg::plotter::update_primitive_box : FAIS %d : %g %g %g : %g %g %g\n",a_obj.m_FAIS,
 //        pos1.x(),pos1.y(),pos1.z(),pos2.x(),pos2.y(),pos2.z());
@@ -8818,20 +8860,18 @@ protected: //rep
 
   void update_primitive_ellipse(std::ostream& a_out,const plottable_ellipse& a_obj){
 
-    float z = xy_depth.value()*1.1F;
-
     vec3f pos;
-    axis_2_data_frame(vec3f(a_obj.m_X,a_obj.m_Y,z),pos);
+    axis_2_data_frame(vec3f(a_obj.m_X,a_obj.m_Y,0),pos);
     xx_2_yy(pos,pos);
 
     vec3f pos2;
-    axis_2_data_frame(vec3f(a_obj.m_X+a_obj.m_R1,a_obj.m_Y+a_obj.m_R2,z),pos2);
+    axis_2_data_frame(vec3f(a_obj.m_X+a_obj.m_R1,a_obj.m_Y+a_obj.m_R2,0),pos2);
     xx_2_yy(pos2,pos2);
 
     float rx = pos2[0]-pos[0];
     float ry = pos2[1]-pos[1];
 
-    z = pos[2];
+    float z = _zprims();
 
     //::printf("debug : inlib::sg::plotter::update_primitive_ellipse : FAIS %d : %g %g %g : %g %g\n",a_obj.m_FAIS,
     //         pos.x(),pos.y(),pos.z(),rx,ry);
@@ -8841,7 +8881,7 @@ protected: //rep
       separator* sep = new separator;
 
       matrix* _tsf = new matrix;
-      _tsf->set_translate(pos);
+      _tsf->set_translate(pos[0],pos[1],z);
       sep->add(_tsf);
 
       rgba* mat = new rgba();
@@ -8958,18 +8998,17 @@ protected: //rep
 
   void update_primitive_img(std::ostream& /*a_out*/,const plottable_img& a_obj){
 
-    float z = xy_depth.value()*1.1F;
-
     vec3f pos;
-    axis_2_data_frame(vec3f(a_obj.m_X,a_obj.m_Y,z),pos);
+    axis_2_data_frame(vec3f(a_obj.m_X,a_obj.m_Y,0),pos);
     xx_2_yy(pos,pos);   //pos = center of image in axes coordinates.
-    z = pos[2];
 
     vec3f top;
     axis_2_data_frame(vec3f(0,a_obj.m_Y+a_obj.m_HEIGHT*0.5f,0),top);
     xx_2_yy(top,top);  //top = (o,y-top)  of image in axes coordinates.
     float scale = 2.0f*(top[1]-pos[1]);
     //float scale = a_obj.m_HEIGHT; //m_HEIGHT is then in page coordinate YSIZ.
+
+    float z = _zprims();
 
     const img<byte>& img = a_obj.m_img;
 
@@ -8987,7 +9026,7 @@ protected: //rep
     sep->add(nm);
 
     matrix* _tsf = new matrix;
-    _tsf->set_translate(pos);
+    _tsf->set_translate(pos[0],pos[1],z);
     _tsf->mul_rotate(0,1,0,a_obj.m_THETA*fpi()/180.0f);
     _tsf->mul_rotate(0,0,1,a_obj.m_PHI*fpi()/180.0f);
     _tsf->mul_scale(scale,scale,1);
@@ -9017,6 +9056,7 @@ protected: //etc
   float _zinfos() const {return xy_depth.value()-_zoffset()*0.4f;} //in front _zgrid
   float _zhatch() const {return _zoffset()*0.25f;}
   float _zerrors() const {return _zoffset()*0.5f;}
+  float _zprims() const {return xy_depth.value()*1.1F;}
 
   //static void LIST_SET(vec3f a_list[],unsigned int a_index,float x,float y,float z) {a_list[a_index].set_value(x,y,z);}
 
@@ -9368,8 +9408,20 @@ protected: //etc
     float x = 0;
     if(!to<float>(ws[0],x)) return false;
     float y = 0;
-    if(!to<float>(ws[1],x)) return false;
+    if(!to<float>(ws[1],y)) return false;
     a_v.set_value(x,y);
+    return true;
+  }
+
+  bool sto(const std::string& a_s,std::vector<vec2f>& a_vs) {
+    a_vs.clear();
+    std::vector<std::string> ws;
+    words(a_s,"\n",false,ws);
+    inlib_vforcit(std::string,ws,it) {
+      vec2f v;
+      if(!sto(*it,v)) return false;
+      a_vs.push_back(v);
+    }    
     return true;
   }
 
@@ -9378,6 +9430,19 @@ protected: //etc
     else if(a_s=="axis") {a_v = unit_axis;return true;}
     return false;
   }
+
+  bool sto(const std::string& a_s,std::vector<unit_type>& a_vs) {
+    a_vs.clear();
+    std::vector<std::string> ws;
+    words(a_s,"\n",false,ws);
+    inlib_vforcit(std::string,ws,it) {
+      unit_type v;
+      if(!sto(*it,v)) return false;
+      a_vs.push_back(v);
+    }    
+    return true;
+  }
+
 
   void clear_cmaps() {
    {std::vector<base_colormap*>::iterator it;

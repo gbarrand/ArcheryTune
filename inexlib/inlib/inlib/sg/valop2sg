@@ -347,7 +347,7 @@ public:
 
       return true;
     } else {
-      // generic case : <func_name>(rep of a_1)
+      // generic case : func_name(rep of a_1)
 
       sg::separator* sep = new sg::separator;
 
@@ -364,7 +364,7 @@ public:
       m_group.add(sep);
 
       ////////////////////////////////////////////////////////
-      /// left func symbol : <func_name> (       /////////////
+      /// left func symbol : func_name (       ///////////////
       ////////////////////////////////////////////////////////
      {sg::separator* op_sep = new sg::separator;
       sep->add(op_sep);
@@ -469,7 +469,7 @@ public:
       return true;
 
     } else {
-      // generic case : <func_name>(rep of a_1, rep of a_2)
+      // generic case : func_name(rep of a_1, rep of a_2)
 
       sg::separator* sep = new sg::separator;
 
@@ -498,7 +498,7 @@ public:
       m_group.add(sep);
 
       ////////////////////////////////////////////////////////
-      /// left func symbol : <func_name> (       /////////////
+      /// left func symbol : func_name (       ///////////////
       ////////////////////////////////////////////////////////
      {sg::separator* op_sep = new sg::separator;
       sep->add(op_sep);
@@ -687,7 +687,7 @@ protected:
   }
 
   void unichar2sg(unichar a_unichar,sg::base_freetype& a_node){
-    if(m_wf) a_node.modeling = sg::font_outline;  //else font_filled, font_pixmap.
+    if(m_wf) a_node.modeling = sg::font_outline;
 
     a_node.font = sg::font_stixgeneral_otf();
 

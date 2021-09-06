@@ -181,17 +181,28 @@ typedef struct {
 /*----------------------------------------------------------*/
 /*----------------------------------------------------------*/
 /*----------------------------------------------------------*/
+typedef inlib_GLboolean (*inlib_glIsEnabled_func)      (inlib_GLenum);
+typedef void            (*inlib_glBegin_func)          (inlib_GLenum);
+typedef void            (*inlib_glEnd_func)            ();
+typedef void            (*inlib_glGetFloatv_func)      (inlib_GLenum,inlib_GLfloat*);
+typedef void            (*inlib_glVertex3f_func)       (inlib_GLfloat,inlib_GLfloat,inlib_GLfloat);
+typedef void            (*inlib_glGetBooleanv_func)    (inlib_GLenum,inlib_GLboolean*);
+typedef void            (*inlib_glGetIntegerv_func)    (inlib_GLenum,inlib_GLint*);
+typedef inlib_GLint     (*inlib_glRenderMode_func)     (inlib_GLenum);
+typedef void            (*inlib_glFeedbackBuffer_func) (inlib_GLsizei,inlib_GLenum,inlib_GLfloat*);
+typedef void            (*inlib_glPassThrough_func)    (inlib_GLfloat);
+
 typedef struct {
-  inlib_GLboolean (*m_glIsEnabled)      (inlib_GLenum);
-  void      (*m_glBegin)          (inlib_GLenum);
-  void      (*m_glEnd)            ();
-  void      (*m_glGetFloatv)      (inlib_GLenum,inlib_GLfloat*);
-  void      (*m_glVertex3f)       (inlib_GLfloat,inlib_GLfloat,inlib_GLfloat);
-  void      (*m_glGetBooleanv)    (inlib_GLenum,inlib_GLboolean*);
-  void      (*m_glGetIntegerv)    (inlib_GLenum,inlib_GLint*);
-  inlib_GLint     (*m_glRenderMode)     (inlib_GLenum);
-  void      (*m_glFeedbackBuffer) (inlib_GLsizei,inlib_GLenum,inlib_GLfloat*);
-  void      (*m_glPassThrough)    (inlib_GLfloat);
+  inlib_glIsEnabled_func      m_glIsEnabled;
+  inlib_glBegin_func          m_glBegin;
+  inlib_glEnd_func            m_glEnd;
+  inlib_glGetFloatv_func      m_glGetFloatv;
+  inlib_glVertex3f_func       m_glVertex3f;
+  inlib_glGetBooleanv_func    m_glGetBooleanv;
+  inlib_glGetIntegerv_func    m_glGetIntegerv;
+  inlib_glRenderMode_func     m_glRenderMode;
+  inlib_glFeedbackBuffer_func m_glFeedbackBuffer;
+  inlib_glPassThrough_func    m_glPassThrough;
 } inlib_gl2ps_gl_funcs_t;
 
 #endif

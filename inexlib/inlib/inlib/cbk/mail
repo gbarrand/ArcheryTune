@@ -5,62 +5,22 @@
 #define inlib_cbk_mail
 
 #include "../sg/gui_viewer"
+#include "../mime"
 
 namespace inlib {
 namespace cbk {
 
 inline void file_to_mail(sg::gui_viewer& a_gv,const std::string& a_file,const std::string& a_subject,const std::string& a_msg) {
-  if(a_gv.has_mail_panel()) {
-    std::string mime;
-    if(!file::mime_type(a_file,mime)){
-      //mime set to application/octet_stream
-    }
-    std::string to; //get from address book.
-    if(!a_gv.mail_panel(to,a_subject,a_msg,a_file,mime)) {
-      a_gv.map_warn_failed();
-      return;
-    }
-   //a_gv.map_warn("iPhone send msg done");
-  } else {
-    a_gv.map_warn("mail not supported on this platform");
-    (void)a_file;
-    (void)a_subject;
-    (void)a_msg;
-/*
-    const std::string& from    = vals[3];
-    const std::string& to      = vals[4];
-    const std::string& smtp    = vals[5];
-
-    const std::string& sport   = vals[6];
-    const std::string& sauth   = vals[7];
-    const std::string& user    = vals[8];
-    const std::string& pass    = vals[9];
-
-    unsigned int port;
-    if(!to(sport,port)) {
-      m_gv.map_warn("port not an uint");
-      return sg::return_to_render;
-    }
-
-    bool auth;
-    if(!to(sauth,auth)) {
-      m_gv.map_warn("auth not a bool");
-      return sg::return_to_render;
-    }
-
-    bool verbose = false;
-
-    if(!mail_file(m_gv.out(),_path,smtp,port,from,to,auth,user,pass,subject,msg,verbose)) {
-      m_gv.map_warn_failed();
-      return sg::return_to_render;
-    }
-    m_gv.map_warn_done();
-*/
+  std::string mime;
+  if(!file::mime_type(a_file,mime)){
+    //mime set to application/octet_stream
+  }
+  std::string to; //get from address book.
+  if(!a_gv.mail_panel(to,a_subject,a_msg,a_file,mime)) {
+    a_gv.map_warn_failed();
+    return;
   }
 }
-
-inline void def_subject(sg::gui_viewer& a_gv,std::string& a_s) {a_s = a_gv.app_name()+" export";}
-inline void def_msg(sg::gui_viewer& a_gv,std::string& a_s) {a_s = "sent from "+a_gv.app_name()+" app.";}
 
 inline sg::return_action action_send_mail(sg::gui_viewer& a_gv,sg::entries& a_entries) {
   const std::vector<std::string>& vals = a_entries.values.values();
@@ -76,9 +36,13 @@ inline sg::return_action action_send_mail(sg::gui_viewer& a_gv,sg::entries& a_en
 }
 
 inline sg::return_action action_mail(sg::gui_viewer& a_gv,const sg::pos_data& a_data) {
+  if(!a_gv.has_mail_panel()) {
+    a_gv.map_warn("mail not supported on this platform");
+    return sg::return_to_render;
+  }
+  
   sg::entries* _entries = new sg::entries(a_gv.ttf());
   a_gv.set_style(*_entries);
-  add_callback(a_gv,*_entries,action_send_mail);
 
   _entries->label = "mail";
 
@@ -96,26 +60,14 @@ inline sg::return_action action_mail(sg::gui_viewer& a_gv,const sg::pos_data& a_
   _entries->add_string("subject",a_gv.app_name()+" export");            //1
   _entries->add_string("message","sent from "+a_gv.app_name()+" app."); //2
 
-  if(a_gv.has_mail_panel()) {
-  } else {
-    _entries->add_string("from","barrand@lal.in2p3.fr"); //3
-    _entries->add_string("to","barrand@lal.in2p3.fr");   //4
-
-    _entries->add_string("smtp","smtp.lal.in2p3.fr");    //5
-   {std::vector<std::string> opts;
-    opts.push_back("587");
-    opts.push_back("25");
-    _entries->add_opts("port",opts[0],opts);} //6
-
-    // show the two below if "to" is not <user>@lal.in2p3.fr :
-    _entries->add_bool("auth",false);             //7
-    _entries->add_string("auth=true -> user",""); //8
-    _entries->add_string("auth=true -> pass",""); //9
-  }
-
+  add_callback(a_gv,*_entries,action_send_mail);
+  
   a_gv.show_widget(a_data,_entries);
   return sg::return_to_render;
 }
+
+inline void def_subject(sg::gui_viewer& a_gv,std::string& a_s) {a_s = a_gv.app_name()+" export";}
+inline void def_msg(sg::gui_viewer& a_gv,std::string& a_s) {a_s = "sent from "+a_gv.app_name()+" app.";}
 
 class mail_cbk : public sg::acbk {
   typedef acbk parent;

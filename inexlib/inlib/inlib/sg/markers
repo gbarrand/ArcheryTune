@@ -12,8 +12,8 @@
 #include "pick_action"
 #include "bbox_action"
 #include "../mathf"
-#include "../vec2f"
-#include "../geom2"
+#include "../lina/vec2f"
+#include "../lina/geom2"
 
 namespace inlib {
 namespace sg {

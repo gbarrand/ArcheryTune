@@ -116,6 +116,8 @@ public:
   }
 
 public:
+  virtual void clear_gstos() {gstos::clean_gstos();}
+public:
   vertices()
   :parent()
   ,mode(gl::line_strip()){

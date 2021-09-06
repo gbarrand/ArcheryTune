@@ -15,7 +15,7 @@
 // Except for the public methods we let the style "as it".
 
 #include "mnmx"
-#include "vec3f"
+#include "lina/vec3f"
 #include "mathd" //pi
 #include "snpf"
 #include "out_error"

@@ -5,6 +5,7 @@
 #define inlib_sg_sf_enum
 
 #include "sf"
+#include "../sto"
 
 namespace inlib {
 namespace sg {
@@ -53,7 +54,12 @@ public:
     return true;
   }
   virtual bool s_value(std::string& a_s) const {a_s.clear();return false;}
-  virtual bool s2value(const std::string&) {return false;}
+  virtual bool s2value(const std::string& a_s) {
+    int value;
+    if(!to<int>(a_s,value)) return false;
+    parent::value(T(value));    
+    return true;
+  }
 public:
   virtual void set_value(int a_value) {parent::value(T(a_value));}
 public:

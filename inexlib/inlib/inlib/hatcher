@@ -46,8 +46,8 @@
  *
  */
 
-#include "vec3f"
-#include "vec2f"
+#include "lina/vec3f"
+#include "lina/vec2f"
 #include "mathf"
 #include <cfloat> // for FLT_MAX
 
@@ -65,7 +65,7 @@ public:
   ,fFirstNumHatch(0)
   ,fNumberHatchToDraw(0)
   ,fFirstPolyline(true)
-  ,fResolveResult(UNDEFINED)
+  ,fResolveResult(RESOLVE_UNDEFINED)
   {}
   virtual ~hatcher() {}
 protected:
@@ -256,11 +256,11 @@ protected:
 
   bool fFirstPolyline;
   enum ResolveErrors{
-    OK = 0,
-    COLINEAR,
-    Z_ERROR,
-    PRECISION_ERROR,
-    UNDEFINED
+    RESOLVE_OK = 0,
+    RESOLVE_COLINEAR,
+    RESOLVE_Z_ERROR,
+    RESOLVE_PRECISION_ERROR,
+    RESOLVE_UNDEFINED
   };
   ResolveErrors fResolveResult;
 };

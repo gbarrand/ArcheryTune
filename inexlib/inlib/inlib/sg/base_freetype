@@ -50,15 +50,15 @@ private:
     //add_field(&font_dirs);
   }
 public:
+  virtual void clear_gstos() {gstos::clean_gstos();}
+public:
   base_freetype()
   :parent()
   ,gstos()
 
   ,font("")
   ,front_face(winding_ccw)
-  ,modeling(font_filled) //font_outline
-  //,modeling(font_outline)
-  //,modeling(font_pixmap)
+  ,modeling(font_filled)
   ,unitext()
   //,font_dirs()
   {

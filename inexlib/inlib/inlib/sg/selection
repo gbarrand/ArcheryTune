@@ -47,7 +47,7 @@ public:
 
     const sg::event& evt = a_action.get_event();
 
-    if(const up_event* uevt = event_cast<sg::event,up_event>(evt)){
+    if(const mouse_up_event* uevt = event_cast<sg::event,mouse_up_event>(evt)){
       if(m_up_cbks.is_empty()) return;
 
       float z,w;
@@ -64,7 +64,7 @@ public:
         ecbk::exec_event_cbks(m_up_cbks.callbacks(),evt,&a_action,0,0,0); //it is ok.
       }
 
-    } else if(const down_event* devt = event_cast<sg::event,down_event>(evt)){
+    } else if(const mouse_down_event* devt = event_cast<sg::event,mouse_down_event>(evt)){
       if(m_down_cbks.is_empty()) return;
 
       float z,w;
@@ -81,7 +81,7 @@ public:
         ecbk::exec_event_cbks(m_down_cbks.callbacks(),evt,&a_action,0,0,0); //it is ok.
       }
 
-    } else if(const move_event* mevt = event_cast<sg::event,move_event>(evt)){
+    } else if(const mouse_move_event* mevt = event_cast<sg::event,mouse_move_event>(evt)){
       if(m_move_cbks.is_empty()) return;
 
       float z,w;

@@ -290,6 +290,8 @@ public:
     }
   }
 public:
+  virtual void clear_gstos() {gstos::clean_gstos();}
+public:
   polyhedron()
   :parent()
   ,ph(hep::polyhedron())

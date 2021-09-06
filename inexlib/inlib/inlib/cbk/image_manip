@@ -8,7 +8,7 @@
 #include "../sg/ecbk"
 #include "../sg/base_tex"
 #include "../sg/pos_data"
-#include "../line"
+#include "../lina/line"
 
 namespace inlib {
 namespace cbk {
@@ -17,15 +17,15 @@ inline sg::return_action action_image_manip(sg::alert& a_alert,
                                             const sg::ecbk& a_cbk,sg::base_tex& a_widget,const sg::pos_data&) {
   sg::base_tex::intersect_type type;
   int ex,ey;
- {if(sg::down_event* devt = sg::event_cast<sg::event,sg::down_event>(*(a_cbk.m_event))){
+ {if(sg::mouse_down_event* devt = sg::event_cast<sg::event,sg::mouse_down_event>(*(a_cbk.m_event))){
     ex = devt->x();
     ey = devt->y();
     type = sg::base_tex::intersect_down;
-  } else if(sg::move_event* mevt = sg::event_cast<sg::event,sg::move_event>(*(a_cbk.m_event))){
+  } else if(sg::mouse_move_event* mevt = sg::event_cast<sg::event,sg::mouse_move_event>(*(a_cbk.m_event))){
     ex = mevt->x();
     ey = mevt->y();
     type = sg::base_tex::intersect_move;
-  } else if(sg::up_event* uevt = sg::event_cast<sg::event,sg::up_event>(*(a_cbk.m_event))){
+  } else if(sg::mouse_up_event* uevt = sg::event_cast<sg::event,sg::mouse_up_event>(*(a_cbk.m_event))){
     ex = uevt->x();
     ey = uevt->y();
     type = sg::base_tex::intersect_up;

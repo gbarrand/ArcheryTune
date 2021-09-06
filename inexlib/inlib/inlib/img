@@ -741,10 +741,10 @@ public:
   bool rgb2rgba(img<T>& a_res,const T& a_pixel) const {
     if(m_n!=3) return false;
 
-    unsigned int a_n = 4;
+    unsigned int n = 4;
 
     a_res.make_empty();
-    unsigned int sz = m_w*m_h*a_n;
+    unsigned int sz = m_w*m_h*n;
     if(!sz) return false;
 
     a_res.m_buffer = new T[sz];
@@ -752,23 +752,41 @@ public:
     a_res.m_owner = true;
     a_res.m_w = m_w;
     a_res.m_h = m_h;
-    a_res.m_n = a_n;
+    a_res.m_n = n;
 
     for(unsigned int j=0;j<m_h;j++) {
       for(unsigned int i=0;i<m_w;i++) {
         //position in the original image.
         T* pos = m_buffer + j * (m_w * m_n) + i*m_n;
 
-        T* rpos = a_res.m_buffer + j * (m_w * a_n) + i*a_n;
+        T* rpos = a_res.m_buffer + j * (m_w * n) + i*n;
 
-        for(unsigned int ipix=0;ipix<m_n;ipix++) {
-          *(rpos+ipix) = *(pos+ipix);
-        }
+        *(rpos+0) = *(pos+0);
+        *(rpos+1) = *(pos+1);
+        *(rpos+2) = *(pos+2);
         *(rpos+3) = a_pixel;
 
       }
     }
 
+    return true;
+  }
+
+  bool rgba2bgra() {
+    if(m_n!=4) return false;
+    for(unsigned int j=0;j<m_h;j++) {
+      for(unsigned int i=0;i<m_w;i++) {
+        T* pos = m_buffer + j * (m_w * m_n) + i*m_n;
+        T r = *(pos+0);
+        T g = *(pos+1);
+        T b = *(pos+2);
+        T a = *(pos+3);
+        *(pos+0) = b;
+        *(pos+1) = g;
+        *(pos+2) = r;
+        *(pos+3) = a;
+      }
+    }
     return true;
   }
 
@@ -830,14 +848,14 @@ public:
     unsigned int rwn = rw*an;
     unsigned int i,j,r;
     //unsigned int c;
-    T* tile;T* pos;T* ptile;T* _pos;
+    T* pos;T* ptile;T* _pos;
 
     //copy tiles :
     unsigned int index = 0;
     for(j=0;j<a_rows;j++) {
       for(i=0;i<a_cols;i++) {
         // index = a_cols*j+i
-        tile = a_imgs[index].buffer();
+        const T* tile = a_imgs[index].buffer();
 
         //if(has_border) {
         //  for(unsigned int r=0;r<hbh;r++) {

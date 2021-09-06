@@ -94,6 +94,8 @@ public: //node
     visit(a_action,radius,max_level,state.m_draw_type);
   }
 public:
+  virtual void clear_gstos() {gstos::clean_gstos();}
+public:
   icosahedron_sphere()
   :parent()
   ,render_gstos()

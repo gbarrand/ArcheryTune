@@ -4,8 +4,10 @@
 #ifndef inlib_app
 #define inlib_app
 
-#include "system"
-#include "file"
+#include "path_env"
+#include "sout"
+#include "path"
+#include "file_exists"
 #include "forit"
 #include "sys/dir"
 

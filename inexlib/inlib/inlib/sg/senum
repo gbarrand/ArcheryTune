@@ -289,6 +289,37 @@ inline bool sline_pattern(const std::string& a_s,lpat& aPattern){
   return true;
 }
 
+typedef struct {char string[16];text_mode value;} text_mode_rec;
+inline const text_mode_rec* text_mode_recsList(unsigned int& a_num){
+  static const text_mode_rec list[] = { //read only static, then ok.
+    {"as_is",          text_as_is},
+    {"enforce_width",  text_enforce_width},
+    {"enforce_height", text_enforce_height}
+  };
+  a_num = sizeof(list)/sizeof(list[0]);
+  return list;
+}
+inline bool stext_mode(const std::string& a_s,text_mode& a_v){
+  unsigned int number;
+  const text_mode_rec* list = text_mode_recsList(number);
+  for(unsigned int count=0;count<number;count++) {
+    if(a_s==list[count].string) {
+      a_v = list[count].value;
+      return true;
+    }
+  }
+  a_v = text_as_is;
+  return false;
+}
+inline const char* stext_mode(text_mode a_v){
+  unsigned int number;
+  const text_mode_rec* list = text_mode_recsList(number);
+  for(unsigned int count=0;count<number;count++) {
+    if(a_v==list[count].value) return list[count].string;
+  }
+  return 0;
+}
+
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
@@ -339,3 +370,4 @@ inline bool scolor(const colorf& a_col,std::string& a_s){
 */
 
 #endif
+

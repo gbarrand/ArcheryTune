@@ -62,10 +62,11 @@ public:
   sf_vec3f translation;
   sf_string coloring;
   sf_string title;
+  sf<bool> back_visible;
 public:
   virtual const desc_fields& node_desc_fields() const {
     INLIB_FIELD_DESC_NODE_CLASS(inlib::sg::style)
-    static const desc_fields s_v(parent::node_desc_fields(),43, //WARNING : take care of count.
+    static const desc_fields s_v(parent::node_desc_fields(),44, //WARNING : take care of count.
       INLIB_ARG_FIELD_DESC(color),  //1
       INLIB_ARG_FIELD_DESC(highlight_color),
       INLIB_ARG_FIELD_DESC(back_color),
@@ -112,7 +113,8 @@ public:
 
       INLIB_ARG_FIELD_DESC(translation),
       INLIB_ARG_FIELD_DESC(coloring),
-      INLIB_ARG_FIELD_DESC(title)
+      INLIB_ARG_FIELD_DESC(title),
+      INLIB_ARG_FIELD_DESC(back_visible)
     );
     return s_v;
   }
@@ -161,6 +163,7 @@ private:
     add_field(&translation);
     add_field(&coloring);
     add_field(&title);
+    add_field(&back_visible);
   }
 public:
   style()
@@ -208,6 +211,7 @@ public:
   ,translation(vec3f(0,0,0))
   ,coloring()
   ,title()
+  ,back_visible(true)
   {
     add_fields();
   }
@@ -258,6 +262,7 @@ public:
   ,translation(a_from.translation)
   ,coloring(a_from.coloring)
   ,title(a_from.title)
+  ,back_visible(a_from.back_visible)
   {
     add_fields();
   }
@@ -307,6 +312,7 @@ public:
     translation = a_from.translation;
     coloring = a_from.coloring;
     title = a_from.title;
+    back_visible = a_from.back_visible;
 
     return *this;
   }
@@ -355,6 +361,7 @@ public:
     translation = vec3f(0,0,0);
     coloring = "";
     title = "";
+    back_visible = true;
   }
 
   bool from_string(std::ostream& a_out,const cmaps_t& a_cmaps,const std::string& a_s) {
@@ -405,6 +412,7 @@ public:
     sp.translation(translation.value());
     sp.coloring(coloring.value());
     sp.title(title.value());
+    sp.back_visible(back_visible.value());
 
     //if(!sp.parse(a_s,style_parser::def_error_func))
     //  return false;
@@ -461,6 +469,7 @@ public:
     translation.value(sp.translation());
     coloring.value(sp.coloring());
     title.value(sp.title());
+    back_visible.value(sp.back_visible());
 
     return true;
   }

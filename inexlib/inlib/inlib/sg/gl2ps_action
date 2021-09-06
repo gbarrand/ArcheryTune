@@ -279,11 +279,18 @@ public:
     vp[3] = m_wh;
 
     int bufsize = 0;
-    ::inlib_gl2psBeginPage("","inlib_sg_write_gl2ps",
+    if(::inlib_gl2psBeginPage("","inlib_sg_write_gl2ps",
                      vp,a_format,sort,options,
                      INLIB_GL_RGBA,0, NULL,0,0,0,bufsize,
-                     m_FILE,a_name.c_str());
-
+                     m_FILE,a_name.c_str())==INLIB_GL2PS_ERROR) {
+      m_out << "inlib::sg::gl2ps_action::open :"
+            << " inlib_gl2psBeginPage() failed."
+            << std::endl;
+      ::fclose(m_FILE);
+      m_FILE = 0;
+      return false;
+    }
+    
     ::inlib_gl2psSetBackgroundColor(m_back[0],m_back[1],m_back[2]);
 
     m_vp_mtx.set_identity();
@@ -525,37 +532,37 @@ protected:
       return true;
     }
 
-    virtual bool project_normal(float& a_x,float& a_y,float& a_z) {
+    virtual bool project_normal(float& /*a_x*/,float& /*a_y*/,float& /*a_z*/) {
       //return m_this.project_normal(a_x,a_y,a_z);
       return true;
     }
     virtual bool add_point_normal(float a_x,float a_y,float a_z,float a_w,
-                                  float a_nx,float a_ny,float a_nz) {
+                                  float /*a_nx*/,float /*a_ny*/,float /*a_nz*/) {
       add_point(a_x,a_y,a_z,a_w);
     //m_this.m_points.add_normal(a_nx,a_ny,a_nz);
       return true;
     }
     virtual bool add_point_normal(float a_x,float a_y,float a_z,float a_w,
-                                  float a_nx,float a_ny,float a_nz,
+                                  float /*a_nx*/,float /*a_ny*/,float /*a_nz*/,
                                   float a_r,float a_g,float a_b,float a_a) {
       add_point(a_x,a_y,a_z,a_w,a_r,a_g,a_b,a_a);
     //m_this.m_points.add_normal(a_nx,a_ny,a_nz);
       return true;
     }
     virtual bool add_line_normal(float a_bx,float a_by,float a_bz,float a_bw,
-                                 float a_bnx,float a_bny,float a_bnz,
+                                 float /*a_bnx*/,float /*a_bny*/,float /*a_bnz*/,
                                  float a_ex,float a_ey,float a_ez,float a_ew,
-                                 float a_enx,float a_eny,float a_enz) {
+                                 float /*a_enx*/,float /*a_eny*/,float /*a_enz*/) {
       add_line(a_bx,a_by,a_bz,a_bw, a_ex,a_ey,a_ez,a_ew);
     //m_this.m_lines.add_normal(a_bnx,a_bny,a_bnz);
     //m_this.m_lines.add_normal(a_enx,a_eny,a_enz);
       return true;
     }
     virtual bool add_line_normal(float a_bx,float a_by,float a_bz,float a_bw,
-                                 float a_bnx,float a_bny,float a_bnz,
+                                 float /*a_bnx*/,float /*a_bny*/,float /*a_bnz*/,
                                  float a_br,float a_bg,float a_bb,float a_ba,
                                  float a_ex,float a_ey,float a_ez,float a_ew,
-                                 float a_enx,float a_eny,float a_enz,
+                                 float /*a_enx*/,float /*a_eny*/,float /*a_enz*/,
                                  float a_er,float a_eg,float a_eb,float a_ea){
       add_line(a_bx,a_by,a_bz,a_bw, a_br,a_bg,a_bb,a_ba, a_ex,a_ey,a_ez,a_ew, a_er,a_eg,a_eb,a_ea);
     //m_this.m_lines.add_normal(a_bnx,a_bny,a_bnz);
@@ -564,11 +571,11 @@ protected:
     }
     virtual bool add_triangle_normal(
       float a_p1x,float a_p1y,float a_p1z,float a_p1w,
-      float a_n1x,float a_n1y,float a_n1z,
+      float /*a_n1x*/,float /*a_n1y*/,float /*a_n1z*/,
       float a_p2x,float a_p2y,float a_p2z,float a_p2w,
-      float a_n2x,float a_n2y,float a_n2z,
+      float /*a_n2x*/,float /*a_n2y*/,float /*a_n2z*/,
       float a_p3x,float a_p3y,float a_p3z,float a_p3w,
-      float a_n3x,float a_n3y,float a_n3z) {
+      float /*a_n3x*/,float /*a_n3y*/,float /*a_n3z*/) {
       add_triangle(a_p1x,a_p1y,a_p1z,a_p1w,
                    a_p2x,a_p2y,a_p2z,a_p2w,
                    a_p3x,a_p3y,a_p3z,a_p3w);
@@ -579,13 +586,13 @@ protected:
     }
     virtual bool add_triangle_normal(
       float a_p1x,float a_p1y,float a_p1z,float a_p1w,
-      float a_n1x,float a_n1y,float a_n1z,
+      float /*a_n1x*/,float /*a_n1y*/,float /*a_n1z*/,
       float a_r1,float a_g1,float a_b1,float a_a1,
       float a_p2x,float a_p2y,float a_p2z,float a_p2w,
-      float a_n2x,float a_n2y,float a_n2z,
+      float /*a_n2x*/,float /*a_n2y*/,float /*a_n2z*/,
       float a_r2,float a_g2,float a_b2,float a_a2,
       float a_p3x,float a_p3y,float a_p3z,float a_p3w,
-      float a_n3x,float a_n3y,float a_n3z,
+      float /*a_n3x*/,float /*a_n3y*/,float /*a_n3z*/,
       float a_r3,float a_g3,float a_b3,float a_a3){
       add_triangle(a_p1x,a_p1y,a_p1z,a_p1w,
                    a_r1,a_g1,a_b1,a_a1,

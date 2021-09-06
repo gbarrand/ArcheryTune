@@ -5,7 +5,7 @@
 #define inlib_tess_contour
 
 #include "glutess/glutess"
-#include "vec3f"
+#include "lina/vec3f"
 #include "glprims"
 
 namespace inlib {

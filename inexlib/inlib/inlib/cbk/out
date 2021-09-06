@@ -6,44 +6,86 @@
 
 #include "mail"
 
+#include "../sg/ref_pos_data"
+#include "../sg/item_insh"
+
 namespace inlib {
 namespace cbk {
 
-inline sg::return_action action_menu_export(sg::gui_viewer& a_gv,const sg::pos_data& a_data) {
+inline void choose_and_download_doc_file_script(std::string& a_s) {
+  a_s = std::string("\
+#!insh\n\
+doc_dir=`app_dir -doc`\n\
+items=`ls ${doc_dir}`\n\
+script='gui_push_list '\n\
+for item in ${items} ; do\n\
+  action=\"'file_download -doc ${item}'\"\n\
+  script=\"${script} ${item} ${action} \"\n\
+done\n\
+eval ${script}\n\
+");
+}
+
+inline sg::return_action action_menu_export(sg::gui_viewer& a_gv,const sg::ref_pos_data<ishell>& a_data) {
   sg::list* list = new sg::list(a_gv.ttf());
   a_gv.set_style(*list);
-  sg::add_item_insh(a_gv,*list,"window to out.jpeg","window_to_jpeg");
-  sg::add_item_insh(a_gv,*list,"window to out.png" ,"window_to_png");
 
-  sg::add_item_insh(a_gv,*list,"scene to out_zb.ps"   ,"gui_hide_main_menu\nscene_write_to_paper -format=inzb_ps   -out_dir -scale=2 out_zb.ps");
-  sg::add_item_insh(a_gv,*list,"scene to out_zb.png"  ,"gui_hide_main_menu\nscene_write_to_paper -format=inzb_png  -out_dir -scale=2 out_zb.png");
-  sg::add_item_insh(a_gv,*list,"scene to out_zb.jpeg" ,"gui_hide_main_menu\nscene_write_to_paper -format=inzb_jpeg -out_dir -scale=2 out_zb.jpeg");
-  sg::add_item_insh(a_gv,*list,"scene to out_gl2ps.eps","gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_eps -out_dir out_gl2ps.eps");
-  sg::add_item_insh(a_gv,*list,"scene to out_gl2ps.ps" ,"gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_ps  -out_dir out_gl2ps.ps");
-  sg::add_item_insh(a_gv,*list,"scene to out_gl2ps.pdf","gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_pdf -out_dir out_gl2ps.pdf");
-  sg::add_item_insh(a_gv,*list,"scene to out_gl2ps.svg","gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_svg -out_dir out_gl2ps.svg");
-  sg::add_item_insh(a_gv,*list,"scene to out_gl2ps.tex","gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_tex -out_dir out_gl2ps.tex");
-  sg::add_item_insh(a_gv,*list,"scene to out_gl2ps.pgf","gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_pdf -out_dir out_gl2ps.pgf");
+  ishell& _shell = a_data.m_data;
+
+  sg::add_item_insh(*list,"window to out.jpeg",_shell,"window_to_jpeg");
+  sg::add_item_insh(*list,"window to out.png" ,_shell,"window_to_png");
+
+  sg::add_item_insh(*list,"scene to out_zb.ps"   ,_shell,"gui_hide_main_menu\nscene_write_to_paper -format=inzb_ps   -out_dir -scale=2 out_zb.ps");
+  sg::add_item_insh(*list,"scene to out_zb.png"  ,_shell,"gui_hide_main_menu\nscene_write_to_paper -format=inzb_png  -out_dir -scale=2 out_zb.png");
+  sg::add_item_insh(*list,"scene to out_zb.jpeg" ,_shell,"gui_hide_main_menu\nscene_write_to_paper -format=inzb_jpeg -out_dir -scale=2 out_zb.jpeg");
+  sg::add_item_insh(*list,"scene to out_gl2ps.eps",_shell,"gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_eps -out_dir out_gl2ps.eps");
+  sg::add_item_insh(*list,"scene to out_gl2ps.ps" ,_shell,"gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_ps  -out_dir out_gl2ps.ps");
+  sg::add_item_insh(*list,"scene to out_gl2ps.pdf",_shell,"gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_pdf -out_dir out_gl2ps.pdf");
+  sg::add_item_insh(*list,"scene to out_gl2ps.svg",_shell,"gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_svg -out_dir out_gl2ps.svg");
+  sg::add_item_insh(*list,"scene to out_gl2ps.tex",_shell,"gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_tex -out_dir out_gl2ps.tex");
+  sg::add_item_insh(*list,"scene to out_gl2ps.pgf",_shell,"gui_hide_main_menu\nscene_write_to_paper -format=gl2ps_pdf -out_dir out_gl2ps.pgf");
 //#if defined(IODA_DEV) || defined(G4VIEW_DEV)
-//  sg::add_item(a_gv,*list,"scene to out.exsg",sg::action_exsg);
+//  sg::add_item(*list,"scene to out.exsg",sg::action_exsg);
 //#endif
-  sg::add_item_insh(a_gv,*list,"scene to out.bsg","scene_write_to_bsg -out_dir out.bsg");
-  sg::add_item_insh(a_gv,*list,"static scene in out_static.bsg","scene_write_static_to_bsg -out_dir out_static.bsg");
-  sg::add_item_insh(a_gv,*list,"dynamic scene in out_dynamic.bsg","scene_write_dynamic_to_bsg -out_dir out_dynamic.bsg");
-  if(a_gv.has_mail_panel()) {
-    sg::add_item(a_gv,*list,"mail...",cbk::action_mail,a_data);
+  sg::add_item_insh(*list,"scene to out.bsg"                ,_shell,"scene_write_to_bsg -out_dir out.bsg");
+  sg::add_item_insh(*list,"static scene in out_static.bsg"  ,_shell,"scene_write_static_to_bsg -out_dir out_static.bsg");
+  sg::add_item_insh(*list,"dynamic scene in out_dynamic.bsg",_shell,"scene_write_dynamic_to_bsg -out_dir out_dynamic.bsg");
+
+  if(device::is_emscripten()) {
+   {std::string script;
+    choose_and_download_doc_file_script(script);
+    sg::add_item_insh(*list,"download doc file",_shell,script);}
   }
+
+  if(a_gv.has_mail_panel()) {
+    sg::add_item(a_gv,*list,"mail...",cbk::action_mail);
+  }
+  a_gv.show_widget(a_data,list);
+  return sg::return_to_render;
+}
+
+inline sg::return_action action_menu_import(sg::gui_viewer& a_gv,const sg::ref_pos_data<ishell>& a_data) {
+  sg::list* list = new sg::list(a_gv.ttf());
+  a_gv.set_style(*list);
+
+  ishell& _shell = a_data.m_data;
+
+  if(device::is_emscripten()) {
+    sg::add_item_insh(*list,"upload in app doc dir",_shell,"ems 'open_file_chooser();'");
+    sg::add_item_insh(*list,"upload in app doc dir and open",_shell,"ems 'open_file_chooser_open();'");
+  }
+
   a_gv.show_widget(a_data,list);
   return sg::return_to_render;
 }
 
 }}
 
-namespace inlib {
-namespace out {
-inline sg::return_action action_main(sg::gui_viewer& a_gv,const sg::pos_data& a_data) { //deprecated.
-  return cbk::action_menu_export(a_gv,a_data);
-}
-}}
+//namespace inlib {
+//namespace out {
+//inline sg::return_action action_main(sg::gui_viewer& a_gv,const sg::pos_data& a_data) { //deprecated.
+//  return cbk::action_menu_export(a_data);
+//}
+//}}
 
 #endif

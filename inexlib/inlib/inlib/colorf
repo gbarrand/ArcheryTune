@@ -4,7 +4,7 @@
 #ifndef inlib_colorf
 #define inlib_colorf
 
-#include "vec4f"
+#include "lina/vec4f"
 
 namespace inlib {
 
@@ -155,10 +155,11 @@ struct cmp_colorf {
   }
 };
 
+//default color is lightgrey:
 #if defined(INLIB_MEM) && !defined(INLIB_MEM_ATEXIT)
-inline const colorf& colorf_default() {static const colorf s_v(0.8f,0.8f,0.8f,1,false);return s_v;}
+inline const colorf& colorf_default() {static const colorf s_v(0.824231F,0.824231F,0.824231F,1,false);return s_v;}
 #else
-inline const colorf& colorf_default() {static const colorf s_v(0.8f,0.8f,0.8f,1);return s_v;}
+inline const colorf& colorf_default() {static const colorf s_v(0.824231F,0.824231F,0.824231F,1);return s_v;}
 #endif
 
 }

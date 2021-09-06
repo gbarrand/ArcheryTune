@@ -128,10 +128,10 @@ public:
 
     if(m_active) {
 
-      if(event_cast<sg::event,sg::move_event>(a_action.get_event())){
+      if(event_cast<sg::event,sg::mouse_move_event>(a_action.get_event())){
         ecbk::exec_event_cbks(m_move_cbks.callbacks(),a_action.get_event(),&a_action,this);
 
-      } else if(event_cast<sg::event,sg::up_event>(a_action.get_event())){
+      } else if(event_cast<sg::event,sg::mouse_up_event>(a_action.get_event())){
         set_active_node(0);
         a_action.set_done(true);
       }

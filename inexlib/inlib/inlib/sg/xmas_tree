@@ -357,7 +357,7 @@ inline void xmas_tree::grow_branch(const vec3f& a_dir,
 
 
     if (gen > 0) {
-        // if this is not the end of the branch lenghten it
+        // if this is not the end of the branch lengthen it
 
         // Compute random factors used to control how far out the next
         // genration will go. The power function is used to concentrate

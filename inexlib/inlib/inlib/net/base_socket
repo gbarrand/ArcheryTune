@@ -6,11 +6,13 @@
 
 #include "../typedefs"
 #include "../platform"
-#include "../file"
 #include "../buffer"
 #include "../mnmx"
 #include "../newdel"
 #include "../forit"
+#include "../file_read"
+#include "../file_write"
+#include "../S_STRING"
 
 //#define INLIB_SOCKET_DUMP_PID
 #ifdef INLIB_SOCKET_DUMP_PID

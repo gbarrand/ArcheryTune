@@ -7,7 +7,7 @@
 #include "../vmanip"
 #include "../vdata"
 #include "../glprims"
-#include "../mat4f"
+#include "../lina/mat4f"
 
 namespace inlib {
 namespace sg {
@@ -60,7 +60,7 @@ public:
     offset = m_nms.size();
     m_nms.resize(offset+nxyzs);
     float* pnms = vec_data<float>(m_nms)+offset;
-    gl::triangle_strip_to_triangles(num,a_xyzs,a_nms,pxyzs,pnms);
+    gl::triangle_strip_to_triangles_nms(num,a_xyzs,a_nms,pxyzs,pnms);
   }
   void add_triangle_fan_normal(size_t a_floatn,const float* a_xyzs,const float* a_nms) {
     size_t num = a_floatn/3;
@@ -72,7 +72,7 @@ public:
     offset = m_nms.size();
     m_nms.resize(offset+nxyzs);
     float* pnms = vec_data<float>(m_nms)+offset;
-    gl::triangle_fan_to_triangles(num,a_xyzs,a_nms,pxyzs,pnms);
+    gl::triangle_fan_to_triangles_nms(num,a_xyzs,a_nms,pxyzs,pnms);
   }
 
   void add_triangle_strip_as_triangles(size_t a_floatn,const float* a_xyzs,const float* a_nms) { //used in sg::sphere, icosahedron_sphere.

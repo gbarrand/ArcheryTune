@@ -185,12 +185,6 @@ public: //inlib::sg::plotprim
   }
   virtual plotprim* copy() const {return new plottable_text(*this);}
 public:
-  enum text_mode {
-    text_as_it,
-    text_enforce_width,
-    text_enforce_height
-  };
-public:
   plottable_text(const std::string& a_TEXT,float a_X,float a_Y,
                  float a_SIZE,text_mode a_text_mode,
   /*
@@ -204,7 +198,10 @@ public:
                  char a_HJUST,char a_VJUST,
                  const std::string& a_FONT,const colorf& a_TXCI,
                  float a_SCALE,bool a_SMOOTHING,bool a_HINTING,float a_line_width,
-                 font_modeling a_font_modeling
+                 font_modeling a_font_modeling,
+                 bool a_back_visible,
+                 const colorf& a_back_color,
+                 float a_back_shadow
 		 )
   :m_TEXT(a_TEXT),m_X(a_X),m_Y(a_Y)
   ,m_SIZE(a_SIZE),m_text_mode(a_text_mode)
@@ -214,6 +211,9 @@ public:
   ,m_FONT(a_FONT),m_TXCI(a_TXCI)
   ,m_SCALE(a_SCALE),m_SMOOTHING(a_SMOOTHING),m_HINTING(a_HINTING),m_line_width(a_line_width)
   ,m_font_modeling(a_font_modeling)
+  ,m_back_visible(a_back_visible)
+  ,m_back_color(a_back_color)
+  ,m_back_shadow(a_back_shadow)
   {}
 public:
   plottable_text(const plottable_text& a_from)
@@ -227,6 +227,9 @@ public:
   ,m_FONT(a_from.m_FONT),m_TXCI(a_from.m_TXCI)
   ,m_SCALE(a_from.m_SCALE),m_SMOOTHING(a_from.m_SMOOTHING),m_HINTING(a_from.m_HINTING),m_line_width(a_from.m_line_width)
   ,m_font_modeling(a_from.m_font_modeling)
+  ,m_back_visible(a_from.m_back_visible)
+  ,m_back_color(a_from.m_back_color)
+  ,m_back_shadow(a_from.m_back_shadow)
   {}
   plottable_text& operator=(const plottable_text& a_from) {
     m_TEXT = a_from.m_TEXT;
@@ -244,6 +247,9 @@ public:
     m_HINTING = a_from.m_HINTING;
     m_line_width = a_from.m_line_width;
     m_font_modeling = a_from.m_font_modeling;
+    m_back_visible = a_from.m_back_visible;
+    m_back_color = a_from.m_back_color;
+    m_back_shadow = a_from.m_back_shadow;
     return *this;
   }
 public:
@@ -262,6 +268,9 @@ public:
   bool m_HINTING;
   float m_line_width; //used if font is hershey.
   font_modeling m_font_modeling;
+  bool m_back_visible;
+  colorf m_back_color;
+  float m_back_shadow;
 };
 
 class plottable_box : public virtual plotprim {

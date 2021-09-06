@@ -4,7 +4,9 @@
 #ifndef inlib_dirmanip
 #define inlib_dirmanip
 
-#include "fmanip"
+#include "get_env"
+#include "sep"
+#include "sout"
 #include "vmanip"
 #include "path_words"
 
@@ -124,7 +126,7 @@ inline bool get_files_with_names(std::ostream& a_out,
 
 inline bool check_env_dir(const std::string& a_env) {
   std::string s;
-  if(!getenv(a_env,s)) return false;
+  if(!get_env(a_env,s)) return false;
   bool is_dir;
   dir::is_a(s,is_dir);
   return is_dir;

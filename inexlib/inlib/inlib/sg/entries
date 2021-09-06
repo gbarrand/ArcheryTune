@@ -24,7 +24,11 @@ namespace inlib {
 namespace sg {
 
 class entries : public base_list {
-  INLIB_CLASS_STRING_VALUE(enter,)
+//INLIB_CLASS_STRING_VALUE(enter,)
+  static const std::string& s_enter() {
+    static const std::string s_v;
+    return s_v;
+  }
 public:
   INLIB_NODE(entries,inlib::sg::entries,base_list)
 public:

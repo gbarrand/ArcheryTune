@@ -108,6 +108,8 @@ public:
   }
 
 public:
+  virtual void clear_gstos() {gstos::clean_gstos();}
+public:
   virtual bool intersect_value(std::ostream&,intersect_type,const line<vec3f>&,std::string&) const {
     return false;
   }

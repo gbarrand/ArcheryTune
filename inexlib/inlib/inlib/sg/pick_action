@@ -7,7 +7,7 @@
 #include "matrix_action"
 #include "primitive_visitor"
 
-#include "../plane"
+#include "../lina/plane"
 #include "../vmanip"
 
 #include "node"
@@ -125,7 +125,7 @@ protected:
                                      a_p3x,a_p3y,a_p3z,a_p3w);
   }
 
-  virtual bool project_normal(float& a_x,float& a_y,float& a_z) {return true;}
+  virtual bool project_normal(float&,float&,float&) {return true;}
   virtual bool add_point_normal(float a_x,float a_y,float a_z,float a_w,
                                 float,float,float) {
     return pick_action::add_point(a_x,a_y,a_z,a_w);

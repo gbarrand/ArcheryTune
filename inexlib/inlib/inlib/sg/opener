@@ -7,7 +7,7 @@
 #include "iopener"
 
 #include "../file_opener"
-#include "../file"
+#include "../file_format"
 #include "../rcmp"
 #include "../vpair"
 
@@ -120,7 +120,7 @@ public:
       out << "inlib::opener::open :"
           << " file " << sout(a_path) << " does not exist."
           << std::endl;
-      m_gv.map_warn_failed();
+      m_gv.map_warn_not_existing_file();
       return false;
     }
 

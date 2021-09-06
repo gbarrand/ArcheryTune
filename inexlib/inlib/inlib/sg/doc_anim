@@ -12,9 +12,6 @@
 #include "../file_iterator"
 #include "../file_opener"
 
-//#include "../file"
-//#include "../sys/file"
-
 namespace inlib {
 namespace sg {
 

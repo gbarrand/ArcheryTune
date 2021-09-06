@@ -4,7 +4,7 @@
 //
 //  Pure header version of gl2ps-1.4.0 done automatically from
 // the original source by using the bush/upgrade/inlib_gl2ps script.
-//  The code had been "namespace protected" by changing :
+//  The code had been "name space protected" by changing :
 //    gl2ps_<xxx> to inlib_gl2ps_<xxx>
 // and :
 //    INLIB_GL2PS_<xxx> to INLIB_INLIB_GL2PS_<xxx>
@@ -263,7 +263,7 @@ static inlib_GL2PScontext *inlib_gl2ps_context = NULL;
 
 /* Need to forward-declare this one */
 
-static inlib_GLint inlib_gl2psPrintPrimitives(void);
+inline inlib_GLint inlib_gl2psPrintPrimitives(void);
 
 /*********************************************************************
  *
@@ -271,7 +271,7 @@ static inlib_GLint inlib_gl2psPrintPrimitives(void);
  *
  *********************************************************************/
 
-static void inlib_gl2psMsg(inlib_GLint level, const char *fmt, ...)
+inline void inlib_gl2psMsg(inlib_GLint level, const char *fmt, ...)
 {
   va_list args;
 
@@ -289,7 +289,7 @@ static void inlib_gl2psMsg(inlib_GLint level, const char *fmt, ...)
   /* if(level == INLIB_GL2PS_ERROR) exit(1); */
 }
 
-static void *inlib_gl2psMalloc(size_t size)
+inline void *inlib_gl2psMalloc(size_t size)
 {
   void *ptr;
 
@@ -302,7 +302,7 @@ static void *inlib_gl2psMalloc(size_t size)
   return ptr;
 }
 
-static void *inlib_gl2psRealloc(void *ptr, size_t size)
+inline void *inlib_gl2psRealloc(void *ptr, size_t size)
 {
   void *orig = ptr;
   if(!size) return NULL;
@@ -315,13 +315,13 @@ static void *inlib_gl2psRealloc(void *ptr, size_t size)
   return ptr;
 }
 
-static void inlib_gl2psFree(void *ptr)
+inline void inlib_gl2psFree(void *ptr)
 {
   if(!ptr) return;
   free(ptr);
 }
 
-static int inlib_gl2psWriteBigEndian(unsigned long data, int bytes)
+inline int inlib_gl2psWriteBigEndian(unsigned long data, int bytes)
 {
   int i;
   int size = sizeof(unsigned long);
@@ -335,7 +335,7 @@ static int inlib_gl2psWriteBigEndian(unsigned long data, int bytes)
 
 #if defined(INLIB_GL2PS_HAVE_ZLIB)
 
-static void inlib_gl2psSetupCompress(void)
+inline void inlib_gl2psSetupCompress(void)
 {
   inlib_gl2ps_context->compress = (inlib_GL2PScompress*)inlib_gl2psMalloc(sizeof(inlib_GL2PScompress));
   inlib_gl2ps_context->compress->src = NULL;
@@ -345,7 +345,7 @@ static void inlib_gl2psSetupCompress(void)
   inlib_gl2ps_context->compress->destLen = 0;
 }
 
-static void inlib_gl2psFreeCompress(void)
+inline void inlib_gl2psFreeCompress(void)
 {
   if(!inlib_gl2ps_context->compress)
     return;
@@ -358,7 +358,7 @@ static void inlib_gl2psFreeCompress(void)
   inlib_gl2ps_context->compress->destLen = 0;
 }
 
-static int inlib_gl2psAllocCompress(unsigned int srcsize)
+inline int inlib_gl2psAllocCompress(unsigned int srcsize)
 {
   inlib_gl2psFreeCompress();
 
@@ -374,7 +374,7 @@ static int inlib_gl2psAllocCompress(unsigned int srcsize)
   return INLIB_GL2PS_SUCCESS;
 }
 
-static void *inlib_gl2psReallocCompress(unsigned int srcsize)
+inline void *inlib_gl2psReallocCompress(unsigned int srcsize)
 {
   if(!inlib_gl2ps_context->compress || !srcsize)
     return NULL;
@@ -393,7 +393,7 @@ static void *inlib_gl2psReallocCompress(unsigned int srcsize)
   return inlib_gl2ps_context->compress->start;
 }
 
-static int inlib_gl2psWriteBigEndianCompress(unsigned long data, int bytes)
+inline int inlib_gl2psWriteBigEndianCompress(unsigned long data, int bytes)
 {
   int i;
   int size = sizeof(unsigned long);
@@ -404,7 +404,7 @@ static int inlib_gl2psWriteBigEndianCompress(unsigned long data, int bytes)
   return bytes;
 }
 
-static int inlib_gl2psDeflate(void)
+inline int inlib_gl2psDeflate(void)
 {
   /* For compatibility with older zlib versions, we use compress(...)
      instead of compress2(..., Z_BEST_COMPRESSION) */
@@ -414,7 +414,7 @@ static int inlib_gl2psDeflate(void)
 
 #endif
 
-static int inlib_gl2psPrintf(const char* fmt, ...)
+inline int inlib_gl2psPrintf(const char* fmt, ...)
 {
   int ret;
   va_list args;
@@ -466,7 +466,7 @@ static int inlib_gl2psPrintf(const char* fmt, ...)
   return ret;
 }
 
-static void inlib_gl2psPrintGzipHeader(void)
+inline void inlib_gl2psPrintGzipHeader(void)
 {
 #if defined(INLIB_GL2PS_HAVE_ZLIB)
   char tmp[10] = {'\x1f', '\x8b', /* magic numbers: 0x1f, 0x8b */
@@ -484,7 +484,7 @@ static void inlib_gl2psPrintGzipHeader(void)
 #endif
 }
 
-static void inlib_gl2psPrintGzipFooter(void)
+inline void inlib_gl2psPrintGzipFooter(void)
 {
 #if defined(INLIB_GL2PS_HAVE_ZLIB)
   int n;
@@ -526,7 +526,7 @@ static void inlib_gl2psPrintGzipFooter(void)
 
 /* The list handling routines */
 
-static void inlib_gl2psListRealloc(inlib_GL2PSlist *list, inlib_GLint n)
+inline void inlib_gl2psListRealloc(inlib_GL2PSlist *list, inlib_GLint n)
 {
   if(!list){
     inlib_gl2psMsg(INLIB_GL2PS_ERROR, "Cannot reallocate NULL list");
@@ -546,7 +546,7 @@ static void inlib_gl2psListRealloc(inlib_GL2PSlist *list, inlib_GLint n)
   }
 }
 
-static inlib_GL2PSlist *inlib_gl2psListCreate(inlib_GLint n, inlib_GLint incr, inlib_GLint size)
+inline inlib_GL2PSlist *inlib_gl2psListCreate(inlib_GLint n, inlib_GLint incr, inlib_GLint size)
 {
   inlib_GL2PSlist *list;
 
@@ -562,20 +562,20 @@ static inlib_GL2PSlist *inlib_gl2psListCreate(inlib_GLint n, inlib_GLint incr, i
   return list;
 }
 
-static void inlib_gl2psListReset(inlib_GL2PSlist *list)
+inline void inlib_gl2psListReset(inlib_GL2PSlist *list)
 {
   if(!list) return;
   list->n = 0;
 }
 
-static void inlib_gl2psListDelete(inlib_GL2PSlist *list)
+inline void inlib_gl2psListDelete(inlib_GL2PSlist *list)
 {
   if(!list) return;
   inlib_gl2psFree(list->array);
   inlib_gl2psFree(list);
 }
 
-static void inlib_gl2psListAdd(inlib_GL2PSlist *list, void *data)
+inline void inlib_gl2psListAdd(inlib_GL2PSlist *list, void *data)
 {
   if(!list){
     inlib_gl2psMsg(INLIB_GL2PS_ERROR, "Cannot add into unallocated list");
@@ -586,14 +586,14 @@ static void inlib_gl2psListAdd(inlib_GL2PSlist *list, void *data)
   memcpy(&list->array[(list->n - 1) * list->size], data, list->size);
 }
 
-static int inlib_gl2psListNbr(inlib_GL2PSlist *list)
+inline int inlib_gl2psListNbr(inlib_GL2PSlist *list)
 {
   if(!list)
     return 0;
   return list->n;
 }
 
-static void *inlib_gl2psListPointer(inlib_GL2PSlist *list, inlib_GLint idx)
+inline void *inlib_gl2psListPointer(inlib_GL2PSlist *list, inlib_GLint idx)
 {
   if(!list){
     inlib_gl2psMsg(INLIB_GL2PS_ERROR, "Cannot point into unallocated list");
@@ -606,7 +606,7 @@ static void *inlib_gl2psListPointer(inlib_GL2PSlist *list, inlib_GLint idx)
   return &list->array[idx * list->size];
 }
 
-static void inlib_gl2psListSort(inlib_GL2PSlist *list,
+inline void inlib_gl2psListSort(inlib_GL2PSlist *list,
                           int (*fcmp)(const void *a, const void *b))
 {
   if(!list)
@@ -614,7 +614,7 @@ static void inlib_gl2psListSort(inlib_GL2PSlist *list,
   qsort(list->array, list->n, list->size, fcmp);
 }
 
-static void inlib_gl2psListAction(inlib_GL2PSlist *list, void (*action)(void *data))
+inline void inlib_gl2psListAction(inlib_GL2PSlist *list, void (*action)(void *data))
 {
   inlib_GLint i;
 
@@ -623,7 +623,7 @@ static void inlib_gl2psListAction(inlib_GL2PSlist *list, void (*action)(void *da
   }
 }
 
-static void inlib_inlib_gl2psListActionInverse(inlib_GL2PSlist *list, void (*action)(void *data))
+inline void inlib_inlib_gl2psListActionInverse(inlib_GL2PSlist *list, void (*action)(void *data))
 {
   inlib_GLint i;
 
@@ -634,14 +634,14 @@ static void inlib_inlib_gl2psListActionInverse(inlib_GL2PSlist *list, void (*act
 
 #if defined(INLIB_GL2PS_HAVE_LIBPNG)
 
-static void inlib_gl2psListRead(inlib_GL2PSlist *list, int index, void *data)
+inline void inlib_gl2psListRead(inlib_GL2PSlist *list, int index, void *data)
 {
   if((index < 0) || (index >= list->n))
     inlib_gl2psMsg(INLIB_GL2PS_ERROR, "Wrong list index in inlib_gl2psListRead");
   memcpy(data, &list->array[index * list->size], list->size);
 }
 
-static void inlib_gl2psEncodeBase64Block(unsigned char in[3], unsigned char out[4], int len)
+inline void inlib_gl2psEncodeBase64Block(unsigned char in[3], unsigned char out[4], int len)
 {
   static const char cb64[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -652,7 +652,7 @@ static void inlib_gl2psEncodeBase64Block(unsigned char in[3], unsigned char out[
   out[3] = (len > 2) ? cb64[ in[2] & 0x3f ] : '=';
 }
 
-static void inlib_gl2psListEncodeBase64(inlib_GL2PSlist *list)
+inline void inlib_gl2psListEncodeBase64(inlib_GL2PSlist *list)
 {
   unsigned char *buffer, in[3], out[4];
   int i, n, index, len;
@@ -688,7 +688,7 @@ static void inlib_gl2psListEncodeBase64(inlib_GL2PSlist *list)
 
 /* Helpers for rgba colors */
 
-static inlib_GLboolean inlib_gl2psSameColor(inlib_GL2PSrgba rgba1, inlib_GL2PSrgba rgba2)
+inline inlib_GLboolean inlib_gl2psSameColor(inlib_GL2PSrgba rgba1, inlib_GL2PSrgba rgba2)
 {
   if(!INLIB_GL2PS_ZERO(rgba1[0] - rgba2[0]) ||
      !INLIB_GL2PS_ZERO(rgba1[1] - rgba2[1]) ||
@@ -697,7 +697,7 @@ static inlib_GLboolean inlib_gl2psSameColor(inlib_GL2PSrgba rgba1, inlib_GL2PSrg
   return INLIB_GL_TRUE;
 }
 
-static inlib_GLboolean inlib_gl2psVertsSameColor(const inlib_GL2PSprimitive *prim)
+inline inlib_GLboolean inlib_gl2psVertsSameColor(const inlib_GL2PSprimitive *prim)
 {
   int i;
 
@@ -709,7 +709,7 @@ static inlib_GLboolean inlib_gl2psVertsSameColor(const inlib_GL2PSprimitive *pri
   return INLIB_GL_TRUE;
 }
 
-static inlib_GLboolean inlib_inlib_gl2psSameColorThreshold(int n, inlib_GL2PSrgba rgba[],
+inline inlib_GLboolean inlib_inlib_gl2psSameColorThreshold(int n, inlib_GL2PSrgba rgba[],
                                          inlib_GL2PSrgba threshold)
 {
   int i;
@@ -726,7 +726,7 @@ static inlib_GLboolean inlib_inlib_gl2psSameColorThreshold(int n, inlib_GL2PSrgb
   return INLIB_GL_TRUE;
 }
 
-static void inlib_gl2psSetLastColor(inlib_GL2PSrgba rgba)
+inline void inlib_gl2psSetLastColor(inlib_GL2PSrgba rgba)
 {
   int i;
   for(i = 0; i < 3; ++i){
@@ -734,7 +734,7 @@ static void inlib_gl2psSetLastColor(inlib_GL2PSrgba rgba)
   }
 }
 
-static inlib_GLfloat inlib_gl2psGetRGB(inlib_GL2PSimage *im, inlib_GLuint x, inlib_GLuint y,
+inline inlib_GLfloat inlib_gl2psGetRGB(inlib_GL2PSimage *im, inlib_GLuint x, inlib_GLuint y,
                            inlib_GLfloat *red, inlib_GLfloat *green, inlib_GLfloat *blue)
 {
 
@@ -762,7 +762,7 @@ static inlib_GLfloat inlib_gl2psGetRGB(inlib_GL2PSimage *im, inlib_GLuint x, inl
 
 /* Helper routines for pixmaps */
 
-static inlib_GL2PSimage *inlib_gl2psCopyPixmap(inlib_GL2PSimage *im)
+inline inlib_GL2PSimage *inlib_gl2psCopyPixmap(inlib_GL2PSimage *im)
 {
   int size;
   inlib_GL2PSimage *image = (inlib_GL2PSimage*)inlib_gl2psMalloc(sizeof(inlib_GL2PSimage));
@@ -790,7 +790,7 @@ static inlib_GL2PSimage *inlib_gl2psCopyPixmap(inlib_GL2PSimage *im)
   return image;
 }
 
-static void inlib_inlib_gl2psFreePixmap(inlib_GL2PSimage *im)
+inline void inlib_inlib_gl2psFreePixmap(inlib_GL2PSimage *im)
 {
   if(!im)
     return;
@@ -804,7 +804,7 @@ static void inlib_inlib_gl2psFreePixmap(inlib_GL2PSimage *im)
 #  define png_jmpbuf(png_ptr) ((png_ptr)->jmpbuf)
 #endif
 
-static void inlib_gl2psUserWritePNG(png_structp png_ptr, png_bytep data, png_size_t length)
+inline void inlib_gl2psUserWritePNG(png_structp png_ptr, png_bytep data, png_size_t length)
 {
   unsigned int i;
   inlib_GL2PSlist *png = (inlib_GL2PSlist*)png_get_io_ptr(png_ptr);
@@ -812,12 +812,12 @@ static void inlib_gl2psUserWritePNG(png_structp png_ptr, png_bytep data, png_siz
     inlib_gl2psListAdd(png, &data[i]);
 }
 
-static void inlib_gl2psUserFlushPNG(png_structp png_ptr)
+inline void inlib_gl2psUserFlushPNG(png_structp png_ptr)
 {
   (void) png_ptr;  /* not used */
 }
 
-static void inlib_gl2psConvertPixmapToPNG(inlib_GL2PSimage *pixmap, inlib_GL2PSlist *png)
+inline void inlib_gl2psConvertPixmapToPNG(inlib_GL2PSimage *pixmap, inlib_GL2PSlist *png)
 {
   png_structp png_ptr;
   png_infop info_ptr;
@@ -865,7 +865,7 @@ static void inlib_gl2psConvertPixmapToPNG(inlib_GL2PSimage *pixmap, inlib_GL2PSl
 
 /* Helper routines for text strings */
 
-static inlib_GLint inlib_gl2psAddText(inlib_GLint type, const char *str, const char *fontname,
+inline inlib_GLint inlib_gl2psAddText(inlib_GLint type, const char *str, const char *fontname,
                           inlib_GLshort fontsize, inlib_GLint alignment, inlib_GLfloat angle,
                           inlib_GL2PSrgba color)
 {
@@ -944,7 +944,7 @@ static inlib_GLint inlib_gl2psAddText(inlib_GLint type, const char *str, const c
   return INLIB_GL2PS_SUCCESS;
 }
 
-static inlib_GL2PSstring *inlib_gl2psCopyText(inlib_GL2PSstring *t)
+inline inlib_GL2PSstring *inlib_gl2psCopyText(inlib_GL2PSstring *t)
 {
   inlib_GL2PSstring *text = (inlib_GL2PSstring*)inlib_gl2psMalloc(sizeof(inlib_GL2PSstring));
   text->str = (char*)inlib_gl2psMalloc((strlen(t->str)+1)*sizeof(char));
@@ -958,7 +958,7 @@ static inlib_GL2PSstring *inlib_gl2psCopyText(inlib_GL2PSstring *t)
   return text;
 }
 
-static void inlib_inlib_gl2psFreeText(inlib_GL2PSstring *text)
+inline void inlib_inlib_gl2psFreeText(inlib_GL2PSstring *text)
 {
   if(!text)
     return;
@@ -969,7 +969,7 @@ static void inlib_inlib_gl2psFreeText(inlib_GL2PSstring *text)
 
 /* Helpers for blending modes */
 
-static inlib_GLboolean inlib_gl2psSupportedBlendMode(inlib_GLenum sfactor, inlib_GLenum dfactor)
+inline inlib_GLboolean inlib_gl2psSupportedBlendMode(inlib_GLenum sfactor, inlib_GLenum dfactor)
 {
   /* returns TRUE if gl2ps supports the argument combination: only two
      blending modes have been implemented so far */
@@ -980,7 +980,7 @@ static inlib_GLboolean inlib_gl2psSupportedBlendMode(inlib_GLenum sfactor, inlib
   return INLIB_GL_FALSE;
 }
 
-static void inlib_gl2psAdaptVertexForBlending(inlib_GL2PSvertex *v)
+inline void inlib_gl2psAdaptVertexForBlending(inlib_GL2PSvertex *v)
 {
   /* Transforms vertex depending on the actual blending function -
      currently the vertex v is considered as source vertex and his
@@ -1004,7 +1004,7 @@ static void inlib_gl2psAdaptVertexForBlending(inlib_GL2PSvertex *v)
   }
 }
 
-static void inlib_gl2psAssignTriangleProperties(inlib_GL2PStriangle *t)
+inline void inlib_gl2psAssignTriangleProperties(inlib_GL2PStriangle *t)
 {
   /* int i; */
 
@@ -1037,7 +1037,7 @@ static void inlib_gl2psAssignTriangleProperties(inlib_GL2PStriangle *t)
   }
 }
 
-static void inlib_gl2psFillTriangleFromPrimitive(inlib_GL2PStriangle *t, inlib_GL2PSprimitive *p,
+inline void inlib_gl2psFillTriangleFromPrimitive(inlib_GL2PStriangle *t, inlib_GL2PSprimitive *p,
                                            inlib_GLboolean assignprops)
 {
   t->vertex[0] = p->verts[0];
@@ -1047,7 +1047,7 @@ static void inlib_gl2psFillTriangleFromPrimitive(inlib_GL2PStriangle *t, inlib_G
     inlib_gl2psAssignTriangleProperties(t);
 }
 
-static void inlib_gl2psInitTriangle(inlib_GL2PStriangle *t)
+inline void inlib_gl2psInitTriangle(inlib_GL2PStriangle *t)
 {
   int i;
   inlib_GL2PSvertex vertex = { {-1.0F, -1.0F, -1.0F}, {-1.0F, -1.0F, -1.0F, -1.0F} };
@@ -1058,13 +1058,13 @@ static void inlib_gl2psInitTriangle(inlib_GL2PStriangle *t)
 
 /* Miscellaneous helper routines */
 
-static void inlib_gl2psResetLineProperties(void)
+inline void inlib_gl2psResetLineProperties(void)
 {
   inlib_gl2ps_context->lastlinewidth = 0.;
   inlib_gl2ps_context->lastlinecap = inlib_gl2ps_context->lastlinejoin = 0;
 }
 
-static inlib_GL2PSprimitive *inlib_gl2psCopyPrimitive(inlib_GL2PSprimitive *p)
+inline inlib_GL2PSprimitive *inlib_gl2psCopyPrimitive(inlib_GL2PSprimitive *p)
 {
   inlib_GL2PSprimitive *prim;
 
@@ -1105,7 +1105,7 @@ static inlib_GL2PSprimitive *inlib_gl2psCopyPrimitive(inlib_GL2PSprimitive *p)
   return prim;
 }
 
-static inlib_GLboolean inlib_gl2psSamePosition(inlib_GL2PSxyz p1, inlib_GL2PSxyz p2)
+inline inlib_GLboolean inlib_gl2psSamePosition(inlib_GL2PSxyz p1, inlib_GL2PSxyz p2)
 {
   if(!INLIB_GL2PS_ZERO(p1[0] - p2[0]) ||
      !INLIB_GL2PS_ZERO(p1[1] - p2[1]) ||
@@ -1120,7 +1120,7 @@ static inlib_GLboolean inlib_gl2psSamePosition(inlib_GL2PSxyz p1, inlib_GL2PSxyz
  *
  *********************************************************************/
 
-static inlib_GLfloat inlib_gl2psComparePointPlane(inlib_GL2PSxyz point, inlib_GL2PSplane plane)
+inline inlib_GLfloat inlib_gl2psComparePointPlane(inlib_GL2PSxyz point, inlib_GL2PSplane plane)
 {
   return (plane[0] * point[0] +
           plane[1] * point[1] +
@@ -1128,24 +1128,24 @@ static inlib_GLfloat inlib_gl2psComparePointPlane(inlib_GL2PSxyz point, inlib_GL
           plane[3]);
 }
 
-static inlib_GLfloat inlib_gl2psPsca(inlib_GLfloat *a, inlib_GLfloat *b)
+inline inlib_GLfloat inlib_gl2psPsca(inlib_GLfloat *a, inlib_GLfloat *b)
 {
   return (a[0]*b[0] + a[1]*b[1] + a[2]*b[2]);
 }
 
-static void inlib_gl2psPvec(inlib_GLfloat *a, inlib_GLfloat *b, inlib_GLfloat *c)
+inline void inlib_gl2psPvec(inlib_GLfloat *a, inlib_GLfloat *b, inlib_GLfloat *c)
 {
   c[0] = a[1]*b[2] - a[2]*b[1];
   c[1] = a[2]*b[0] - a[0]*b[2];
   c[2] = a[0]*b[1] - a[1]*b[0];
 }
 
-static inlib_GLfloat inlib_gl2psNorm(inlib_GLfloat *a)
+inline inlib_GLfloat inlib_gl2psNorm(inlib_GLfloat *a)
 {
   return (inlib_GLfloat)sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
 }
 
-static void inlib_gl2psGetNormal(inlib_GLfloat *a, inlib_GLfloat *b, inlib_GLfloat *c)
+inline void inlib_gl2psGetNormal(inlib_GLfloat *a, inlib_GLfloat *b, inlib_GLfloat *c)
 {
   inlib_GLfloat norm;
 
@@ -1164,7 +1164,7 @@ static void inlib_gl2psGetNormal(inlib_GLfloat *a, inlib_GLfloat *b, inlib_GLflo
   }
 }
 
-static void inlib_gl2psGetPlane(inlib_GL2PSprimitive *prim, inlib_GL2PSplane plane)
+inline void inlib_gl2psGetPlane(inlib_GL2PSprimitive *prim, inlib_GL2PSplane plane)
 {
   inlib_GL2PSxyz v = {0.0F, 0.0F, 0.0F}, w = {0.0F, 0.0F, 0.0F};
 
@@ -1228,7 +1228,7 @@ static void inlib_gl2psGetPlane(inlib_GL2PSprimitive *prim, inlib_GL2PSplane pla
   }
 }
 
-static void inlib_gl2psCutEdge(inlib_GL2PSvertex *a, inlib_GL2PSvertex *b, inlib_GL2PSplane plane,
+inline void inlib_gl2psCutEdge(inlib_GL2PSvertex *a, inlib_GL2PSvertex *b, inlib_GL2PSplane plane,
                          inlib_GL2PSvertex *c)
 {
   inlib_GL2PSxyz v;
@@ -1253,7 +1253,7 @@ static void inlib_gl2psCutEdge(inlib_GL2PSvertex *a, inlib_GL2PSvertex *b, inlib
   c->rgba[3] = (1 - sect) * a->rgba[3] + sect * b->rgba[3];
 }
 
-static void inlib_gl2psCreateSplitPrimitive(inlib_GL2PSprimitive *parent, inlib_GL2PSplane plane,
+inline void inlib_gl2psCreateSplitPrimitive(inlib_GL2PSprimitive *parent, inlib_GL2PSplane plane,
                                       inlib_GL2PSprimitive *child, inlib_GLshort numverts,
                                       inlib_GLshort *index0, inlib_GLshort *index1)
 {
@@ -1301,7 +1301,7 @@ static void inlib_gl2psCreateSplitPrimitive(inlib_GL2PSprimitive *parent, inlib_
   }
 }
 
-static void inlib_gl2psAddIndex(inlib_GLshort *index0, inlib_GLshort *index1, inlib_GLshort *nb,
+inline void inlib_gl2psAddIndex(inlib_GLshort *index0, inlib_GLshort *index1, inlib_GLshort *nb,
                           inlib_GLshort i, inlib_GLshort j)
 {
   inlib_GLint k;
@@ -1315,12 +1315,12 @@ static void inlib_gl2psAddIndex(inlib_GLshort *index0, inlib_GLshort *index1, in
   (*nb)++;
 }
 
-static inlib_GLshort inlib_gl2psGetIndex(inlib_GLshort i, inlib_GLshort num)
+inline inlib_GLshort inlib_gl2psGetIndex(inlib_GLshort i, inlib_GLshort num)
 {
   return (i < num - 1) ? i + 1 : 0;
 }
 
-static inlib_GLint inlib_gl2psTestSplitPrimitive(inlib_GL2PSprimitive *prim, inlib_GL2PSplane plane)
+inline inlib_GLint inlib_gl2psTestSplitPrimitive(inlib_GL2PSprimitive *prim, inlib_GL2PSplane plane)
 {
   inlib_GLint type = INLIB_GL2PS_COINCIDENT;
   inlib_GLshort i, j;
@@ -1351,7 +1351,7 @@ static inlib_GLint inlib_gl2psTestSplitPrimitive(inlib_GL2PSprimitive *prim, inl
   return 0;
 }
 
-static inlib_GLint inlib_gl2psSplitPrimitive(inlib_GL2PSprimitive *prim, inlib_GL2PSplane plane,
+inline inlib_GLint inlib_gl2psSplitPrimitive(inlib_GL2PSprimitive *prim, inlib_GL2PSplane plane,
                                  inlib_GL2PSprimitive **front, inlib_GL2PSprimitive **back)
 {
   inlib_GLshort i, j, in = 0, out = 0, in0[5], in1[5], out0[5], out1[5];
@@ -1411,7 +1411,7 @@ static inlib_GLint inlib_gl2psSplitPrimitive(inlib_GL2PSprimitive *prim, inlib_G
   return type;
 }
 
-static void inlib_gl2psDivideQuad(inlib_GL2PSprimitive *quad,
+inline void inlib_gl2psDivideQuad(inlib_GL2PSprimitive *quad,
                             inlib_GL2PSprimitive **t1, inlib_GL2PSprimitive **t2)
 {
   *t1 = (inlib_GL2PSprimitive*)inlib_gl2psMalloc(sizeof(inlib_GL2PSprimitive));
@@ -1439,7 +1439,7 @@ static void inlib_gl2psDivideQuad(inlib_GL2PSprimitive *quad,
   (*t2)->boundary = ((quad->boundary & 4) ? 2 : 0) | ((quad->boundary & 8) ? 4 : 0);
 }
 
-static int inlib_gl2psCompareDepth(const void *a, const void *b)
+inline int inlib_gl2psCompareDepth(const void *a, const void *b)
 {
   const inlib_GL2PSprimitive *q, *w;
   inlib_GLfloat dq = 0.0F, dw = 0.0F, diff;
@@ -1470,7 +1470,7 @@ static int inlib_gl2psCompareDepth(const void *a, const void *b)
   }
 }
 
-static int inlib_gl2psTrianglesFirst(const void *a, const void *b)
+inline int inlib_gl2psTrianglesFirst(const void *a, const void *b)
 {
   const inlib_GL2PSprimitive *q, *w;
 
@@ -1479,7 +1479,7 @@ static int inlib_gl2psTrianglesFirst(const void *a, const void *b)
   return (q->type < w->type ? 1 : -1);
 }
 
-static inlib_GLint inlib_gl2psFindRoot(inlib_GL2PSlist *primitives, inlib_GL2PSprimitive **root)
+inline inlib_GLint inlib_gl2psFindRoot(inlib_GL2PSlist *primitives, inlib_GL2PSprimitive **root)
 {
   inlib_GLint i, j, count, best = 1000000, idx = 0;
   inlib_GL2PSprimitive *prim1, *prim2;
@@ -1524,7 +1524,7 @@ static inlib_GLint inlib_gl2psFindRoot(inlib_GL2PSlist *primitives, inlib_GL2PSp
   }
 }
 
-static void inlib_inlib_gl2psFreeImagemap(inlib_GL2PSimagemap *list)
+inline void inlib_inlib_gl2psFreeImagemap(inlib_GL2PSimagemap *list)
 {
   inlib_GL2PSimagemap *next;
   while(list != NULL){
@@ -1536,7 +1536,7 @@ static void inlib_inlib_gl2psFreeImagemap(inlib_GL2PSimagemap *list)
   }
 }
 
-static void inlib_inlib_gl2psFreePrimitive(void *data)
+inline void inlib_inlib_gl2psFreePrimitive(void *data)
 {
   inlib_GL2PSprimitive *q;
 
@@ -1551,7 +1551,7 @@ static void inlib_inlib_gl2psFreePrimitive(void *data)
   inlib_gl2psFree(q);
 }
 
-static void inlib_gl2psAddPrimitiveInList(inlib_GL2PSprimitive *prim, inlib_GL2PSlist *list)
+inline void inlib_gl2psAddPrimitiveInList(inlib_GL2PSprimitive *prim, inlib_GL2PSlist *list)
 {
   inlib_GL2PSprimitive *t1, *t2;
 
@@ -1567,7 +1567,7 @@ static void inlib_gl2psAddPrimitiveInList(inlib_GL2PSprimitive *prim, inlib_GL2P
 
 }
 
-static void inlib_inlib_gl2psFreeBspTree(inlib_GL2PSbsptree **tree)
+inline void inlib_inlib_gl2psFreeBspTree(inlib_GL2PSbsptree **tree)
 {
   if(*tree){
     if((*tree)->back) inlib_inlib_gl2psFreeBspTree(&(*tree)->back);
@@ -1581,19 +1581,19 @@ static void inlib_inlib_gl2psFreeBspTree(inlib_GL2PSbsptree **tree)
   }
 }
 
-static inlib_GLboolean inlib_gl2psGreater(inlib_GLfloat f1, inlib_GLfloat f2)
+inline inlib_GLboolean inlib_gl2psGreater(inlib_GLfloat f1, inlib_GLfloat f2)
 {
   if(f1 > f2) return INLIB_GL_TRUE;
   else return INLIB_GL_FALSE;
 }
 
-static inlib_GLboolean inlib_gl2psLess(inlib_GLfloat f1, inlib_GLfloat f2)
+inline inlib_GLboolean inlib_gl2psLess(inlib_GLfloat f1, inlib_GLfloat f2)
 {
   if(f1 < f2) return INLIB_GL_TRUE;
   else return INLIB_GL_FALSE;
 }
 
-static void inlib_gl2psBuildBspTree(inlib_GL2PSbsptree *tree, inlib_GL2PSlist *primitives)
+inline void inlib_gl2psBuildBspTree(inlib_GL2PSbsptree *tree, inlib_GL2PSlist *primitives)
 {
   inlib_GL2PSprimitive *prim, *frontprim = NULL, *backprim = NULL;
   inlib_GL2PSlist *frontlist, *backlist;
@@ -1656,7 +1656,7 @@ static void inlib_gl2psBuildBspTree(inlib_GL2PSbsptree *tree, inlib_GL2PSlist *p
   inlib_gl2psListDelete(primitives);
 }
 
-static void inlib_gl2psTraverseBspTree(inlib_GL2PSbsptree *tree, inlib_GL2PSxyz eye, inlib_GLfloat epsilon,
+inline void inlib_gl2psTraverseBspTree(inlib_GL2PSbsptree *tree, inlib_GL2PSxyz eye, inlib_GLfloat epsilon,
                                  inlib_GLboolean (*compare)(inlib_GLfloat f1, inlib_GLfloat f2),
                                  void (*action)(void *data), int inverse)
 {
@@ -1692,7 +1692,7 @@ static void inlib_gl2psTraverseBspTree(inlib_GL2PSbsptree *tree, inlib_GL2PSxyz 
   }
 }
 
-static void inlib_gl2psRescaleAndOffset(void)
+inline void inlib_gl2psRescaleAndOffset(void)
 {
   inlib_GL2PSprimitive *prim;
   inlib_GLfloat minZ, maxZ, rangeZ, scaleZ;
@@ -1779,7 +1779,7 @@ static void inlib_gl2psRescaleAndOffset(void)
  *
  *********************************************************************/
 
-static inlib_GLint inlib_inlib_gl2psGetPlaneFromPoints(inlib_GL2PSxyz a, inlib_GL2PSxyz b, inlib_GL2PSplane plane)
+inline inlib_GLint inlib_inlib_gl2psGetPlaneFromPoints(inlib_GL2PSxyz a, inlib_GL2PSxyz b, inlib_GL2PSplane plane)
 {
   inlib_GLfloat n;
 
@@ -1801,7 +1801,7 @@ static inlib_GLint inlib_inlib_gl2psGetPlaneFromPoints(inlib_GL2PSxyz a, inlib_G
   }
 }
 
-static void inlib_inlib_gl2psFreeBspImageTree(inlib_GL2PSbsptree2d **tree)
+inline void inlib_inlib_gl2psFreeBspImageTree(inlib_GL2PSbsptree2d **tree)
 {
   if(*tree){
     if((*tree)->back)  inlib_inlib_gl2psFreeBspImageTree(&(*tree)->back);
@@ -1811,7 +1811,7 @@ static void inlib_inlib_gl2psFreeBspImageTree(inlib_GL2PSbsptree2d **tree)
   }
 }
 
-static inlib_GLint inlib_gl2psCheckPoint(inlib_GL2PSxyz point, inlib_GL2PSplane plane)
+inline inlib_GLint inlib_gl2psCheckPoint(inlib_GL2PSxyz point, inlib_GL2PSplane plane)
 {
   inlib_GLfloat pt_dis;
 
@@ -1821,7 +1821,7 @@ static inlib_GLint inlib_gl2psCheckPoint(inlib_GL2PSxyz point, inlib_GL2PSplane 
   else                              return INLIB_GL2PS_POINT_COINCIDENT;
 }
 
-static void inlib_gl2psAddPlanesInBspTreeImage(inlib_GL2PSprimitive *prim,
+inline void inlib_gl2psAddPlanesInBspTreeImage(inlib_GL2PSprimitive *prim,
                                          inlib_GL2PSbsptree2d **tree)
 {
   inlib_GLint ret = 0;
@@ -1925,7 +1925,7 @@ static void inlib_gl2psAddPlanesInBspTreeImage(inlib_GL2PSprimitive *prim,
   }
 }
 
-static inlib_GLint inlib_gl2psCheckPrimitive(inlib_GL2PSprimitive *prim, inlib_GL2PSplane plane)
+inline inlib_GLint inlib_gl2psCheckPrimitive(inlib_GL2PSprimitive *prim, inlib_GL2PSplane plane)
 {
   inlib_GLint i;
   inlib_GLint pos;
@@ -1940,7 +1940,7 @@ static inlib_GLint inlib_gl2psCheckPrimitive(inlib_GL2PSprimitive *prim, inlib_G
   else                            return INLIB_GL2PS_COINCIDENT;
 }
 
-static inlib_GL2PSprimitive *inlib_inlib_gl2psCreateSplitPrimitive2D(inlib_GL2PSprimitive *parent,
+inline inlib_GL2PSprimitive *inlib_inlib_gl2psCreateSplitPrimitive2D(inlib_GL2PSprimitive *parent,
                                                    inlib_GLshort numverts,
                                                    inlib_GL2PSvertex *vertx)
 {
@@ -1978,7 +1978,7 @@ static inlib_GL2PSprimitive *inlib_inlib_gl2psCreateSplitPrimitive2D(inlib_GL2PS
   return child;
 }
 
-static void inlib_inlib_gl2psSplitPrimitive2D(inlib_GL2PSprimitive *prim,
+inline void inlib_inlib_gl2psSplitPrimitive2D(inlib_GL2PSprimitive *prim,
                                   inlib_GL2PSplane plane,
                                   inlib_GL2PSprimitive **front,
                                   inlib_GL2PSprimitive **back)
@@ -2060,7 +2060,7 @@ static void inlib_inlib_gl2psSplitPrimitive2D(inlib_GL2PSprimitive *prim,
   inlib_gl2psFree(back_list);
 }
 
-static inlib_GLint inlib_gl2psAddInBspImageTree(inlib_GL2PSprimitive *prim, inlib_GL2PSbsptree2d **tree)
+inline inlib_GLint inlib_gl2psAddInBspImageTree(inlib_GL2PSprimitive *prim, inlib_GL2PSbsptree2d **tree)
 {
   inlib_GLint ret = 0;
   inlib_GL2PSprimitive *frontprim = NULL, *backprim = NULL;
@@ -2119,7 +2119,7 @@ static inlib_GLint inlib_gl2psAddInBspImageTree(inlib_GL2PSprimitive *prim, inli
   return 0;
 }
 
-static void inlib_inlib_gl2psAddInImageTree(void *data)
+inline void inlib_inlib_gl2psAddInImageTree(void *data)
 {
   inlib_GL2PSprimitive *prim = *(inlib_GL2PSprimitive **)data;
   inlib_gl2ps_context->primitivetoadd = prim;
@@ -2136,7 +2136,7 @@ static void inlib_inlib_gl2psAddInImageTree(void *data)
 
 /* Boundary construction */
 
-static void inlib_gl2psAddBoundaryInList(inlib_GL2PSprimitive *prim, inlib_GL2PSlist *list)
+inline void inlib_gl2psAddBoundaryInList(inlib_GL2PSprimitive *prim, inlib_GL2PSlist *list)
 {
   inlib_GL2PSprimitive *b;
   inlib_GLshort i;
@@ -2208,7 +2208,7 @@ static void inlib_gl2psAddBoundaryInList(inlib_GL2PSprimitive *prim, inlib_GL2PS
 
 }
 
-static void inlib_gl2psBuildPolygonBoundary(inlib_GL2PSbsptree *tree)
+inline void inlib_gl2psBuildPolygonBoundary(inlib_GL2PSbsptree *tree)
 {
   inlib_GLint i;
   inlib_GL2PSprimitive *prim;
@@ -2235,6 +2235,7 @@ INLIB_GL2PSDLL_API void inlib_gl2psAddPolyPrimitive(inlib_GLshort type, inlib_GL
                                         inlib_GLfloat width, inlib_GLint linecap,
                                         inlib_GLint linejoin,char boundary)
 {
+  if(!inlib_gl2ps_context) return;  /*G.Barrand*/
   inlib_GL2PSprimitive *prim;
 
   prim = (inlib_GL2PSprimitive*)inlib_gl2psMalloc(sizeof(inlib_GL2PSprimitive));
@@ -2259,7 +2260,7 @@ INLIB_GL2PSDLL_API void inlib_gl2psAddPolyPrimitive(inlib_GLshort type, inlib_GL
   inlib_gl2psListAdd(inlib_gl2ps_context->primitives, &prim);
 }
 
-static inlib_GLint inlib_gl2psGetVertex(inlib_GL2PSvertex *v, inlib_GLfloat *p)
+inline inlib_GLint inlib_gl2psGetVertex(inlib_GL2PSvertex *v, inlib_GLfloat *p)
 {
   inlib_GLint i;
 
@@ -2284,7 +2285,7 @@ static inlib_GLint inlib_gl2psGetVertex(inlib_GL2PSvertex *v, inlib_GLfloat *p)
   }
 }
 
-static void inlib_gl2psParseFeedbackBuffer(inlib_GLint used)
+inline void inlib_gl2psParseFeedbackBuffer(inlib_GLint used)
 {
   char flag;
   inlib_GLushort pattern = 0;
@@ -2522,14 +2523,14 @@ static void inlib_gl2psParseFeedbackBuffer(inlib_GLint used)
  *
  *********************************************************************/
 
-static void inlib_gl2psWriteByte(unsigned char byte)
+inline void inlib_gl2psWriteByte(unsigned char byte)
 {
   unsigned char h = byte / 16;
   unsigned char l = byte % 16;
   inlib_gl2psPrintf("%x%x", h, l);
 }
 
-static void inlib_gl2psPrintPostScriptPixmap(inlib_GLfloat x, inlib_GLfloat y, inlib_GL2PSimage *im,
+inline void inlib_gl2psPrintPostScriptPixmap(inlib_GLfloat x, inlib_GLfloat y, inlib_GL2PSimage *im,
                                              int greyscale,int nbit) /*G.Barrand : to quiet coverity : add last greyscale,nbit.*/
 {
   inlib_GLuint nbhex, nbyte, nrgb, nbits;
@@ -2731,7 +2732,7 @@ static void inlib_gl2psPrintPostScriptPixmap(inlib_GLfloat x, inlib_GLfloat y, i
   inlib_gl2psPrintf("grestore\n");
 }
 
-static void inlib_gl2psPrintPostScriptImagemap(inlib_GLfloat x, inlib_GLfloat y,
+inline void inlib_gl2psPrintPostScriptImagemap(inlib_GLfloat x, inlib_GLfloat y,
                                          inlib_GLsizei width, inlib_GLsizei height,
                                          const unsigned char *imagemap){
   int i, size;
@@ -2751,7 +2752,7 @@ static void inlib_gl2psPrintPostScriptImagemap(inlib_GLfloat x, inlib_GLfloat y,
   inlib_gl2psPrintf(">} imagemask\ngrestore\n");
 }
 
-static void inlib_gl2psPrintPostScriptHeader(void)
+inline void inlib_gl2psPrintPostScriptHeader(void)
 {
   time_t now;
 
@@ -2991,7 +2992,7 @@ static void inlib_gl2psPrintPostScriptHeader(void)
   }
 }
 
-static void inlib_gl2psPrintPostScriptColor(inlib_GL2PSrgba rgba)
+inline void inlib_gl2psPrintPostScriptColor(inlib_GL2PSrgba rgba)
 {
   if(!inlib_gl2psSameColor(inlib_gl2ps_context->lastrgba, rgba)){
     inlib_gl2psSetLastColor(rgba);
@@ -2999,12 +3000,12 @@ static void inlib_gl2psPrintPostScriptColor(inlib_GL2PSrgba rgba)
   }
 }
 
-static void inlib_gl2psResetPostScriptColor(void)
+inline void inlib_gl2psResetPostScriptColor(void)
 {
   inlib_gl2ps_context->lastrgba[0] = inlib_gl2ps_context->lastrgba[1] = inlib_gl2ps_context->lastrgba[2] = -1.;
 }
 
-static void inlib_gl2psEndPostScriptLine(void)
+inline void inlib_gl2psEndPostScriptLine(void)
 {
   int i;
   if(inlib_gl2ps_context->lastvertex.rgba[0] >= 0.){
@@ -3016,7 +3017,7 @@ static void inlib_gl2psEndPostScriptLine(void)
   }
 }
 
-static void inlib_gl2psParseStipplePattern(inlib_GLushort pattern, inlib_GLint factor,
+inline void inlib_gl2psParseStipplePattern(inlib_GLushort pattern, inlib_GLint factor,
                                      int *nb, int array[10])
 {
   int i, n;
@@ -3050,7 +3051,7 @@ static void inlib_gl2psParseStipplePattern(inlib_GLushort pattern, inlib_GLint f
   }
 }
 
-static int inlib_gl2psPrintPostScriptDash(inlib_GLushort pattern, inlib_GLint factor, const char *str)
+inline int inlib_gl2psPrintPostScriptDash(inlib_GLushort pattern, inlib_GLint factor, const char *str)
 {
   int len = 0, i, n, array[10];
 
@@ -3077,7 +3078,7 @@ static int inlib_gl2psPrintPostScriptDash(inlib_GLushort pattern, inlib_GLint fa
   return len;
 }
 
-static void inlib_gl2psPrintPostScriptPrimitive(void *data)
+inline void inlib_gl2psPrintPostScriptPrimitive(void *data)
 {
   int newline;
   inlib_GL2PSprimitive *prim;
@@ -3225,7 +3226,7 @@ static void inlib_gl2psPrintPostScriptPrimitive(void *data)
   }
 }
 
-static void inlib_gl2psPrintPostScriptFooter(void)
+inline void inlib_gl2psPrintPostScriptFooter(void)
 {
   inlib_gl2psPrintf("grestore\n"
               "showpage\n"
@@ -3238,7 +3239,7 @@ static void inlib_gl2psPrintPostScriptFooter(void)
   inlib_gl2psPrintGzipFooter();
 }
 
-static void inlib_gl2psPrintPostScriptBeginViewport(inlib_GLint viewport[4])
+inline void inlib_gl2psPrintPostScriptBeginViewport(inlib_GLint viewport[4])
 {
   inlib_GLint idx;
   inlib_GLfloat rgba[4];
@@ -3281,7 +3282,7 @@ static void inlib_gl2psPrintPostScriptBeginViewport(inlib_GLint viewport[4])
 
 }
 
-static inlib_GLint inlib_gl2psPrintPostScriptEndViewport(void)
+inline inlib_GLint inlib_gl2psPrintPostScriptEndViewport(void)
 {
   inlib_GLint res;
 
@@ -3290,7 +3291,7 @@ static inlib_GLint inlib_gl2psPrintPostScriptEndViewport(void)
   return res;
 }
 
-static void inlib_gl2psPrintPostScriptFinalPrimitive(void)
+inline void inlib_gl2psPrintPostScriptFinalPrimitive(void)
 {
   /* End any remaining line, if any */
   inlib_gl2psEndPostScriptLine();
@@ -3326,7 +3327,7 @@ static inlib_GL2PSbackend inlib_gl2psEPS = {
  *
  *********************************************************************/
 
-static void inlib_gl2psPrintTeXHeader(void)
+inline void inlib_gl2psPrintTeXHeader(void)
 {
   char name[256];
   time_t now;
@@ -3367,7 +3368,7 @@ static void inlib_gl2psPrintTeXHeader(void)
           (int)inlib_gl2ps_context->viewport[2], (int)inlib_gl2ps_context->viewport[3]);
 }
 
-static void inlib_gl2psPrintTeXPrimitive(void *data)
+inline void inlib_gl2psPrintTeXPrimitive(void *data)
 {
   inlib_GL2PSprimitive *prim;
 
@@ -3430,13 +3431,13 @@ static void inlib_gl2psPrintTeXPrimitive(void *data)
   }
 }
 
-static void inlib_gl2psPrintTeXFooter(void)
+inline void inlib_gl2psPrintTeXFooter(void)
 {
   fprintf(inlib_gl2ps_context->stream, "\\end{picture}%s\n",
           (inlib_gl2ps_context->options & INLIB_GL2PS_LANDSCAPE) ? "}" : "");
 }
 
-static void inlib_gl2psPrintTeXBeginViewport(inlib_GLint viewport[4])
+inline void inlib_gl2psPrintTeXBeginViewport(inlib_GLint viewport[4])
 {
   (void) viewport;  /* not used */
   inlib_glRenderMode(INLIB_GL_FEEDBACK);
@@ -3449,12 +3450,12 @@ static void inlib_gl2psPrintTeXBeginViewport(inlib_GLint viewport[4])
   }
 }
 
-static inlib_GLint inlib_gl2psPrintTeXEndViewport(void)
+inline inlib_GLint inlib_gl2psPrintTeXEndViewport(void)
 {
   return inlib_gl2psPrintPrimitives();
 }
 
-static void inlib_gl2psPrintTeXFinalPrimitive(void)
+inline void inlib_gl2psPrintTeXFinalPrimitive(void)
 {
 }
 
@@ -3477,7 +3478,7 @@ static inlib_GL2PSbackend inlib_gl2psTEX = {
  *
  *********************************************************************/
 
-static int inlib_gl2psPrintPDFCompressorType(void)
+inline int inlib_gl2psPrintPDFCompressorType(void)
 {
 #if defined(INLIB_GL2PS_HAVE_ZLIB)
   if(inlib_gl2ps_context->options & INLIB_GL2PS_COMPRESS){
@@ -3487,7 +3488,7 @@ static int inlib_gl2psPrintPDFCompressorType(void)
   return 0;
 }
 
-static int inlib_gl2psPrintPDFStrokeColor(inlib_GL2PSrgba rgba)
+inline int inlib_gl2psPrintPDFStrokeColor(inlib_GL2PSrgba rgba)
 {
   int i, offs = 0;
 
@@ -3504,7 +3505,7 @@ static int inlib_gl2psPrintPDFStrokeColor(inlib_GL2PSrgba rgba)
   return offs;
 }
 
-static int inlib_gl2psPrintPDFFillColor(inlib_GL2PSrgba rgba)
+inline int inlib_gl2psPrintPDFFillColor(inlib_GL2PSrgba rgba)
 {
   int i, offs = 0;
 
@@ -3520,7 +3521,7 @@ static int inlib_gl2psPrintPDFFillColor(inlib_GL2PSrgba rgba)
   return offs;
 }
 
-static int inlib_gl2psPrintPDFLineWidth(inlib_GLfloat lw)
+inline int inlib_gl2psPrintPDFLineWidth(inlib_GLfloat lw)
 {
   if(INLIB_GL2PS_ZERO(lw))
     return inlib_gl2psPrintf("%.0f w\n", 0.);
@@ -3530,7 +3531,7 @@ static int inlib_gl2psPrintPDFLineWidth(inlib_GLfloat lw)
     return inlib_gl2psPrintf("%g w\n", lw);
 }
 
-static int inlib_gl2psPrintPDFLineCap(inlib_GLint lc)
+inline int inlib_gl2psPrintPDFLineCap(inlib_GLint lc)
 {
   if(inlib_gl2ps_context->lastlinecap == lc)
     return 0;
@@ -3538,7 +3539,7 @@ static int inlib_gl2psPrintPDFLineCap(inlib_GLint lc)
     return inlib_gl2psPrintf("%d J\n", lc);
 }
 
-static int inlib_gl2psPrintPDFLineJoin(inlib_GLint lj)
+inline int inlib_gl2psPrintPDFLineJoin(inlib_GLint lj)
 {
   if(inlib_gl2ps_context->lastlinejoin == lj)
     return 0;
@@ -3546,7 +3547,7 @@ static int inlib_gl2psPrintPDFLineJoin(inlib_GLint lj)
     return inlib_gl2psPrintf("%d j\n", lj);
 }
 
-static void inlib_gl2psPutPDFText(inlib_GL2PSstring *text, int cnt, inlib_GLfloat x, inlib_GLfloat y)
+inline void inlib_gl2psPutPDFText(inlib_GL2PSstring *text, int cnt, inlib_GLfloat x, inlib_GLfloat y)
 {
   inlib_GLfloat rad, crad, srad;
 
@@ -3573,13 +3574,13 @@ static void inlib_gl2psPutPDFText(inlib_GL2PSstring *text, int cnt, inlib_GLfloa
   }
 }
 
-static void inlib_gl2psPutPDFSpecial(int prim, int sec, inlib_GL2PSstring *text)
+inline void inlib_gl2psPutPDFSpecial(int prim, int sec, inlib_GL2PSstring *text)
 {
   inlib_gl2ps_context->streamlength += inlib_gl2psPrintf("/GS%d%d gs\n", prim, sec);
   inlib_gl2ps_context->streamlength += inlib_gl2psPrintf("%s\n", text->str);
 }
 
-static void inlib_gl2psPutPDFImage(inlib_GL2PSimage *image, int cnt, inlib_GLfloat x, inlib_GLfloat y)
+inline void inlib_gl2psPutPDFImage(inlib_GL2PSimage *image, int cnt, inlib_GLfloat x, inlib_GLfloat y)
 {
   inlib_gl2ps_context->streamlength += inlib_gl2psPrintf
     ("q\n"
@@ -3590,7 +3591,7 @@ static void inlib_gl2psPutPDFImage(inlib_GL2PSimage *image, int cnt, inlib_GLflo
      x, y, cnt);
 }
 
-static void inlib_inlib_gl2psPDFstacksInit(void)
+inline void inlib_inlib_gl2psPDFstacksInit(void)
 {
   inlib_gl2ps_context->objects_stack = 7 /* FIXED_XREF_ENTRIES */ + 1;
   inlib_gl2ps_context->extgs_stack = 0;
@@ -3601,7 +3602,7 @@ static void inlib_inlib_gl2psPDFstacksInit(void)
   inlib_gl2ps_context->mshader_stack = 0;
 }
 
-static void inlib_inlib_gl2psPDFgroupObjectInit(inlib_GL2PSpdfgroup *gro)
+inline void inlib_inlib_gl2psPDFgroupObjectInit(inlib_GL2PSpdfgroup *gro)
 {
   if(!gro)
     return;
@@ -3614,7 +3615,7 @@ static void inlib_inlib_gl2psPDFgroupObjectInit(inlib_GL2PSpdfgroup *gro)
 
 /* Build up group objects and assign name and object numbers */
 
-static void inlib_inlib_gl2psPDFgroupListInit(void)
+inline void inlib_inlib_gl2psPDFgroupListInit(void)
 {
   int i;
   inlib_GL2PSprimitive *p = NULL;
@@ -3721,7 +3722,7 @@ static void inlib_inlib_gl2psPDFgroupListInit(void)
   }
 }
 
-static void inlib_gl2psSortOutTrianglePDFgroup(inlib_GL2PSpdfgroup *gro)
+inline void inlib_gl2psSortOutTrianglePDFgroup(inlib_GL2PSpdfgroup *gro)
 {
   inlib_GL2PStriangle t;
   inlib_GL2PSprimitive *prim = NULL;
@@ -3775,7 +3776,7 @@ static void inlib_gl2psSortOutTrianglePDFgroup(inlib_GL2PSpdfgroup *gro)
 
 /* Main stream data */
 
-static void inlib_inlib_gl2psPDFgroupListWriteMainStream(void)
+inline void inlib_inlib_gl2psPDFgroupListWriteMainStream(void)
 {
   int i, j, lastel, count;
   inlib_GL2PSprimitive *prim = NULL, *prev = NULL;
@@ -3976,7 +3977,7 @@ static void inlib_inlib_gl2psPDFgroupListWriteMainStream(void)
 
 /* Graphics State names */
 
-static int inlib_inlib_gl2psPDFgroupListWriteGStateResources(void)
+inline int inlib_inlib_gl2psPDFgroupListWriteGStateResources(void)
 {
   inlib_GL2PSpdfgroup *gro;
   int offs = 0;
@@ -3997,7 +3998,7 @@ static int inlib_inlib_gl2psPDFgroupListWriteGStateResources(void)
 
 /* Main Shader names */
 
-static int inlib_inlib_gl2psPDFgroupListWriteShaderResources(void)
+inline int inlib_inlib_gl2psPDFgroupListWriteShaderResources(void)
 {
   inlib_GL2PSpdfgroup *gro;
   int offs = 0;
@@ -4018,7 +4019,7 @@ static int inlib_inlib_gl2psPDFgroupListWriteShaderResources(void)
 }
 
 /* Images & Mask Shader XObject names */
-static int inlib_inlib_gl2psPDFgroupListWriteXObjectResources(void)
+inline int inlib_inlib_gl2psPDFgroupListWriteXObjectResources(void)
 {
   int i;
   inlib_GL2PSprimitive *p = NULL;
@@ -4055,7 +4056,7 @@ static int inlib_inlib_gl2psPDFgroupListWriteXObjectResources(void)
 
 /* Font names */
 
-static int inlib_inlib_gl2psPDFgroupListWriteFontResources(void)
+inline int inlib_inlib_gl2psPDFgroupListWriteFontResources(void)
 {
   int i;
   inlib_GL2PSpdfgroup *gro;
@@ -4075,7 +4076,7 @@ static int inlib_inlib_gl2psPDFgroupListWriteFontResources(void)
   return offs;
 }
 
-static void inlib_inlib_gl2psPDFgroupListDelete(void)
+inline void inlib_inlib_gl2psPDFgroupListDelete(void)
 {
   int i;
   inlib_GL2PSpdfgroup *gro = NULL;
@@ -4094,7 +4095,7 @@ static void inlib_inlib_gl2psPDFgroupListDelete(void)
 
 /* Print 1st PDF object - file info */
 
-static int inlib_gl2psPrintPDFInfo(void)
+inline int inlib_gl2psPrintPDFInfo(void)
 {
   int offs;
   time_t now;
@@ -4135,7 +4136,7 @@ static int inlib_gl2psPrintPDFInfo(void)
 
 /* Create catalog and page structure - 2nd and 3th PDF object */
 
-static int inlib_gl2psPrintPDFCatalog(void)
+inline int inlib_gl2psPrintPDFCatalog(void)
 {
   return fprintf(inlib_gl2ps_context->stream,
                  "2 0 obj\n"
@@ -4146,7 +4147,7 @@ static int inlib_gl2psPrintPDFCatalog(void)
                  "endobj\n");
 }
 
-static int inlib_gl2psPrintPDFPages(void)
+inline int inlib_gl2psPrintPDFPages(void)
 {
   return fprintf(inlib_gl2ps_context->stream,
                  "3 0 obj\n"
@@ -4160,7 +4161,7 @@ static int inlib_gl2psPrintPDFPages(void)
 
 /* Open stream for data - graphical objects, fonts etc. PDF object 4 */
 
-static int inlib_gl2psOpenPDFDataStream(void)
+inline int inlib_gl2psOpenPDFDataStream(void)
 {
   int offs = 0;
 
@@ -4177,7 +4178,7 @@ static int inlib_gl2psOpenPDFDataStream(void)
 
 /* Stream setup - Graphics state, fill background if allowed */
 
-static int inlib_inlib_gl2psOpenPDFDataStreamWritePreface(void)
+inline int inlib_inlib_gl2psOpenPDFDataStreamWritePreface(void)
 {
   int offs;
 
@@ -4195,7 +4196,7 @@ static int inlib_inlib_gl2psOpenPDFDataStreamWritePreface(void)
 
 /* Use the functions above to create the first part of the PDF*/
 
-static void inlib_gl2psPrintPDFHeader(void)
+inline void inlib_gl2psPrintPDFHeader(void)
 {
   int offs = 0;
   inlib_gl2ps_context->pdfprimlist = inlib_gl2psListCreate(500, 500, sizeof(inlib_GL2PSprimitive*));
@@ -4228,7 +4229,7 @@ static void inlib_gl2psPrintPDFHeader(void)
 
 /* The central primitive drawing */
 
-static void inlib_gl2psPrintPDFPrimitive(void *data)
+inline void inlib_gl2psPrintPDFPrimitive(void *data)
 {
   inlib_GL2PSprimitive *prim = *(inlib_GL2PSprimitive**)data;
 
@@ -4241,7 +4242,7 @@ static void inlib_gl2psPrintPDFPrimitive(void *data)
 
 /* close stream and ... */
 
-static int inlib_gl2psClosePDFDataStream(void)
+inline int inlib_gl2psClosePDFDataStream(void)
 {
   int offs = 0;
 
@@ -4266,7 +4267,7 @@ static int inlib_gl2psClosePDFDataStream(void)
 
 /* ... write the now known length object */
 
-static int inlib_gl2psPrintPDFDataStreamLength(int val)
+inline int inlib_gl2psPrintPDFDataStreamLength(int val)
 {
   return fprintf(inlib_gl2ps_context->stream,
                  "5 0 obj\n"
@@ -4276,7 +4277,7 @@ static int inlib_gl2psPrintPDFDataStreamLength(int val)
 
 /* Put the info created before in PDF objects */
 
-static int inlib_gl2psPrintPDFOpenPage(void)
+inline int inlib_gl2psPrintPDFOpenPage(void)
 {
   int offs;
 
@@ -4305,7 +4306,7 @@ static int inlib_gl2psPrintPDFOpenPage(void)
   /* End fixed part, proceeds in inlib_inlib_gl2psPDFgroupListWriteVariableResources() */
 }
 
-static int inlib_inlib_gl2psPDFgroupListWriteVariableResources(void)
+inline int inlib_inlib_gl2psPDFgroupListWriteVariableResources(void)
 {
   int offs = 0;
 
@@ -4331,7 +4332,7 @@ static int inlib_inlib_gl2psPDFgroupListWriteVariableResources(void)
 
 /* Standard Graphics State */
 
-static int inlib_gl2psPrintPDFGSObject(void)
+inline int inlib_gl2psPrintPDFGSObject(void)
 {
   return fprintf(inlib_gl2ps_context->stream,
                  "7 0 obj\n"
@@ -4351,7 +4352,7 @@ static int inlib_gl2psPrintPDFGSObject(void)
 
 /* Put vertex' edge flag (8bit) and coordinates (32bit) in shader stream */
 
-static int inlib_inlib_inlib_gl2psPrintPDFShaderStreamDataCoord(inlib_GL2PSvertex *vertex,
+inline int inlib_inlib_inlib_gl2psPrintPDFShaderStreamDataCoord(inlib_GL2PSvertex *vertex,
                                               int (*action)(unsigned long data, int size),
                                               inlib_GLfloat dx, inlib_GLfloat dy,
                                               inlib_GLfloat xmin, inlib_GLfloat ymin)
@@ -4398,7 +4399,7 @@ static int inlib_inlib_inlib_gl2psPrintPDFShaderStreamDataCoord(inlib_GL2PSverte
 
 /* Put vertex' rgb value (8bit for every component) in shader stream */
 
-static int inlib_inlib_inlib_gl2psPrintPDFShaderStreamDataRGB(inlib_GL2PSvertex *vertex,
+inline int inlib_inlib_inlib_gl2psPrintPDFShaderStreamDataRGB(inlib_GL2PSvertex *vertex,
                                             int (*action)(unsigned long data, int size))
 {
   int offs = 0;
@@ -4423,7 +4424,7 @@ static int inlib_inlib_inlib_gl2psPrintPDFShaderStreamDataRGB(inlib_GL2PSvertex 
 
 /* Put vertex' alpha (8/16bit) in shader stream */
 
-static int inlib_inlib_inlib_gl2psPrintPDFShaderStreamDataAlpha(inlib_GL2PSvertex *vertex,
+inline int inlib_inlib_inlib_gl2psPrintPDFShaderStreamDataAlpha(inlib_GL2PSvertex *vertex,
                                               int (*action)(unsigned long data, int size),
                                               int sigbyte)
 {
@@ -4449,7 +4450,7 @@ static int inlib_inlib_inlib_gl2psPrintPDFShaderStreamDataAlpha(inlib_GL2PSverte
 
 /* Put a triangles raw data in shader stream */
 
-static int inlib_inlib_gl2psPrintPDFShaderStreamData(inlib_GL2PStriangle *triangle,
+inline int inlib_inlib_gl2psPrintPDFShaderStreamData(inlib_GL2PStriangle *triangle,
                                          inlib_GLfloat dx, inlib_GLfloat dy,
                                          inlib_GLfloat xmin, inlib_GLfloat ymin,
                                          int (*action)(unsigned long data, int size),
@@ -4476,7 +4477,7 @@ static int inlib_inlib_gl2psPrintPDFShaderStreamData(inlib_GL2PStriangle *triang
   return offs;
 }
 
-static void inlib_inlib_gl2psPDFRectHull(inlib_GLfloat *xmin, inlib_GLfloat *xmax,
+inline void inlib_inlib_gl2psPDFRectHull(inlib_GLfloat *xmin, inlib_GLfloat *xmax,
                              inlib_GLfloat *ymin, inlib_GLfloat *ymax,
                              inlib_GL2PStriangle *triangles, int cnt)
 {
@@ -4506,7 +4507,7 @@ static void inlib_inlib_gl2psPDFRectHull(inlib_GLfloat *xmin, inlib_GLfloat *xma
    gray == 8             8bit-grayscale (for alpha masks)
    gray == 16            16bit-grayscale (for alpha masks) */
 
-static int inlib_gl2psPrintPDFShader(int obj, inlib_GL2PStriangle *triangles,
+inline int inlib_gl2psPrintPDFShader(int obj, inlib_GL2PStriangle *triangles,
                                int size, int gray)
 {
   int i, offs = 0, vertexbytes, done = 0;
@@ -4593,7 +4594,7 @@ static int inlib_gl2psPrintPDFShader(int obj, inlib_GL2PStriangle *triangles,
 
 /* Writes a XObject for a shaded triangle mask */
 
-static int inlib_inlib_gl2psPrintPDFShaderMask(int obj, int childobj)
+inline int inlib_inlib_gl2psPrintPDFShaderMask(int obj, int childobj)
 {
   int offs = 0, len;
 
@@ -4632,7 +4633,7 @@ static int inlib_inlib_gl2psPrintPDFShaderMask(int obj, int childobj)
    simplealpha ist true the childobj argument is ignored and a /ca
    statement will be written instead */
 
-static int inlib_inlib_gl2psPrintPDFShaderExtGS(int obj, int childobj)
+inline int inlib_inlib_gl2psPrintPDFShaderExtGS(int obj, int childobj)
 {
   int offs = 0;
 
@@ -4653,7 +4654,7 @@ static int inlib_inlib_gl2psPrintPDFShaderExtGS(int obj, int childobj)
 
 /* a simple graphics state */
 
-static int inlib_inlib_gl2psPrintPDFShaderSimpleExtGS(int obj, inlib_GLfloat alpha)
+inline int inlib_inlib_gl2psPrintPDFShaderSimpleExtGS(int obj, inlib_GLfloat alpha)
 {
   int offs = 0;
 
@@ -4669,7 +4670,7 @@ static int inlib_inlib_gl2psPrintPDFShaderSimpleExtGS(int obj, inlib_GLfloat alp
 
 /* Similar groups of functions for pixmaps and text */
 
-static int inlib_inlib_gl2psPrintPDFPixmapStreamData(inlib_GL2PSimage *im,
+inline int inlib_inlib_gl2psPrintPDFPixmapStreamData(inlib_GL2PSimage *im,
                                          int (*action)(unsigned long data, int size),
                                          int gray)
 {
@@ -4708,7 +4709,7 @@ static int inlib_inlib_gl2psPrintPDFPixmapStreamData(inlib_GL2PSimage *im,
   }
 }
 
-static int inlib_gl2psPrintPDFPixmap(int obj, int childobj, inlib_GL2PSimage *im, int gray)
+inline int inlib_gl2psPrintPDFPixmap(int obj, int childobj, inlib_GL2PSimage *im, int gray)
 {
   int offs = 0, done = 0, sigbytes = 3;
 
@@ -4775,7 +4776,7 @@ static int inlib_gl2psPrintPDFPixmap(int obj, int childobj, inlib_GL2PSimage *im
   return offs;
 }
 
-static int inlib_gl2psPrintPDFText(int obj, inlib_GL2PSstring *s, int fontnumber)
+inline int inlib_gl2psPrintPDFText(int obj, inlib_GL2PSstring *s, int fontnumber)
 {
   int offs = 0;
 
@@ -4795,7 +4796,7 @@ static int inlib_gl2psPrintPDFText(int obj, inlib_GL2PSstring *s, int fontnumber
 
 /* Write the physical objects */
 
-static int inlib_inlib_gl2psPDFgroupListWriteObjects(int entryoffs)
+inline int inlib_inlib_gl2psPDFgroupListWriteObjects(int entryoffs)
 {
   int i,j;
   inlib_GL2PSprimitive *p = NULL;
@@ -4871,7 +4872,7 @@ static int inlib_inlib_gl2psPDFgroupListWriteObjects(int entryoffs)
    functioninality has been gathered, so we can write now file footer
    with cross reference table and trailer */
 
-static void inlib_gl2psPrintPDFFooter(void)
+inline void inlib_gl2psPrintPDFFooter(void)
 {
   int i, offs;
 
@@ -4936,7 +4937,7 @@ static void inlib_gl2psPrintPDFFooter(void)
 
 /* PDF begin viewport */
 
-static void inlib_gl2psPrintPDFBeginViewport(inlib_GLint viewport[4])
+inline void inlib_gl2psPrintPDFBeginViewport(inlib_GLint viewport[4])
 {
   int offs = 0;
   inlib_GLint idx;
@@ -4981,7 +4982,7 @@ static void inlib_gl2psPrintPDFBeginViewport(inlib_GLint viewport[4])
   inlib_gl2ps_context->streamlength += offs;
 }
 
-static inlib_GLint inlib_gl2psPrintPDFEndViewport(void)
+inline inlib_GLint inlib_gl2psPrintPDFEndViewport(void)
 {
   inlib_GLint res;
 
@@ -4990,7 +4991,7 @@ static inlib_GLint inlib_gl2psPrintPDFEndViewport(void)
   return res;
 }
 
-static void inlib_gl2psPrintPDFFinalPrimitive(void)
+inline void inlib_gl2psPrintPDFFinalPrimitive(void)
 {
 }
 
@@ -5013,7 +5014,7 @@ static inlib_GL2PSbackend inlib_gl2psPDF = {
  *
  *********************************************************************/
 
-static void inlib_inlib_gl2psSVGGetCoordsAndColors(int n, inlib_GL2PSvertex *verts,
+inline void inlib_inlib_gl2psSVGGetCoordsAndColors(int n, inlib_GL2PSvertex *verts,
                                        inlib_GL2PSxyz *xyz, inlib_GL2PSrgba *rgba)
 {
   int i, j;
@@ -5027,7 +5028,7 @@ static void inlib_inlib_gl2psSVGGetCoordsAndColors(int n, inlib_GL2PSvertex *ver
   }
 }
 
-static void inlib_inlib_gl2psSVGGetColorString(inlib_GL2PSrgba rgba, char str[32])
+inline void inlib_inlib_gl2psSVGGetColorString(inlib_GL2PSrgba rgba, char str[32])
 {
   int r = (int)(255. * rgba[0]);
   int g = (int)(255. * rgba[1]);
@@ -5038,7 +5039,7 @@ static void inlib_inlib_gl2psSVGGetColorString(inlib_GL2PSrgba rgba, char str[32
   sprintf(str, "#%2.2x%2.2x%2.2x", rc, gc, bc);
 }
 
-static void inlib_gl2psPrintSVGHeader(void)
+inline void inlib_gl2psPrintSVGHeader(void)
 {
   int x, y, width, height;
   char col[32];
@@ -5091,7 +5092,7 @@ static void inlib_gl2psPrintSVGHeader(void)
   inlib_gl2psPrintf("<g>\n");
 }
 
-static void inlib_gl2psPrintSVGSmoothTriangle(inlib_GL2PSxyz xyz[3], inlib_GL2PSrgba rgba[3])
+inline void inlib_gl2psPrintSVGSmoothTriangle(inlib_GL2PSxyz xyz[3], inlib_GL2PSrgba rgba[3])
 {
   int i;
   inlib_GL2PSxyz xyz2[3];
@@ -5159,7 +5160,7 @@ static void inlib_gl2psPrintSVGSmoothTriangle(inlib_GL2PSxyz xyz[3], inlib_GL2PS
   }
 }
 
-static void inlib_gl2psPrintSVGDash(inlib_GLushort pattern, inlib_GLint factor)
+inline void inlib_gl2psPrintSVGDash(inlib_GLushort pattern, inlib_GLint factor)
 {
   int i, n, array[10];
 
@@ -5174,7 +5175,7 @@ static void inlib_gl2psPrintSVGDash(inlib_GLushort pattern, inlib_GLint factor)
   inlib_gl2psPrintf("\" ");
 }
 
-static void inlib_gl2psEndSVGLine(void)
+inline void inlib_gl2psEndSVGLine(void)
 {
   int i;
   if(inlib_gl2ps_context->lastvertex.rgba[0] >= 0.){
@@ -5187,7 +5188,7 @@ static void inlib_gl2psEndSVGLine(void)
   }
 }
 
-static void inlib_gl2psPrintSVGPixmap(inlib_GLfloat x, inlib_GLfloat y, inlib_GL2PSimage *pixmap)
+inline void inlib_gl2psPrintSVGPixmap(inlib_GLfloat x, inlib_GLfloat y, inlib_GL2PSimage *pixmap)
 {
 #if defined(INLIB_GL2PS_HAVE_LIBPNG)
   inlib_GL2PSlist *png;
@@ -5226,7 +5227,7 @@ static void inlib_gl2psPrintSVGPixmap(inlib_GLfloat x, inlib_GLfloat y, inlib_GL
 #endif
 }
 
-static void inlib_gl2psPrintSVGPrimitive(void *data)
+inline void inlib_gl2psPrintSVGPrimitive(void *data)
 {
   inlib_GL2PSprimitive *prim;
   inlib_GL2PSxyz xyz[4];
@@ -5293,6 +5294,9 @@ static void inlib_gl2psPrintSVGPrimitive(void *data)
       case INLIB_GL2PS_LINE_CAP_SQUARE:
         sprintf (lcap, "%s", "square");
         break;
+      default: /*G.Barrand : to quiet Coverity :*/
+        sprintf (lcap, "%s", "butt");
+        break;
       }
       switch (prim->linejoin){
       case INLIB_GL2PS_LINE_JOIN_MITER:
@@ -5303,6 +5307,9 @@ static void inlib_gl2psPrintSVGPrimitive(void *data)
         break;
       case INLIB_GL2PS_LINE_JOIN_BEVEL:
         sprintf (ljoin, "%s", "bevel");
+        break;
+      default: /*G.Barrand : to quiet Coverity :*/
+        sprintf (ljoin, "%s", "miter");
         break;
       }
       inlib_gl2psPrintf("stroke-linecap=\"%s\" stroke-linejoin=\"%s\" ",
@@ -5402,7 +5409,7 @@ static void inlib_gl2psPrintSVGPrimitive(void *data)
   }
 }
 
-static void inlib_gl2psPrintSVGFooter(void)
+inline void inlib_gl2psPrintSVGFooter(void)
 {
   inlib_gl2psPrintf("</g>\n");
   inlib_gl2psPrintf("</svg>\n");
@@ -5410,7 +5417,7 @@ static void inlib_gl2psPrintSVGFooter(void)
   inlib_gl2psPrintGzipFooter();
 }
 
-static void inlib_gl2psPrintSVGBeginViewport(inlib_GLint viewport[4])
+inline void inlib_gl2psPrintSVGBeginViewport(inlib_GLint viewport[4])
 {
   inlib_GLint idx;
   char col[32];
@@ -5456,7 +5463,7 @@ static void inlib_gl2psPrintSVGBeginViewport(inlib_GLint viewport[4])
   inlib_gl2psPrintf("<g clip-path=\"url(#cp%d%d%d%d)\">\n", x, y, w, h);
 }
 
-static inlib_GLint inlib_gl2psPrintSVGEndViewport(void)
+inline inlib_GLint inlib_gl2psPrintSVGEndViewport(void)
 {
   inlib_GLint res;
 
@@ -5465,7 +5472,7 @@ static inlib_GLint inlib_gl2psPrintSVGEndViewport(void)
   return res;
 }
 
-static void inlib_gl2psPrintSVGFinalPrimitive(void)
+inline void inlib_gl2psPrintSVGFinalPrimitive(void)
 {
   /* End any remaining line, if any */
   inlib_gl2psEndSVGLine();
@@ -5490,7 +5497,7 @@ static inlib_GL2PSbackend inlib_gl2psSVG = {
  *
  *********************************************************************/
 
-static void inlib_gl2psPrintPGFColor(inlib_GL2PSrgba rgba)
+inline void inlib_gl2psPrintPGFColor(inlib_GL2PSrgba rgba)
 {
   if(!inlib_gl2psSameColor(inlib_gl2ps_context->lastrgba, rgba)){
     inlib_gl2psSetLastColor(rgba);
@@ -5498,7 +5505,7 @@ static void inlib_gl2psPrintPGFColor(inlib_GL2PSrgba rgba)
   }
 }
 
-static void inlib_gl2psPrintPGFHeader(void)
+inline void inlib_gl2psPrintPGFHeader(void)
 {
   time_t now;
 
@@ -5525,7 +5532,7 @@ static void inlib_gl2psPrintPGFHeader(void)
   }
 }
 
-static void inlib_gl2psPrintPGFDash(inlib_GLushort pattern, inlib_GLint factor)
+inline void inlib_gl2psPrintPGFDash(inlib_GLushort pattern, inlib_GLint factor)
 {
   int i, n, array[10];
 
@@ -5547,7 +5554,7 @@ static void inlib_gl2psPrintPGFDash(inlib_GLushort pattern, inlib_GLint factor)
   }
 }
 
-static const char *inlib_inlib_gl2psPGFTextAlignment(int align)
+inline const char *inlib_inlib_gl2psPGFTextAlignment(int align)
 {
   switch(align){
   case INLIB_GL2PS_TEXT_C  : return "center";
@@ -5563,7 +5570,7 @@ static const char *inlib_inlib_gl2psPGFTextAlignment(int align)
   }
 }
 
-static void inlib_gl2psPrintPGFPrimitive(void *data)
+inline void inlib_gl2psPrintPGFPrimitive(void *data)
 {
   inlib_GL2PSprimitive *prim;
 
@@ -5699,12 +5706,12 @@ static void inlib_gl2psPrintPGFPrimitive(void *data)
   }
 }
 
-static void inlib_gl2psPrintPGFFooter(void)
+inline void inlib_gl2psPrintPGFFooter(void)
 {
   fprintf(inlib_gl2ps_context->stream, "\\end{pgfpicture}\n");
 }
 
-static void inlib_gl2psPrintPGFBeginViewport(inlib_GLint viewport[4])
+inline void inlib_gl2psPrintPGFBeginViewport(inlib_GLint viewport[4])
 {
   inlib_GLint idx;
   inlib_GLfloat rgba[4];
@@ -5746,7 +5753,7 @@ static void inlib_gl2psPrintPGFBeginViewport(inlib_GLint viewport[4])
           x, y, w, h);
 }
 
-static inlib_GLint inlib_gl2psPrintPGFEndViewport(void)
+inline inlib_GLint inlib_gl2psPrintPGFEndViewport(void)
 {
   inlib_GLint res;
   res = inlib_gl2psPrintPrimitives();
@@ -5754,7 +5761,7 @@ static inlib_GLint inlib_gl2psPrintPGFEndViewport(void)
   return res;
 }
 
-static void inlib_gl2psPrintPGFFinalPrimitive(void)
+inline void inlib_gl2psPrintPGFFinalPrimitive(void)
 {
 }
 
@@ -5789,7 +5796,7 @@ static inlib_GL2PSbackend *inlib_gl2psbackends[] = {
   &inlib_gl2psPGF  /* 5 */
 };
 
-static void inlib_gl2psComputeTightBoundingBox(void *data)
+inline void inlib_gl2psComputeTightBoundingBox(void *data)
 {
   inlib_GL2PSprimitive *prim;
   int i;
@@ -5808,7 +5815,7 @@ static void inlib_gl2psComputeTightBoundingBox(void *data)
   }
 }
 
-static inlib_GLint inlib_gl2psPrintPrimitives(void)
+inline inlib_GLint inlib_gl2psPrintPrimitives(void)
 {
   inlib_GL2PSbsptree *root;
   inlib_GL2PSxyz eye = {0.0F, 0.0F, 100.0F * INLIB_GL2PS_ZSCALE};
@@ -5884,7 +5891,7 @@ static inlib_GLint inlib_gl2psPrintPrimitives(void)
   return INLIB_GL2PS_SUCCESS;
 }
 
-static inlib_GLboolean inlib_gl2psCheckOptions(inlib_GLint options, inlib_GLint colormode)
+inline inlib_GLboolean inlib_gl2psCheckOptions(inlib_GLint options, inlib_GLint colormode)
 {
   if (options & INLIB_GL2PS_NO_OPENGL_CONTEXT) {
     if (options & INLIB_GL2PS_DRAW_BACKGROUND) {

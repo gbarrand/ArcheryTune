@@ -20,6 +20,9 @@ public:
   //virtual bool get_time_now(atime&) const = 0;
 
   //virtual bool stop_works() {return false;}
+
+  //virtual void set_to_render() {} //for Apple/Metal.
+
 public:
   ui():m_to_exit(false){}
   virtual ~ui(){clear();}

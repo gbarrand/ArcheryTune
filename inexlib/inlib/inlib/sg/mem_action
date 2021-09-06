@@ -96,12 +96,12 @@ public:
     m_out << "mem_action::draw_vertex_array_texture : dummy." << std::endl;
   }
 
-  virtual void draw_vertex_normal_array_texture(gl::mode_t a_mode,
-                                         size_t a_xyzn,
-                                         const float* a_xyzs,
-                                         const float* a_nms,
-                                         gstoid a_id,
-                                         const float* a_tcs) {
+  virtual void draw_vertex_normal_array_texture(gl::mode_t /*a_mode*/,
+                                         size_t /*a_xyzn*/,
+                                         const float* /*a_xyzs*/,
+                                         const float* /*a_nms*/,
+                                         gstoid /*a_id*/,
+                                         const float* /*a_tcs*/) {
     m_out << "mem_action::draw_vertex_normal_array_texture : dummy." << std::endl;
   }
 
@@ -377,11 +377,11 @@ protected:
       return true;
     }
     virtual bool add_triangle_normal(
-      float a_p1x,float a_p1y,float a_p1z,float a_p1w,
+      float a_p1x,float a_p1y,float a_p1z,float /*a_p1w*/,
       float a_n1x,float a_n1y,float a_n1z,
-      float a_p2x,float a_p2y,float a_p2z,float a_p2w,
+      float a_p2x,float a_p2y,float a_p2z,float /*a_p2w*/,
       float a_n2x,float a_n2y,float a_n2z,
-      float a_p3x,float a_p3y,float a_p3z,float a_p3w,
+      float a_p3x,float a_p3y,float a_p3z,float /*a_p3w*/,
       float a_n3x,float a_n3y,float a_n3z) {
 
       float r = m_this.m_color[0];
@@ -417,13 +417,13 @@ protected:
       return true;
     }
     virtual bool add_triangle_normal(
-      float a_p1x,float a_p1y,float a_p1z,float a_p1w,
+      float a_p1x,float a_p1y,float a_p1z,float /*a_p1w*/,
       float a_n1x,float a_n1y,float a_n1z,
       float a_r1,float a_g1,float a_b1,float a_a1,
-      float a_p2x,float a_p2y,float a_p2z,float a_p2w,
+      float a_p2x,float a_p2y,float a_p2z,float /*a_p2w*/,
       float a_n2x,float a_n2y,float a_n2z,
       float a_r2,float a_g2,float a_b2,float a_a2,
-      float a_p3x,float a_p3y,float a_p3z,float a_p3w,
+      float a_p3x,float a_p3y,float a_p3z,float /*a_p3w*/,
       float a_n3x,float a_n3y,float a_n3z,
       float a_r3,float a_g3,float a_b3,float a_a3){
       if(m_this.m_ccw) {

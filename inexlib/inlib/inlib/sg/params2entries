@@ -52,6 +52,8 @@ inline void params2entries(const gui_params& a_params,
   a_node.add_opts(gui_params::s_sliders_pos(),a_params.m_sliders_pos,opts);}
 
  {std::vector<std::string> opts;
+  opts.push_back(font_lato_regular_ttf());
+  opts.push_back(font_roboto_bold_ttf());
   opts.push_back(font_helveticabd_ttf());
   opts.push_back(font_arialbd_ttf());
   opts.push_back(font_courbd_ttf());

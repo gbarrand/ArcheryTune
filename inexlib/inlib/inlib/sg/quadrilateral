@@ -110,6 +110,8 @@ public:
     a_action.add_points(12,tris);
   }
 public:
+  virtual void clear_gstos() {gstos::clean_gstos();}
+public:
   quadrilateral()
   :parent()
   ,corners()
@@ -141,7 +143,7 @@ public:
   }
 
 protected:
-  virtual void update_sg(std::ostream& a_out) {
+  virtual void update_sg(std::ostream&) {
     clean_gstos();
     plane<vec3f> plane(corners[0],corners[1],corners[2]);
     m_normal = plane.normal();

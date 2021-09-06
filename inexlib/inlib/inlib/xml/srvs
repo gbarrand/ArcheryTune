@@ -7,7 +7,7 @@
 #include "tree"
 
 #include "../num2s"
-#include "../file"
+#include "../file_write"
 
 namespace inlib {
 namespace xml {

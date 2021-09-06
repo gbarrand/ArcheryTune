@@ -6,8 +6,8 @@
 
 #include "../platform"
 #include "../img"
-#include "../line"
-#include "../vec3f"
+#include "../lina/line"
+#include "../lina/vec3f"
 
 #include "sf_vec"
 #include "sf_img"

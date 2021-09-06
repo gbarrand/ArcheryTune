@@ -6,8 +6,8 @@
 
 // see (lengthy) doc and disclaimer at end.
 
-#include "../vec3d"
-#include "../rotd"
+#include "../lina/vec3d"
+#include "../lina/rotd"
 
 #ifdef INLIB_MEM
 #include "../mem"

@@ -56,8 +56,10 @@ public:
 
       INLIB_ARG_FIELD_DESC(color),
 
-      INLIB_ARG_FIELD_DESC_OPTS_BEG(font,8)
+      INLIB_ARG_FIELD_DESC_OPTS_BEG(font,10)
         font_hershey().c_str(),
+        font_lato_regular_ttf().c_str(),
+        font_roboto_bold_ttf().c_str(),
         font_arial_ttf().c_str(),
         font_arialbd_ttf().c_str(),
         font_timesbd_ttf().c_str(),
@@ -380,7 +382,6 @@ public:
       float xx = -(mn_x+mx_x)*0.5F+xtrans;
       float yy = -(mn_y+mx_y)*0.5F+ytrans;
       tsf->set_translate(xx,yy,zz);
-
       return;
     }
 
@@ -424,7 +425,6 @@ public:
       tsf->set_translate(xx,yy,zz);
 
       m_base_text->height = bxh; //=th?
-
       return;
     }
 
@@ -496,7 +496,7 @@ public:
 
       }
 
-   } else {
+    } else {
 
       // we arrange yy so that two aside texts
       // with same height will have their text base lines aligned.
@@ -561,6 +561,19 @@ public:
       }
       m_base_text->strings = labcut;}
     }
+  }
+
+  void map_back_area_to_text() {
+    if(!m_base_text) return;
+    
+    float mn_x,mn_y,mn_z;
+    float mx_x,mx_y,mx_z;
+    m_base_text->get_bounds(front_height,mn_x,mn_y,mn_z,mx_x,mx_y,mx_z);
+
+    float bxw = mx_x-mn_x;
+    float bxh = mx_y-mn_y;
+    parent::width = bxw/wmargin_factor;
+    parent::height = bxh/hmargin_factor;
   }
 
 protected:

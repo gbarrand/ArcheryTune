@@ -20,7 +20,6 @@
 #endif
 
 namespace inlib {
-namespace dir {
 
 #ifdef _WIN32
 #ifdef _UNICODE
@@ -42,7 +41,7 @@ inline bool ansi_to_unicode(const std::string& a_ansi,BSTR& a_unicode) {
 inline bool unicode_to_ansi(BSTR a_unicode,std::string& a_ansi) {
   a_ansi.clear();
   //int lu = ::SysStringLen(a_unicode); //does not work.
-  int lu = wcslen(a_unicode);
+  int lu = (int)wcslen(a_unicode);
   int la = ::WideCharToMultiByte(CP_ACP,0,a_unicode,lu,0,0,NULL,NULL);
   if(la<=0) return false;
   char* _ansi = new char[la+1];
@@ -53,7 +52,11 @@ inline bool unicode_to_ansi(BSTR a_unicode,std::string& a_ansi) {
   return true;
 }
 #endif //_UNICODE
+#endif //_WIN32
 
+namespace dir {
+
+#ifdef _WIN32
 inline bool find_first_file(const std::string& a_entry,HANDLE& a_dir,WIN32_FIND_DATA& a_findFileData) {
 #ifdef _UNICODE
   BSTR wentry;
@@ -312,8 +315,7 @@ inline bool rmdir(const std::string& a_path){
       //::printf("debug : rm file %s.\n",entry.c_str());
     }
   }
-  // Remove the directory :
-  return (::rmdir(a_path.c_str())==0?true:false);
+  return dir::remove(a_path.c_str());
 }
 
 inline bool dirs(const std::string& a_path,std::vector<std::string>& a_dirs,bool a_full_path = true){
@@ -537,6 +539,100 @@ protected:
 };
 
 }}
+
+#include <time.h>
+#ifdef _WIN32
+#include <wchar.h>
+#else
+#include <utime.h>
+#endif
+
+namespace inlib {
+
+#ifdef _WIN32
+/*
+inline bool utf8_to_utf16(const std::string& a_s,std::wstring& a_ws) {
+  if(a_s.empty()) {a_ws.clear();return true;}
+
+  int chars_needed = ::MultiByteToWideChar(CP_UTF8, 0,a_s.c_str(), (int)a_s.size(), NULL, 0);
+  if (chars_needed == 0) {a_ws.clear();return false;}
+
+  std::vector<wchar_t> buffer(chars_needed);
+  int chars_converted = ::MultiByteToWideChar(CP_UTF8, 0, a_s.c_str(), (int)a_s.size(), &buffer[0], buffer.size());
+  if (chars_converted == 0) {a_ws.clear();return false;}
+
+  a_ws = std::wstring(&buffer[0], chars_converted);
+  return true;
+}
+*/
+inline bool ansi_to_wide(const std::string& a_s,std::wstring& a_ws) {
+  if(a_s.empty()) {a_ws.clear();return true;}
+  int count = ::MultiByteToWideChar(CP_ACP, 0, a_s.c_str(), a_s.size(), NULL, 0);
+  if(count==0) {a_ws.clear();return false;}
+  a_ws.resize(count, 0);
+  if(::MultiByteToWideChar(CP_ACP, 0, a_s.c_str(), a_s.size(), &a_ws[0], count)==0) {a_ws.clear();return false;}
+  return true;
+}
+
+#endif
+
+inline bool touch_file(const std::string& a_file) {
+#ifdef _WIN32
+  std::wstring wfile;
+//if(!utf8_to_utf16(a_file,wfile)) return false;
+  if(!ansi_to_wide(a_file,wfile)) return false;
+  HANDLE fh = ::CreateFileW(LPCWSTR(wfile.c_str()), GENERIC_READ | FILE_WRITE_ATTRIBUTES,0, NULL, OPEN_EXISTING, 0, NULL);
+  if (fh == INVALID_HANDLE_VALUE) return false;
+  
+  // Use GetFileTime() to get the file modification time:
+  FILETIME modtime;
+  if (::GetFileTime(fh, NULL, NULL, &modtime) == 0) {
+    ::CloseHandle(fh);
+    return false;
+  }
+
+  SYSTEMTIME st;
+  ::FileTimeToSystemTime(&modtime, &st);
+  
+  wchar_t date[80], time[80];
+  if( (::GetDateFormatW(LOCALE_USER_DEFAULT, DATE_LONGDATE, &st, NULL,date, sizeof date / sizeof date[0]) == 0) ||
+      (::GetTimeFormatW(LOCALE_USER_DEFAULT, 0, &st, NULL,time, sizeof time / sizeof time[0]) == 0) ) {
+    ::CloseHandle(fh);
+    return false;
+  }
+  //::wprintf(L"%ls: Last modified at %s at %s (UTC).\n",path, date, time);
+ 
+  // Use SetFileTime() to change the file modification time to the current time:
+  ::GetSystemTime(&st);
+  if( (::GetDateFormatW(LOCALE_USER_DEFAULT, DATE_LONGDATE, &st, NULL,date, sizeof date / sizeof date[0]) == 0) ||
+      (::GetTimeFormatW(LOCALE_USER_DEFAULT, 0, &st, NULL,time, sizeof time / sizeof time[0]) == 0)  ) {
+    ::CloseHandle(fh);
+    return false;
+   }
+
+  ::SystemTimeToFileTime(&st, &modtime);
+  if (::SetFileTime(fh, NULL, NULL, &modtime) == 0) {
+    ::CloseHandle(fh);
+    return false;
+   }
+
+  //::wprintf(L"%ls: Changed to %s at %s (UTC).\n", path, date, time);
+ 
+  ::CloseHandle(fh);
+  return true;
+#else
+  struct stat finfo;
+  if(::stat(a_file.c_str(),&finfo) < 0) return false;
+  time_t mtime = finfo.st_mtime; /* seconds since the epoch */
+  struct utimbuf new_times;
+  new_times.actime = finfo.st_atime; //keep atime unchanged.
+  new_times.modtime = ::time(NULL);    //set mtime to current time.
+  ::utime(a_file.c_str(), &new_times);
+  return true;
+#endif  
+}
+
+}
 
 //inlib_build_use kernel
 

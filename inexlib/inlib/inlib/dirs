@@ -185,13 +185,14 @@ inline bool check_dir(std::ostream& a_out,const std::string& a_path) {
   return true;
 }
 
-inline bool create_out_dir(std::ostream& a_out,const std::string& a_name,unsigned int a_scale,
+inline bool create_out_dir(std::ostream& a_out,const std::string& a_app,
+                           const std::string& a_name,unsigned int a_scale,
                            std::string& a_out_dir,std::string& a_data_dir,bool a_verbose = false) {
   std::string home_dir;
   dir::home(home_dir);
   if(a_verbose) a_out << "home_dir is " << home_dir << std::endl;
 
-  a_data_dir = home_dir+sep()+"Documents"+sep()+"TouchSky";
+  a_data_dir = home_dir+sep()+"Documents"+sep()+a_app;
   if(a_verbose) a_out << "data_dir is " << a_data_dir << std::endl;
 
  {bool is;

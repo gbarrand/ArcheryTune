@@ -8,7 +8,7 @@
 
 #include "../forit"
 #include "../b2s"
-#include "../file"
+#include "../file_write"
 #include "../xml/tree"
 
 namespace inlib {

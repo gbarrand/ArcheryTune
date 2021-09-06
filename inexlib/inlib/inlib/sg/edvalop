@@ -794,7 +794,7 @@ public:
         return return_to_render;
 
 /*
-        if(//const up_event* up_evt = event_cast<event,up_event>(*m_event)){
+        if(//const mouse_up_event* up_evt = event_cast<event,mouse_up_event>(*m_event)){
           //::printf("debug : edvalop : action_up\n");
 
           wout alert(m_event_action->out());

@@ -149,7 +149,6 @@ inline void CreateETandAET (
     pSLLBlock->next = (ScanLineListBlock *)NULL;
 
     PrevPt = &pts[count-1];
-
     /*
      *  for each vertex in the array of points.
      *  In this loop we are dealing with two vertices at
