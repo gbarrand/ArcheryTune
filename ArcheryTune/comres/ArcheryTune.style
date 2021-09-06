@@ -173,7 +173,8 @@
 
     <style name="background_style">
       <visible>true</visible>
-      <back_color>ROOT/grey19</back_color>
+ <!-- <back_color>ROOT/grey19</back_color> -->
+      <back_color>white</back_color>
       <!-- border : -->
       <color>black</color>
       <line_width>0.003</line_width> <!-- 0 = no border. In % of width -->
