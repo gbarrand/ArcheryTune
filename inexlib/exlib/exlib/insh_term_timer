@@ -1,14 +1,15 @@
 // Copyright (C) 2010, Guy Barrand. All rights reserved.
 // See the file exlib.license for terms.
 
-#ifndef exlib_app_insh_term
-#define exlib_app_insh_term
+#ifndef exlib_insh_term_timer
+#define exlib_insh_term_timer
 
 #include <inlib/sys/base_timer>
 
 #include <inlib/S_STRING>
-#include <inlib/insh>
+#include <inlib/insh/insh>
 #include <inlib/sg/ui>
+#include <inlib/sys/console>
 
 #include <Getline/ourex_Getline.h> //enforce ourex.
 
@@ -54,11 +55,15 @@ public:
       if(line.size()) {
         m_insh.out() << line << std::endl;
         ::ourex_Gl_histadd((char*)line.c_str()); //we have to use that so that keys up/down work.
+       {unsigned int cols,rows;
+        if(inlib::console_size(cols,rows)) m_insh.set_unix_cols(cols);}
         m_insh.exec_line_reset_to_stop(line);
         m_ui.win_render();
       }
     } else {
       ::ourex_Gl_histadd((char*)cmd.c_str()); //we have to use that so that keys up/down work.
+     {unsigned int cols,rows;
+      if(inlib::console_size(cols,rows)) m_insh.set_unix_cols(cols);}
       m_insh.exec_line_reset_to_stop(cmd);
       m_ui.win_render();
     }

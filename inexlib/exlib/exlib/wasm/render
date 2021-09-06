@@ -582,15 +582,21 @@ public:
   }
 
   virtual void load_proj_matrix(const inlib::mat4f& a_mtx) {
+    m_proj = a_mtx;
+   {inlib::mat4f mtx(m_proj);
+    mtx.mul_mtx(m_model);
     EM_ASM({
-      ldmatp(new Float32Array(HEAPF32.buffer,$0,$1));
-    },(char*)a_mtx.data(),16);
+      ldmatmp(new Float32Array(HEAPF32.buffer,$0,$1));
+    },(char*)mtx.data(),16);}
   }
 
   virtual void load_model_matrix(const inlib::mat4f& a_mtx) {
+    m_model = a_mtx;
+   {inlib::mat4f mtx(m_proj);
+    mtx.mul_mtx(m_model);
     EM_ASM({
-      ldmatm(new Float32Array(HEAPF32.buffer,$0,$1));
-    },(char*)a_mtx.data(),16);
+      ldmatmp(new Float32Array(HEAPF32.buffer,$0,$1));
+    },(char*)mtx.data(),16);}
 
     inlib::mat4f tmp(a_mtx);
     tmp.no_translate();
@@ -724,7 +730,10 @@ public:
   render(manager& a_mgr,std::ostream& a_out,unsigned int a_ww,unsigned int a_wh)
   :parent(a_out,a_ww,a_wh)
   ,m_mgr(a_mgr)
-  {}
+  {
+    m_model.set_identity();
+    m_proj.set_identity();
+  }
   virtual ~render(){}
 protected:
   render(const render& a_from)
@@ -737,6 +746,8 @@ protected:
   }
 protected:
   manager& m_mgr;
+  inlib::mat4f m_model;
+  inlib::mat4f m_proj;
 };
 
 //exlib_build_use inlib

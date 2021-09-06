@@ -10,7 +10,7 @@
 #include <exlib/app/Android/main_cpp>
 
 void android_main(struct android_app* a_state) {
-  exlib_main<EXLIB_APP::context,EXLIB_APP::main>("EXLIB_APP","fr.in2p3.lal",a_state);
+  exlib_main<EXLIB_APP::main>("EXLIB_APP","fr.in2p3.lal",a_state);
 #ifdef EXLIB_ANDROID_MAIN_DO_STD_EXIT
   // for g4exa, g4view, ioda. Mainly all apps that need to unfold some zipped resource file.
   // If doing a first exit by using the Android back button, then
@@ -23,6 +23,6 @@ void android_main(struct android_app* a_state) {
 
 //exlib_build_use inlib expat
 //exlib_build_use exlib png jpeg zlib inlib_glutess freetype
-//exlib_build_use GL Android
+//exlib_build_use Android
 
 

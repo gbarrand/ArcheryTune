@@ -27,6 +27,7 @@ class main : protected exlib::sg::pv_holder, public EXLIB_APP::main {
   typedef EXLIB_APP::main parent;
 public:
   EXLIB_GL_VIEWER_METHODS
+  virtual bool windowing(std::string& a_value) const {a_value = "UIKit";return true;}
 public:
   virtual void win_render() {[m_GLView window_render];}
   virtual bool has_mail_panel() {return true;}

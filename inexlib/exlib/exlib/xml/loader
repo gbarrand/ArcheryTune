@@ -4,18 +4,15 @@
 #ifndef exlib_xml_loader
 #define exlib_xml_loader
 
+#include "../expat"
+
 #include <inlib/xml/tree>
-#include <inlib/file>
+#include <inlib/gzip>
 #include <inlib/mnmx>
+#include <inlib/CFILE_reader>
 
 #include <cstdio>
 #include <cctype> //iscntrl
-
-#ifdef EXLIB_USE_NATIVE_EXPAT
-#include <expat.h>
-#else
-#include <ourex_expat.h>
-#endif
 
 #ifdef INLIB_MEM
 #include <inlib/mem>

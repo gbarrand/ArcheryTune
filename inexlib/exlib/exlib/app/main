@@ -18,8 +18,6 @@
 #include "../png_opener"
 #include "../jpeg_opener"
 
-#include "../insh"
-
 #include <inlib/help/wrap_description_help>
 #include <inlib/help/wrap_usage_help>
 #include <inlib/help/wrap_top_menu_help>
@@ -39,13 +37,12 @@
 
 #include <inlib/sg/view_sg_client>
 #include <inlib/sg/gl2ps_manager>
-#include <inlib/sg/insh_opener>
 
 #include <inlib/sg/view_sg_serv>
+#include <inlib/path_env>
 
-#ifdef EMSCRIPTEN
-#include <emscripten.h>
-#endif
+#include <inlib/insh/insh>
+#include <inlib/insh/opener>
 
 namespace exlib {
 namespace app {
@@ -72,6 +69,7 @@ protected:
   INLIB_CLASS_STRING(scene)
   INLIB_CLASS_STRING(gui_Apple_black_on_white)
 public:
+  virtual bool windowing(std::string&) const = 0;
   virtual void render() = 0;
 public:
   main(const std::string& a_app_name,const std::string& a_app_version,
@@ -89,7 +87,10 @@ public:
   ,parent_sg_serv(get_me(),a_verbose)
   ,parent_sg_client(a_out,a_app_name,a_doc_dir,compress_buffer,a_ttf)
   //,m_web_cache(a_out,false) //false = no verbose
+  ,m_main_insh(get_me())
   {
+    m_main_insh.set_decompress_func(exlib::decompress_buffer);
+    
     m_res_dir = a_res_dir;
     m_out_dir = a_out_dir;
     m_tmp_dir = a_tmp_dir;
@@ -126,7 +127,7 @@ public:
     /// openers ////////////////////////////////
     ////////////////////////////////////////////
     m_opener.add_ext(inlib::file::s_ext_insh());
-    m_opener.add_opener(inlib::file::s_format_insh(),new inlib::sg::insh_opener());
+    m_opener.add_opener(inlib::file::s_format_insh(),new inlib::insh_opener(m_main_insh));
 
     m_opener.add_ext(inlib::file::s_ext_jpeg());
     m_opener.add_ext(inlib::file::s_ext_jpg());
@@ -206,14 +207,17 @@ public:
     ////////////////////////////////////////////
     m_popup_cbks.add(new inlib::cbk::background_popup(*this));
     m_popup_cbks.add(new inlib::cbk::image_popup(*this,inlib::sg::base_tex::s_class()));
-    ////////////////////////////////////////////
-    ////////////////////////////////////////////
-    ////////////////////////////////////////////
-    main::insh_add_cmds();
 
+    ////////////////////////////////////////////
+    /// insh : /////////////////////////////////
+    ////////////////////////////////////////////    
+   {std::string HOME;
+    inlib::dir::home(HOME);
+    m_main_insh.add_env("HOME",HOME);}
+    
    {std::string PATH;
     doc_res_dirs_to_PATH(PATH);
-    m_insh.add_env("PATH",PATH);}
+    m_main_insh.add_env("PATH",PATH);}
 
   // avoid too much envs, use cmds.
   //m_insh.add_env("RES_DIR",m_res_dir);
@@ -223,13 +227,13 @@ public:
   //m_insh.add_env("START_DIR",m_start_dir);
   //m_insh.add_env("FILE_SEP",inlib::sep());
   //m_insh.add_env("PATH_SEP",inlib::psep());
-
+  
+    m_main_insh.add_command("app_windowing",new main_cmd(*this,&main::_app_windowing,insh_app_windowing_help));
+  
     ////////////////////////////////////////////
     ////////////////////////////////////////////
     ////////////////////////////////////////////
-#ifdef EMSCRIPTEN
-    set_use_gsto(true);
-#endif
+    if(inlib::device::is_emscripten()) set_use_gsto(true);
   }
   virtual ~main() {
     //m_web_cache.clear();
@@ -245,10 +249,12 @@ protected:
   ,m_srvs(a_from.m_srvs)
   //,m_web_cache(m_out,false)
   ,m_tmp_dirs(a_from.m_tmp_dirs)
+  ,m_main_insh(a_from.m_main_insh)
   {}
   main& operator=(const main& a_from){
     parent::operator=(a_from);
     m_tmp_dirs = a_from.m_tmp_dirs;
+    m_main_insh = a_from.m_main_insh;
     return *this;
   }
 
@@ -269,90 +275,67 @@ public:
     }
     m_tmp_dirs.clear();
   }
+
+public: //insh:
+  const inlib::insh& insh() const {return m_main_insh;}
+  inlib::insh& insh() {return m_main_insh;}
+
+  void source_dot_insh() {
+    // home/.insh :
+    std::string home_path;
+    inlib::dir::home(home_path);
+    home_path += inlib::sep()+".insh";
+    if(inlib::file::exists(home_path)) m_main_insh.exec_line_reset_to_stop(". "+home_path); //sourced.
+    // doc_dir/.insh :
+    std::string doc_path = doc_dir()+inlib::sep()+".insh";
+    if( (doc_path!=home_path) && inlib::file::exists(doc_path) ) m_main_insh.exec_line_reset_to_stop(". "+doc_path); //sourced.
+  }
+  void exec_startup_insh() {
+    if(is_doc_res_file("startup.insh")) {  //for app without a startup.insh in doc_res.
+      m_main_insh.exec_line_reset_to_stop("startup.insh");
+    }
+  }
+
+  void _app_windowing(const std::vector<std::string>&) {
+    std::string sw;
+    if(!windowing(sw)) {
+      m_main_insh.warn("exlib::app::main : windowing() failed.");
+      return;
+    }
+    m_main_insh.out(sw);
+  }
+  static const std::string& insh_app_windowing_help() {
+    static const std::string s_help("\
+app_windowing: app_windowing\n\
+  Print the windowing system of the application.\n\
+  It could be [Cocoa,Windows,X11,UIKit,Android,offscreen,web].\n\
+");
+    return s_help;
+  }
+
+  INLIB_INSH_CLASS_CMD(main)
+
 protected:
-  void _style_load_file(const std::vector<std::string>& a_args) {
-    static const std::string s_header("exlib::app::main::_style_load_file :");
-    inlib::args _args(a_args);
-    std::string file;
-    if(!_args.first_not_hyphen(file)) {
-      m_insh.warn(s_header+" no file given.");
-      return;
-    }
-    if(_args.is_arg("-doc_res")) {
-      std::string path;
-      if(!find_doc_res_file(file,path)) {
-        m_insh.warn(s_header+" file "+inlib::sout(file)+" not found in doc and res dirs.");
-        return;
-      }
-      file = path;
-    } else if(_args.is_arg("-doc")) {
-      std::string path;
-      if(!find_doc_file(file,path)) {
-        m_insh.warn(s_header+" file "+inlib::sout(file)+" not found in doc dir.");
-        return;
-      }
-      file = path;
-    } else if(_args.is_arg("-res")) {
-      std::string path;
-      if(!find_res_file(file,path)) {
-        m_insh.warn(s_header+" file "+inlib::sout(file)+" not found in res dir.");
-        return;
-      }
-      file = path;
-    }
-    if(!xml::load_style_file(m_out,file,m_styles)) {
-      m_insh.warn(s_header+" xml parsing of "+file+" failed.");
-      return;
-    }
-  }
-  static const std::string& _style_load_file_help() {
-    static const std::string s_help("\
-style_load_file: style_load_file [-doc_res,-res,-doc] path\n\
-  Load a XML style file.\n\
-  If no directory is given in path, the -doc_res option permits to search a file first\n\
-  in the document directory declared to the app, and then in the app (internal) resource directory.\n\
-  -res for the resource directory only, -doc for the document directory only.\n\
-  See also : app_dir.\n\
-");
-    return s_help;
-  }
-
-#ifdef EMSCRIPTEN
-  void _emscripten_run_script(const std::vector<std::string>& a_args) {
-    if(a_args.empty()) return;
-    ::emscripten_run_script(a_args[0].c_str());
-  }
-  static const std::string& _emscripten_run_script_help() {
-    static const std::string s_help("\
-ems: ems command\n\
-  Do a ::emscripten_run_script(command).\n\
-  Example:\n\
-    ems 'alert(\"hello world!\")'\n\
-");
-    return s_help;
-  }
-  INLIB_INSH_CLASS_CMD(main,ems,m_holder._emscripten_run_script(a_args),_emscripten_run_script_help())
-#endif
-
-  INLIB_INSH_CLASS_CMD(main,style_load_file,m_holder._style_load_file(a_args),_style_load_file_help())
-  INLIB_INSH_CLASS_CMD(main,gui_push_list,gui_push_list_insh(m_holder,a_args),"gui_push_list: gui_push_list [label script]\n  Show a list menu.\n  A list of pairs (label,script) must be provided.\n  gui_push_list 'item 1' 'echo item 1' 'item 2' 'echo item 2'\n  gui_show_main_menu\n")
-
-  INLIB_INSH_CLASS_CMD(main,web_get_file,exlib::insh_web_get_file(m_holder.insh(),m_holder.doc_dir(),a_args),exlib::insh_web_get_file_help())
-
-  void insh_add_cmds() {
-    INLIB_INSH_ADD_CMD(m_insh,*this,style_load_file)
-    INLIB_INSH_ADD_CMD(m_insh,*this,gui_push_list)
-#ifdef EMSCRIPTEN
-    INLIB_INSH_ADD_CMD(m_insh,*this,ems)
-#endif
-    INLIB_INSH_ADD_CMD(m_insh,*this,web_get_file)
-  }
+  class _insh : public inlib::insh {
+    typedef inlib::insh parent;
+  public:
+    virtual void map_warn(const std::string& a_msg,bool a_warn = true) {m_gv.map_warn(a_msg,a_warn);}
+  public:
+    _insh(inlib::sg::gui_viewer& a_gv):parent(a_gv.out()),m_gv(a_gv) {}
+    virtual ~_insh() {}
+  public:
+    _insh(const _insh& a_from):parent(a_from),m_gv(a_from.m_gv) {}
+    _insh& operator=(const _insh& a_from) {parent::operator=(a_from);return *this;}
+  protected:
+    inlib::sg::gui_viewer& m_gv;
+  };
 protected:
   inlib::ftp::ftps m_ftps;
   inlib::xml::srvs m_srvs;
   //inlib::web::cache m_web_cache;
   inlib::cbk::help::help_t m_help;
   std::vector<std::string> m_tmp_dirs;
+  _insh m_main_insh;
 };
 
 }}

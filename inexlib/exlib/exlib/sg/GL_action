@@ -9,7 +9,7 @@
 #include <inlib/sg/render_action>
 
 //#include <inlib/mathf>
-//#include <inlib/matout>
+//#include <inlib/lina/matout>
 
 namespace exlib {
 namespace sg {
@@ -421,7 +421,7 @@ public:
     tmp.no_translate();
     inlib::mat4f normal_matrix;
     if(!tmp.invert(normal_matrix)) {
-      m_out << "inlib::WebGL::render::load_model_matrix :"
+      m_out << "exlib::sg::GL_action::render::load_model_matrix :"
             << " can't invert model matrix."
             << std::endl;
     }

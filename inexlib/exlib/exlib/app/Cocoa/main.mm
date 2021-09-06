@@ -316,7 +316,7 @@ inline void at_exit() {
 
 #include <cstdlib>
 
-template <class APP_CONTEXT,class APP_MAIN>
+template <class APP_MAIN>
 inline int exlib_main(const std::string& a_app_name,int argc, char** argv) {
   bool verbose = false;
 
@@ -516,9 +516,8 @@ options are :\n\
   if(!is_sandboxed) doc_dir += inlib::sep()+a_app_name;
   std::string out_dir = doc_dir;
 
-  APP_CONTEXT context(res_dir);
-
   app_Cocoa::main<APP_MAIN> _main(nsout,doc_dir,res_dir,out_dir,tmp_dir,view,verbose);
+  _main.set_argcv(args);
   if(args.is_arg(inlib::s_arg_black())) _main.m_params.m_scene_screen_color = inlib::colorf_black();
 
   [view set_main:&_main];
@@ -541,8 +540,8 @@ options are :\n\
   /// insh default scripts : ///////////////////////////////////////
   //////////////////////////////////////////////////////////////////
   _main.source_dot_insh();
-  _main.source_startup_insh();
-  _main.exec_insh_startup();
+  _main.exec_startup_insh();
+  /*_main.exec_insh_startup();*/
 
   //////////////////////////////////////////////////////////////////
   /// document file : //////////////////////////////////////////////

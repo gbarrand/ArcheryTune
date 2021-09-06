@@ -23,10 +23,11 @@ inline void at_exit() {std::cout << "exlib_main : at_exit..."<< std::endl;inlib:
 #include <inlib/sargs>
 #include <inlib/saui>
 #include <inlib/app>
+#include <inlib/file_format>
 
 #include <cstdlib>
 
-template <class APP_CONTEXT,class APP_MAIN>
+template <class APP_MAIN>
 inline int exlib_main(const std::string& a_app_name,int argc,char** argv) {
   bool verbose = false;
 
@@ -65,7 +66,7 @@ inline int exlib_main(const std::string& a_app_name,int argc,char** argv) {
   }
 
   std::string orders;
-  args.find(inlib::s_arg_orders(),orders,DOCUMENT.size()?DOCUMENT:"offscreen.insh");
+  args.find(inlib::s_arg_orders(),orders,"offscreen.insh");
 
   //////////////////////////////////////////////////////////////////
   /// dirs : ///////////////////////////////////////////////////////
@@ -113,30 +114,27 @@ inline int exlib_main(const std::string& a_app_name,int argc,char** argv) {
   }
 
   //////////////////////////////////////////////////////////////////
-  /// app_context : ////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////
-
-  APP_CONTEXT app_context(res_dir);
-
-  //////////////////////////////////////////////////////////////////
   /// create main and steer : //////////////////////////////////////
   //////////////////////////////////////////////////////////////////
 
  {app_offscreen::main<APP_MAIN> _main(std::cout,doc_dir,res_dir,out_dir,tmp_dir,ww,wh,verbose);
+  _main.set_argcv(args);
 
+  //note : DOCUMENT could be a .insh script.
+  
+  _main.source_dot_insh();
+//_main.exec_startup_insh();
+///*_main.exec_insh_startup();*/
+
+  _main.create_gui();
+  _main.set_meta_zone_had_been_shown();
+  
   if(DOCUMENT.size()) {
-    _main.create_gui();
     bool done;
     _main.opener().open(DOCUMENT,inlib::file::s_format_guessed(),inlib::args(),done);
+  } else {
+    if(inlib::file::exists(orders)) _main.insh().exec_file_reset_to_stop(orders);
   }
-
-  _main.set_meta_zone_had_been_shown();
-
-  _main.source_dot_insh();
-
-//_main.source_startup_insh();
-//_main.exec_insh_startup();
-  _main.insh().exec_file_reset_to_stop(orders);
 
   }
 

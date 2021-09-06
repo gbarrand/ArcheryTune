@@ -16,22 +16,33 @@
 #include <inlib/dirs>
 #include <inlib/carray>
 
-EM_JS(void, js_set_cursor_auto, (), {
-  set_canvas_cursor('auto');
-});
-EM_JS(void, js_set_cursor_crosshair, (), {
-  set_canvas_cursor('crosshair');
-});
+#include <inlib/file_std>
+#include <inlib/insh/insh>
 
+EM_JS(void, js_set_cursor_auto, (), {set_gl_canvas_cursor('auto');});
+EM_JS(void, js_set_cursor_crosshair, (), {set_gl_canvas_cursor('crosshair');});
+
+EM_JS(void, js_start_anim_timer, (unsigned int a_interval), {
+  if(g_anim_timer_id==null) g_anim_timer_id = setInterval(anim_proc,a_interval);
+});
 EM_JS(void, js_clear_anim_timer, (), {
-  if(g_timer_id!=null) {clearInterval(g_timer_id);g_timer_id = null;}
+  if(g_anim_timer_id!=null) {clearInterval(g_anim_timer_id);g_anim_timer_id = null;}
 });
 
-EM_JS(void, js_show_hide_gui_area, (), {
-  toggle_gui_visible_height();
-  canvas_resize();
-  Module.app_set_size(canvas.width, canvas.height);
+EM_JS(void, js_start_event_anim_timer, (unsigned int a_interval), {
+  if(g_event_anim_timer_id==null) g_event_anim_timer_id = setInterval(anim_proc,a_interval);
 });
+EM_JS(void, js_clear_event_anim_timer, (), {
+  if(g_event_anim_timer_id!=null) {clearInterval(g_event_anim_timer_id);g_event_anim_timer_id = null;}
+});
+
+//EM_JS(void, js_show_hide_gui_area, (), {
+//  toggle_gui_visible_height();
+//  gl_canvas_resize();
+//  Module.app_set_size(canvas.width, canvas.height);
+//});
+
+#include "../../insh/wasm"
 
 namespace app_wasm {
 
@@ -84,20 +95,21 @@ public:
       m_mgr_gra.end_render();
     }
   }
+  virtual bool windowing(std::string& a_value) const {a_value = "web";return true;}
 public: //exlib::sg::viewer
   virtual bool set_cursor_shape(inlib::sg::cursor_shape a_shape) {
     if(!parent::set_cursor_shape(a_shape)) return false;
     if(a_shape==inlib::sg::cursor_default) {
       //EM_ASM({
-      //  set_canvas_cursor('auto');
+      //  set_gl_canvas_cursor('auto');
       //});
       js_set_cursor_auto();
       return true;
     } else if(a_shape==inlib::sg::cursor_target) {
       //std::string _s("crosshair");
       //EM_ASM({
-      //  var s = UTF8ToString($0);
-      //  set_canvas_cursor(s);
+      //  let s = UTF8ToString($0);
+      //  set_gl_canvas_cursor(s);
       //  console.log('debug : 001 : cursor '+s);
       //},_s.c_str());
       js_set_cursor_crosshair();
@@ -109,9 +121,7 @@ public: //exlib::sg::viewer
   virtual void enable_anim() {
     //::printf("debug : enable_anim\n");
     parent::enable_anim();
-    EM_ASM({
-      if(g_timer_id==null) g_timer_id = setInterval(anim_proc,$0);
-    },parent::m_params.m_anim_interval);
+    js_start_anim_timer(parent::m_params.m_anim_interval);
   }
   virtual void disable_anim() {
     parent::disable_anim();
@@ -119,7 +129,11 @@ public: //exlib::sg::viewer
   }
   virtual void set_event_anim(inlib::event_timer* a_timer) {
     parent::set_event_anim(a_timer);
-    enable_anim();
+    js_start_event_anim_timer(parent::m_params.m_anim_interval);
+  }
+  virtual void stop_event_anim() {
+    parent::stop_event_anim();
+    js_clear_event_anim_timer();
   }
 public:
   virtual void win_render() {
@@ -133,7 +147,7 @@ public:
 
   virtual unsigned char* get_pixels(unsigned int a_w,unsigned int a_h,bool a_rgbas) {
     EM_ASM({
-      var data = get_rgbas($0,$1);
+      let data = get_rgbas($0,$1);
       const num_bytes = data.length * data.BYTES_PER_ELEMENT;
       const data_ptr = Module._malloc(num_bytes);
       const data_on_heap = new Int8Array(Module.HEAP8.buffer, data_ptr, num_bytes);
@@ -158,6 +172,7 @@ public:
       return rgbs;
     }
   }
+/*
 protected:
   static inlib::sg::return_action action_show_hide_gui_area(inlib::sg::gui_viewer& a_gv) {
     js_show_hide_gui_area();
@@ -174,6 +189,7 @@ public:
                                   "show/hide","","beos_menu.jpg",
                                   new inlib::sg::gv_cbk(*this,action_show_hide_gui_area));
   }
+  */
 public:
   main(std::ostream& a_out
        ,const std::string& a_app_name
@@ -187,6 +203,7 @@ public:
           parent_pv_holder::gra_mgr(),parent_pv_holder::ttf(),parent_pv_holder::selection(),
           a_doc_dir,a_res_dir,a_out_dir,a_tmp_dir,a_verbose,0)
   {
+    EXLIB_INSH_WASM_ADDS(parent::m_main_insh,*this)
     //parent::m_params.m_gsto_mode = inlib::sg::s_gsto_gl_vbo();
     //this->set_use_gsto(true);
     parent::push_home(); //NOTE : it can't call a potential push_home() done on an inheriting class.

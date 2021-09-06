@@ -22,6 +22,7 @@ class main : protected exlib::sg::pv_holder, public APP_MAIN {
   typedef APP_MAIN parent;
 public:
   EXLIB_GL_VIEWER_METHODS
+  virtual bool windowing(std::string& a_value) const {a_value = "Cocoa";return true;}
 public:
   virtual bool set_cursor_shape(inlib::sg::cursor_shape a_shape) {
     if(!parent::set_cursor_shape(a_shape)) return false;
@@ -89,7 +90,7 @@ public:
   {
     parent::push_home();
   }
-  inline virtual ~main(){}
+  virtual ~main(){}
 private:
   GLView* m_GLView;
 };

@@ -158,6 +158,7 @@ public class Main extends NativeActivity {
              (ext.equals("zip"))       ||
              (ext.equals("zvid"))      ||
              (ext.equals("scenarios")) ||
+             (ext.equals("gz"))        || //for TouchSky.
              (ext.equals("slides"))    ){
 
             if(ext.equals("fog")) {

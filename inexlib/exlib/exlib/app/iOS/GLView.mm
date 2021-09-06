@@ -181,8 +181,6 @@ inline void sg_serv_finalize_func(void* a_app_delegate,void*){
 
     std::string out_dir = doc_dir;
 
-    EXLIB_APP::context context(res_dir);
-
     bool verbose = false;
     //verbose = true;
 
@@ -208,8 +206,8 @@ inline void sg_serv_finalize_func(void* a_app_delegate,void*){
 #endif
 
     m_main->source_dot_insh();
-    m_main->source_startup_insh();
-    m_main->exec_insh_startup();
+    m_main->exec_startup_insh();
+    /*m_main->exec_insh_startup();*/
 
     //NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     //[center addObserver:self selector:@selector(mem_pb:)

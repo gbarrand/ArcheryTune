@@ -11,10 +11,10 @@
 #include <inlib/sg/pick_action>
 #include <inlib/sg/bbox_action>
 #include <inlib/sg/enums>
-#include <inlib/vec3d>
-#include <inlib/fmanip>
+#include <inlib/lina/vec3d>
+#include <inlib/find_file>
 #include <inlib/nostream>
-#include <inlib/box_3f>
+#include <inlib/lina/box_3f>
 
 // font_pixmap :
 #include <inlib/sg/group>
@@ -27,38 +27,7 @@
 #include <map> //for errors
 
 #ifndef SWIG
-#ifdef EXLIB_USE_NATIVE_FREETYPE
-#include <ft2build.h>
-#else
-#include <ourex_ft2build.h>
-
-/*
-#ifdef INLIB_MEM
-// the below coworks with raising cpp INLIB_MEM in
-//   ourex/freetype/src/builds/unix/ftsystem.c
-#include <inlib/mem>
-extern "C" {
-  typedef void* __FT_Memory;
-  void* ft_alloc(__FT_Memory,long size){
-    inlib::mem::increment(inlib::s_malloc().c_str());
-    return ::malloc(size);
-  }
-  void* ft_realloc(__FT_Memory,long,long new_size,void* block){
-    if(block==NULL) inlib::mem::increment(inlib::s_malloc().c_str());
-    return ::realloc(block,new_size);
-  }
-  void ft_free(__FT_Memory,void* block){
-    if(block!=NULL) inlib::mem::decrement(inlib::s_malloc().c_str());
-    ::free(block);
-  }
-}
-#endif
-*/
-
-#endif
-#include FT_FREETYPE_H
-#include FT_GLYPH_H
-#include FT_OUTLINE_H
+#include "../freetype"
 #endif
 
 //#define EXLIB_SG_TEXT_FREETYPE_DEBUG
@@ -1075,7 +1044,7 @@ protected:
       m_face = 0;
       return false;
     }
-    m_scale = height.value()/float(wchar);
+    m_scale = height.value()/float(hchar);
 
     FT_Pos face_height = m_face->size->metrics.height; //FT_Pos (long)
     //::printf("debug : face_height %lu\n",face_height);

@@ -56,23 +56,6 @@ public:\
         parent::after_render();\
       }\
     }\
-  }\
-public:\
-  virtual void gl_infos(std::vector<std::string>& a_v) const {\
-    a_v.clear();\
-    {const char* _sv = (const char*)::glGetString(GL_VERSION);\
-     if(_sv) a_v.push_back("GL_VERSION : "+std::string(_sv));}\
-    {const char* _sv = (const char*)::glGetString(GL_VENDOR);\
-     if(_sv) a_v.push_back("GL_VENDOR : "+std::string(_sv));}\
-    {const char* _sv = (const char*)::glGetString(GL_RENDERER);\
-     if(_sv) a_v.push_back("GL_RENDERER : "+std::string(_sv));}\
-   /*{const char* _sv = (const char*)::glGetString(GL_EXTENSIONS);\
-     if(_sv) a_v.push_back("GL_EXTENSIONS : "+std::string(_sv));}*/\
-    {GLint iv;\
-     ::glGetIntegerv(GL_MAX_TEXTURE_SIZE, &iv);\
-     std::string _s;\
-     if(inlib::num2s(iv,_s)) a_v.push_back("GL_MAX_TEXTURE_SIZE : "+_s);}\
-    /*GLint gl_buffer_size;::glGetIntegerv(GL_BUFFER_SIZE, &gl_buffer_size);*/\
   }
 
 //exlib_build_use inlib png jpeg zlib GL

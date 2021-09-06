@@ -26,9 +26,11 @@
         return EXIT_FAILURE;
       }
     }
-
-  //unsigned int term_timer_interval = 16; //millisecs.
-    unsigned int term_timer_interval = 4; //millisecs. //with 16, cut/paste is slow.
+    
+    unsigned int term_timer_interval; 
+    args.find<unsigned int>
+      ("-term_timer_interval",term_timer_interval,4); //millisecs. //with 16, cut/paste is slow.
+    
 #ifdef EXLIB_APP_TERM_INSH
     _term_timer = new exlib::insh_term_timer(term_timer_interval,_main,_main.insh(),prompt,history_file);
 #else

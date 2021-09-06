@@ -34,6 +34,7 @@ class main
   typedef APP_MAIN parent;
 public:
   EXLIB_GL_VIEWER_METHODS
+  virtual bool windowing(std::string& a_value) const {a_value = "Windows";return true;}
 public: //inlib::sg::gui_viewer
   virtual bool set_cursor_shape(inlib::sg::cursor_shape a_shape) {
     if(!parent::set_cursor_shape(a_shape)) return false;
@@ -123,7 +124,7 @@ public:
   ,parent(a_out,
           parent_pv_holder::m_mgr_gra,parent_pv_holder::m_ttf,parent_pv_holder::selection(),
           a_doc_dir,a_res_dir,a_out_dir,a_tmp_dir,a_verbose,0)
-  ,parent_window(a_w,a_h)
+  ,parent_window("",0,0,a_w,a_h)
   ,parent_glarea(parent_window::m_hwnd)
   {
     parent_window::set_client_area_size(a_w,a_h);
@@ -146,7 +147,7 @@ protected:
 }
 
 //exlib_build_use inlib inlib_glutess freetype png jpeg zlib expat
-//exlib_build_use GL Windows kernel
+//exlib_build_use WGL Windows kernel
 
 #endif
 

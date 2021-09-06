@@ -9,16 +9,26 @@
 // It needs also to have included before it a :
 //    #include "../<app>/main"
 
-#include "main"
-
-static app_wasm::main<APP_NAME::main>* g_main = 0;
+#include "../../wasm/term_streambuf"
+static exlib::wasm::term_streambuf g_term_buf;
+static std::streambuf* g_old_std_cout_buf = 0;
+static std::streambuf* g_old_std_cerr_buf = 0;
 
 #include <iostream>
 
+#include "main"
+
+EM_JS(int, js_gui_get_terminal_cols, (), {return g_term.cols;});
+
+static app_wasm::main<APP_NAME::main>* g_main = 0;
+
 extern "C" {
+
 
 int app_initialize(const char* a_app_name,int a_width,int a_height) {
   //::printf("debug : app_initialize : %d %d\n",a_width,a_height);
+  //std::cout << "debug : app_initialize : 000" << std::endl;
+  //std::cout << "debug : app_initialize : 001" << std::endl;
 
   std::string app_name(a_app_name);
 
@@ -71,8 +81,8 @@ int app_initialize(const char* a_app_name,int a_width,int a_height) {
   /// insh default scripts : ///////////////////////////////////////
   //////////////////////////////////////////////////////////////////
   _main.source_dot_insh();
-  _main.source_startup_insh();
-  _main.exec_insh_startup();
+  _main.exec_startup_insh();
+  /*_main.exec_insh_startup();*/
   //////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////
@@ -132,7 +142,13 @@ void app_upload_file(const char* a_file_name,char* a_buffer,size_t a_size,bool a
     return;
   }
   if(a_warn) {
-    g_main->map_warn("upload done",false);
+    if(a_size) {
+      std::string _s;
+      inlib::size_t2s(a_size,_s);
+      g_main->map_warn(std::string(a_file_name)+" uploaded "+_s+" bytes.",false);
+    } else {
+      g_main->map_warn(std::string(a_file_name)+" uploaded 0 bytes.",false);
+    }
     g_main->win_render();
   }
 }
@@ -191,21 +207,23 @@ void app_upload_buffer(char* a_buffer,size_t a_size,const char* a_sargs) {
   g_main->win_render();
 }
 
-int app_get_doc_file_size(const char* a_file) {
+#include <inlib/fsize>
+
+int app_get_file_size(const char* a_file) {
   std::string file_name(a_file);
-  std::string from = g_main->doc_dir()+inlib::sep()+file_name;
+  std::string from = file_name;
   long length;
   if(!inlib::file::size(from,length)) {
     g_main->map_warn("app_get_doc_file_size : can't get file size of "+inlib::sout(from)+".");
-    return 0;
+    return -1;
   }
   return (int)length;
 }
 
-char* app_get_doc_file(const char* a_file) {
+char* app_get_file(const char* a_file) {
   //returned buffer have to be deleted with delete [].
   std::string file_name(a_file);
-  std::string from = g_main->doc_dir()+inlib::sep()+file_name;
+  std::string from = file_name;
   char* buffer;
   long length;
   if(!inlib::file::read_bytes(from,buffer,length)) {
@@ -224,7 +242,12 @@ void app_delete_buffer(char* a_buffer) {
 
 void app_source_insh(const char* a_string) {
   //::printf("debug : app_source_insh : %lu\n",(unsigned long)a_size);
-  g_main->insh().exec_line_reset_to_stop(a_string);
+  int cols = js_gui_get_terminal_cols();
+  if(cols<=0) cols = 80;
+  g_main->insh().set_unix_cols((size_t)cols);
+  std::vector<std::string> lines;
+  inlib::get_lines(a_string,lines);
+  g_main->insh().exec_lines_reset_to_stop(lines);
   g_main->do_works();
   g_main->win_render();
 }
@@ -238,10 +261,14 @@ void app_upload_rgbas(char* a_buffer,size_t a_size) {
   }
 }
 
-//void app_vis_fits(const char* a_file,double a_ra,double a_dec,const char* a_title) {
-//  std::string path = g_main->doc_dir()+inlib::sep()+std::string(a_file_name);
-//  vis_objects(*g_main,path,a_ra,a_dec,std::string(a_title));
-//}
+void app_map_warn(const char* a_message,bool a_warn) {
+  g_main->map_warn(a_message,a_warn);
+//g_main->win_render();
+}
+void app_pop_list() {
+  g_main->pop_list();
+//g_main->win_render();
+}
 
 }
 
@@ -281,6 +308,47 @@ void app_doc_files_to_ui() {
   }
   ::emscripten_run_script(script.c_str());
 }
+
+//////////////////////////////////////////////////////////////////
+/// terminal related : ///////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+void app_enable_terminal() {
+  //::printf("debug : app_enable_terminal\n");
+  if(!g_old_std_cout_buf) g_old_std_cout_buf = std::cout.rdbuf(&g_term_buf);
+  if(!g_old_std_cerr_buf) g_old_std_cerr_buf = std::cerr.rdbuf(&g_term_buf);
+}
+void app_disable_terminal() {
+  //::printf("debug : app_disable_terminal\n");
+  if(g_old_std_cout_buf) {
+    std::cout.rdbuf(g_old_std_cout_buf);
+    g_old_std_cout_buf = 0;
+  }
+  if(g_old_std_cerr_buf) {
+    std::cerr.rdbuf(g_old_std_cerr_buf);
+    g_old_std_cerr_buf = 0;
+  }
+}
+
+static std::string g_tab_completion;
+
+int app_tab(const char* a_string,int a_loc) {
+  //::printf("debug : app_tab : \"%s\" %d\n",a_string,a_loc);
+  inlib::insh& _insh = g_main->insh();
+  size_t max_completion = 1024;
+  char* buffer = new char[::strlen(a_string)+max_completion];
+  ::strcpy(buffer,a_string);
+  int old_a_loc = a_loc;
+  inlib::insh::tab_hook(buffer,0,&a_loc,&_insh);
+  if(a_loc!=old_a_loc) {
+    g_tab_completion = buffer;
+  } else {
+    g_tab_completion.clear();
+  }
+  delete [] buffer;
+  return a_loc;
+}
+
+char* app_tab_completion() {return (char*)g_tab_completion.c_str();}
 
 }
 

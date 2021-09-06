@@ -125,7 +125,7 @@ inline void at_exit() {std::cout << "exlib_main : at_exit..."<< std::endl;inlib:
 #include <iostream>
 #include <cstdlib>
 
-template <class APP_CONTEXT,class APP_MAIN>
+template <class APP_MAIN>
 inline int exlib_main(const std::string& a_app_name,int argc,char** argv) {
   bool verbose = false;
 
@@ -254,8 +254,6 @@ options are :\n\
   x11.map_raise_window(win);
   //x11.show_window(win); //it waits a MapNotify.
 
-  APP_CONTEXT app_context(res_dir);
-
  {app_X11::main<APP_MAIN> _main(std::cout,doc_dir,res_dir,out_dir,tmp_dir,verbose,x11.display()
 #ifdef EXLIB_NO_GL
                                 ,monitor,win
@@ -282,8 +280,8 @@ options are :\n\
   /// insh default scripts : ///////////////////////////////////////
   //////////////////////////////////////////////////////////////////
   _main.source_dot_insh();
-  _main.source_startup_insh();
-  _main.exec_insh_startup();
+  _main.exec_startup_insh();
+  /*_main.exec_insh_startup();*/
 
   //////////////////////////////////////////////////////////////////
   /// document file : //////////////////////////////////////////////
@@ -553,7 +551,7 @@ options are :\n\
 }
 
 //exlib_build_use inlib inlib_glutess freetype png jpeg zlib expat
-//exlib_build_use GL GLX X11
+//exlib_build_use GLX X11
 
 //exlib_build_cppflags -DEXLIB_APP_HAS_TERM -DEXLIB_APP_TERM_INSH
 //exlib_build_use Getline

@@ -156,11 +156,10 @@
 
   //NSString* chars = [a_event charactersIgnoringModifiers];
   NSString* chars = [a_event characters];
-  unichar keyChar = 0;
   if ( [chars length] == 0 ) return;
   if ( [chars length] != 1 ) {[super keyDown:a_event];return;}
 
-  keyChar = [chars characterAtIndex:0];
+  unichar keyChar = [chars characterAtIndex:0];
 
   if ( keyChar == NSLeftArrowFunctionKey ) {
     if(m_main->do_key(inlib::sg::key_left,shift,ctrl))

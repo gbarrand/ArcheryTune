@@ -10,6 +10,7 @@
 #include <inlib/sg/render_manager>
 #include <inlib/mapmanip>
 #include <inlib/carray>
+#include <inlib/num2s>
 
 #include <cmath> //::sqrt
 
@@ -201,7 +202,7 @@ debug : shine : 0
   }
 
   virtual void end_render() {
-    ::glFinish();
+    //::glFinish();
     gl_dump_if_errors(m_out,"exlib::sg::GL_manager::end_render :");
   }
 
@@ -455,6 +456,31 @@ debug : shine : 0
     return sz;
   }
 
+  virtual bool get_infos(const std::string& a_what,std::string& a_value) const {
+    if(a_what=="GL_VERSION") {
+      const char* _cs = (const char*)::glGetString(GL_VERSION);\
+      if(!_cs) {a_value.clear();return false;}
+      a_value = _cs;
+      return true;
+    } else if(a_what=="GL_VENDOR") {
+      const char* _cs = (const char*)::glGetString(GL_VENDOR);\
+      if(!_cs) {a_value.clear();return false;}
+      a_value = _cs;
+      return true;
+    } else if(a_what=="GL_RENDERER") {
+      const char* _cs = (const char*)::glGetString(GL_RENDERER);\
+      if(!_cs) {a_value.clear();return false;}
+      a_value = _cs;
+      return true;
+    } else if(a_what=="GL_MAX_TEXTURE_SIZE") {
+      GLint iv;
+      ::glGetIntegerv(GL_MAX_TEXTURE_SIZE, &iv);
+      if(!inlib::num2s(iv,a_value)) {a_value.clear();return false;}
+      return true;
+    }
+    a_value.clear();
+    return false;
+  }
 public:
   GL_manager(std::ostream& a_out)
   :m_out(a_out)

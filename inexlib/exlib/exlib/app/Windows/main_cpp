@@ -39,7 +39,7 @@ inline void dc_disconnect_func(inlib::net::sg_serv_args&){}
 inline void at_exit() {std::cout << "exlib_main : at_exit..."<< std::endl;inlib::mem::balance(std::cout);}
 #endif
 
-template <class APP_CONTEXT,class APP_MAIN>
+template <class APP_MAIN>
 inline int exlib_main(const std::string& a_app_name,int argc,char** argv) {
   bool verbose = false;
 
@@ -132,13 +132,7 @@ options are :\n\
 
   exlib::Windows::session wdoz(std::cout);
 
-  APP_CONTEXT context(res_dir);
-
-#ifdef EXLIB_NO_GL
   app_Windows::main<APP_MAIN> _main(std::cout,doc_dir,res_dir,out_dir,tmp_dir,ww,wh,verbose);
-#else
-  app_Windows::main<APP_MAIN> _main(std::cout,doc_dir,res_dir,out_dir,tmp_dir,ww,wh,verbose);
-#endif
 
   _main.set_argcv(args);
   if(args.is_arg(inlib::s_arg_black())) _main.m_params.m_scene_screen_color = inlib::colorf_black();
@@ -158,8 +152,8 @@ options are :\n\
   /// insh default scripts : ///////////////////////////////////////
   //////////////////////////////////////////////////////////////////
   _main.source_dot_insh();
-  _main.source_startup_insh();
-  _main.exec_insh_startup();
+  _main.exec_startup_insh();
+  /*_main.exec_insh_startup();*/
 
   //////////////////////////////////////////////////////////////////
   /// document file : //////////////////////////////////////////////
@@ -312,7 +306,7 @@ options are :\n\
 }
 
 //exlib_build_use inlib inlib_glutess freetype png jpeg zlib expat
-//exlib_build_use GL Windows kernel
+//exlib_build_use WGL Windows kernel
 
 #endif
 
