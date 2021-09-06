@@ -1,0 +1,26 @@
+# Copyright (C) 2010, Guy Barrand. All rights reserved.
+# See the file bush.license for terms.
+
+if [ "${use_iconv}" = "yes" ] ; then
+  use_sys_iconv=yes
+fi
+
+if [ "${use_sys_iconv}" = "yes" ] ; then
+  if [ -e /usr/include/iconv.h ] ; then
+   #ccflags="${ccflags} -I/usr/include"
+   #cppflags="${cppflags} -I/usr/include"
+    libs="${libs} -liconv"
+  elif [ -e /opt/local/include/iconv.h ] ; then
+    ccflags="${ccflags} -I/opt/local/include"
+    cppflags="${cppflags} -I/opt/local/include"
+    if [ "${use_archive}" = "yes" ] ; then
+      libs="${libs} /opt/local/lib/libiconv.a"
+    else
+      libs="${libs} /opt/local/lib/libiconv.dylib"
+    fi
+  else
+    echo "bush/use/iconv : iconv.h not found."
+    exit
+  fi
+fi
+

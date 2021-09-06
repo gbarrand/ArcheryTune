@@ -1,0 +1,12 @@
+# Copyright (C) 2010, Guy Barrand. All rights reserved.
+# See the file bush.license for terms.
+
+if [ "${use_CoreFoundation}" = "yes" ] ; then
+
+  if [ `uname` = Darwin ] ; then
+    libs="${libs} -framework CoreFoundation" # CF functions.
+  else
+    echo 'bush/use/CoreFoundation : not on macOS.'
+  fi
+
+fi

@@ -1,0 +1,26 @@
+# Copyright (C) 2010, Guy Barrand. All rights reserved.
+# See the file bush.license for terms.
+
+if [ "${use_intl}" = "yes" ] ; then
+  use_sys_intl=yes
+fi
+
+if [ "${use_sys_intl}" = "yes" ] ; then
+  if [ -e /usr/include/libintl.h ] ; then
+   #ccflags="${ccflags} -I/usr/include"
+   #cppflags="${cppflags} -I/usr/include"
+    libs="${libs} -lintl"
+  elif [ -e /opt/local/include/libintl.h ] ; then
+    ccflags="${ccflags} -I/opt/local/include"
+    cppflags="${cppflags} -I/opt/local/include"
+    if [ "${use_archive}" = "yes" ] ; then
+      libs="${libs} /opt/local/lib/libintl.a"
+    else
+      libs="${libs} /opt/local/lib/libintl.dylib"
+    fi
+  else
+    echo "bush/use/intl : intl.h not found."
+    exit
+  fi
+fi
+

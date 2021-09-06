@@ -1,0 +1,42 @@
+# Copyright (C) 2010, Guy Barrand. All rights reserved.
+# See the file bush.license for terms.
+
+if [ "${use_fontconfig}" = "yes" ] ; then
+#if [ "${build_use_not_our_fontconfig}" = "yes" ] ; then
+  use_sys_fontconfig=yes
+#  use_our_fontconfig=no
+#else
+#  use_sys_fontconfig=no
+#  use_our_fontconfig=yes
+#fi
+fi
+
+if [ "${use_sys_fontconfig}" = "yes" ] ; then
+  if [ -e /usr/include/fontconfig/fontconfig.h ] ; then
+   #ccflags="${ccflags} -I/usr/include"
+   #cppflags="${cppflags} -I/usr/include"
+    libs="${libs} -lfontconfig"
+  elif [ -e /opt/local/include/fontconfig/fontconfig.h ] ; then
+    ccflags="${ccflags} -I/opt/local/include"
+    cppflags="${cppflags} -I/opt/local/include"
+    if [ "${use_archive}" = "yes" ] ; then
+      libs="${libs} /opt/local/lib/libfontconfig.a"
+    else
+      libs="${libs} /opt/local/lib/libfontconfig.dylib"
+    fi
+  else
+    echo "bush/use/fontconfig : fontconfig.h not found."
+    exit
+  fi
+#  ccflags="${ccflags} -DEXLIB_USE_NATIVE_FONTCONFIG"
+#  cppflags="${cppflags} -DEXLIB_USE_NATIVE_FONTCONFIG"
+fi
+
+#if [ "${use_our_fontconfig}" = "yes" ] ; then
+#  if [ "${ourex_home}" = "" ] ; then
+#    echo 'bush/use/fontconfig : variable ourex_home not defined.';exit
+#  fi
+#  fontconfig_home=${ourex_home}/fontconfig
+#  ourex_pack_name=fontconfig
+#  . ${bush_home}/use/ourex_use
+#fi
