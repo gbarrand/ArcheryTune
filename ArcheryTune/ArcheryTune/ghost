@@ -15,7 +15,7 @@ class ghost : public inlib::sg::ghost {
 public:
   virtual void event(inlib::sg::event_action& a_action) {
     if(!m_active) return;
-    if(inlib::sg::move_event* mevt = inlib::sg::event_cast<inlib::sg::event,inlib::sg::move_event>(a_action.get_event())) {
+    if(inlib::sg::mouse_move_event* mevt = inlib::sg::event_cast<inlib::sg::event,inlib::sg::mouse_move_event>(a_action.get_event())) {
 
       const inlib::sg::state& state = a_action.state();
 

@@ -4,43 +4,21 @@
 #ifndef ArcheryTune_ArcheryTune_main
 #define ArcheryTune_ArcheryTune_main
 
-#include <string>
-
-namespace ArcheryTune {
-
-class context {
-public:
-  context(const std::string&) {}
-  virtual ~context() {}
-protected:
-  context(const context&){}
-  context& operator=(const context&){return *this;}
-};
-
-}
-
 #include "version"
-
-//////////////////////////////////////////////////////
-//////////////////////////////////////////////////////
-//////////////////////////////////////////////////////
-
 #include "gui"
 #include "dac"
 
 #include <exlib/app/main>
+
+#ifdef EMSCRIPTEN
+#include <exlib/insh/wasm>
+#endif
+#include <inlib/insh/gui_viewer>
+
 #include <inlib/cbk/out>
 #include <inlib/cbk/sg_client>
 
 namespace ArcheryTune {
-
-inline inlib::sg::return_action _action_export_png(inlib::sg::gui_viewer& a_gv) {
-  inlib::sg::list* list = new inlib::sg::list(a_gv.ttf());
-  a_gv.set_style(*list);
-  inlib::sg::add_item_insh(a_gv,*list,"out.png","window_to_png");
-  a_gv.push_list(list);
-  return inlib::sg::return_to_render;
-}
 
 class main : public exlib::app::main, public dac {
   typedef exlib::app::main parent;
@@ -80,9 +58,12 @@ protected:
     if(has_mail_panel()) {
       inlib::sg::add_image_item(*this,*list,"Mail...","document_export.jpg",inlib::cbk::action_mail_png);
     } else {
-      //inlib::sg::add_image_item(*this,*list,"export","document_export.jpg",inlib::out::action_main);
-      inlib::sg::add_image_item(*this,*list,inlib::sg::s_export(),"document_export.jpg",_action_export_png);
-    }
+    //inlib::sg::add_image_item(*this,*list,"export","document_export.jpg",inlib::cbk::action_menu_export);
+#ifdef EMSCRIPTEN
+      inlib::sg::add_white_item_insh(*this,*list,"export",insh(),"window_to_png\nfile_download -doc out.png");
+#endif 
+
+   }
 
     //list_add(*list,"utils","tools.jpg",new exlib::cbk::utils(*this));
 
@@ -130,6 +111,13 @@ protected:
 
   }  
 
+protected:  //insh:
+  void insh_add_cmds() {
+    INLIB_INSH_GUI_VIEWER_ADDS(insh(),*this)
+#ifdef EMSCRIPTEN
+    EXLIB_INSH_WASM_ADDS(insh(),*this)
+#endif
+  }
 public:
   main(std::ostream& a_out,
        inlib::sg::render_manager& a_gl_mgr,
@@ -145,6 +133,8 @@ public:
           a_data_dir,a_res_dir,a_out_dir,a_tmp_dir,a_verbose,a_mem_limit)
   ,dac(parent::get_me())
   {
+    insh_add_cmds();
+    
     params_button_visible = false;
     camera_button_visible = false;
   //m_params.m_touch_move = false;

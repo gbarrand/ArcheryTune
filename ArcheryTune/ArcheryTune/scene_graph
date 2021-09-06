@@ -356,7 +356,7 @@ inline inlib::sg::return_action action_adjust_scope(inlib::sg::gui_viewer& a_gv,
     a_cbk.event_action_ref().set_done(true);
 
 #ifdef CURSOR_BUTTON
-  } else if(const inlib::sg::up_event* up_evt = inlib::sg::event_cast<inlib::sg::event,inlib::sg::up_event>(a_cbk.event_ref())){
+  } else if(const inlib::sg::mouse_up_event* up_evt = inlib::sg::event_cast<inlib::sg::event,inlib::sg::mouse_up_event>(a_cbk.event_ref())){
     if(_dac->m_cursor_switch.which.value()==inlib::sg::gui_viewer::SHOWN()) {
       _dac->m_cursor_switch.which = inlib::sg::gui_viewer::HIDDEN();
       _dac->m_scope_ghost.set_active(true);
