@@ -1,0 +1,37 @@
+// Copyright (C) 2010, Guy Barrand. All rights reserved.
+// See the file inlib.license for terms.
+
+#ifndef inlib_sg_ref_pos_data
+#define inlib_sg_ref_pos_data
+
+#include "ref_data"
+#include "pos_data"
+
+namespace inlib {
+namespace sg {
+
+template <class T>
+class ref_pos_data : public ref_data<T>, public pos_data {
+  typedef ref_data<T> parent_ref_data;
+  typedef pos_data parent_pos_data;
+public:
+  ref_pos_data(T& a_data,bool a_popup,int a_ex,int a_ey)
+  :parent_ref_data(a_data)
+  ,parent_pos_data(a_popup,a_ex,a_ey)
+  {}
+  virtual ~ref_pos_data(){}
+public:
+  ref_pos_data(const ref_pos_data& a_from)
+  :parent_ref_data(a_from)
+  ,parent_pos_data(a_from)
+  {}
+  ref_pos_data& operator=(const ref_pos_data& a_from){
+    parent_ref_data::operator=(a_from);
+    parent_pos_data::operator=(a_from);
+    return *this;
+  }
+};
+
+}}
+
+#endif
