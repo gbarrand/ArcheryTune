@@ -8,6 +8,7 @@ if [ "${use_glfw}" = "yes" ] ; then
   fi
 
   if [ `uname` = Darwin ] ; then
+    # sudo ./port install glfw
 
     if [ ! -d /opt/local/include/GLFW ] ; then
       echo 'bush/use/glfw : GLFW not found under /opt/local/include.'
@@ -17,7 +18,7 @@ if [ "${use_glfw}" = "yes" ] ; then
     ccflags="${ccflags} -I/opt/local/include"
     cppflags="${cppflags} -I/opt/local/include"
 
-    libs="${libs} -L/opt/local/lib -lglfw"
+    libs="${libs} /opt/local/lib/libglfw.dylib"
 
   else
 

@@ -18,7 +18,7 @@
   With it we can build our apps on Windows (forever highly exotic) from a CYGWIN prompt by using the Microsoft VisualC++ compiler
  but by avoiding the VisualStudio IDE, and also build macOS/Cocoa apps without having to pass by the Xcode IDE. (It is a pain
  for a single developer, for the same app, to maintain various IDEs). With bush we can build also offscreen version of
- our apps, WebGL and Android version of them. (Obviously we build on Linux, which is a piece of cake).
+ our apps, WebAssembly and Android version of them. (Obviously we build on Linux, which is a piece of cake).
 
   If having problem with the compiler and access to some package, the files to look/customize are :
 @verbatim

@@ -36,6 +36,7 @@ dll=no
 bigobj=no
 std_cpp11=no
 std_cpp14=no
+std_cpp17=no
 
 libs=
 objs=
@@ -55,6 +56,21 @@ while test $# -ge 1 ; do
     -bigobj) bigobj=yes;;
     -std=c++11) std_cpp11=yes;;
     -std=c++14) std_cpp14=yes;;
+    -std=c++17) std_cpp17=yes;;
+    -l*) lib="`echo $1 | sed -e 's:-l::g'`";libs="${libs} ${lib}.lib";;
+
+    # for G4/10.7 cygwin cmake/3.17.3 :
+    -std:c++11) std_cpp11=yes;;
+    -std:c++14) std_cpp14=yes;;
+    -std:c++17) std_cpp17=yes;;
+    -GR)     ;;
+    -EHsc)   ;;
+    -Zm200)  ;;
+    -nologo) ;;
+    -MD)     ;;
+    -Ox)     ;;
+    -shared) ;;
+    
     -*) echo "bush/vc++ : unknown minus option $1";exit;;
      *) suffix=`echo $1 | sed 's:.*\.::'`
         if [ "`basename $1`" = "$1" ] ; then
@@ -106,7 +122,7 @@ if [ "${compile}" = "yes" ] ; then
   ws="`echo ${ws} | sed -e 's:-w:/w:g'`"
   #Ls="`echo ${Ls} | sed -e 's:-L:/LIBPATH:g'`"
 
-  cl_exe_cmd="cl.exe "
+  cl_exe_cmd="cl.exe"
   #cl_exe_cmd="echo "
 
   if [ ${bigobj} = yes ] ; then cl_exe_cmd="${cl_exe_cmd} /bigobj"; fi
@@ -145,8 +161,11 @@ if [ "${compile}" = "yes" ] ; then
   if [ ${language} = c++ ] ; then
     cl_exe_cmd="${cl_exe_cmd} /nologo /O2 /W3 /EHsc /GR"
     if [ ${std_cpp14} = yes ] ; then
-      cl_exe_cmd="${cl_exe_cmd} /std:c++latest"  # to pass ourex/cern_root_arte.
+      cl_exe_cmd="${cl_exe_cmd} /std:c++14"
+    elif [ ${std_cpp17} = yes ] ; then
+      cl_exe_cmd="${cl_exe_cmd} /std:c++17"
     fi	
+   #cl_exe_cmd="${cl_exe_cmd} /std:c++latest"
    #cl_exe_cmd="${cl_exe_cmd} /std:c++17"
    #cl_exe_cmd="${cl_exe_cmd} /std:c++14"
   else
@@ -180,6 +199,8 @@ if [ "${compile}" = "yes" ] ; then
     #cl_exe_cmd="${cl_exe_cmd} /d1scalableinclude-"
 
     file_cpp="`${path_u2w} ${file_cpp}`"
+  else    
+    file_cpp="`${path_u2w} ${file_cpp}`"
   fi
 
   #  CYGWIN : apps : ../Windows/main.cpp not found. The below permits to pass.
@@ -194,9 +215,9 @@ if [ "${compile}" = "yes" ] ; then
   cl_exe_cmd="${cl_exe_cmd} /Fo${file_o}"
 
   if [ ${language} = c++ ] ; then
-    cl_exe_cmd="${cl_exe_cmd} /Tp${file_cpp}"
+    cl_exe_cmd="${cl_exe_cmd} /Tp'${file_cpp}'"
   elif [ ${language} = c ] ; then
-    cl_exe_cmd="${cl_exe_cmd} /Tc${file_cpp}"
+    cl_exe_cmd="${cl_exe_cmd} /Tc'${file_cpp}'"
   else
     echo "bush/vc++ : unknown language ${language}"
     exit
@@ -246,6 +267,8 @@ else
     file_o="`echo ${file_o} | sed 's:.exe::g'`"
     file_o="${file_o}.exe"
   fi
+
+  libs="${libs} gdi32.lib user32.lib wsock32.lib comdlg32.lib"
 
   link_exe_cmd="${link_exe_cmd} /out:${file_o} ${objs} ${libs}"
 

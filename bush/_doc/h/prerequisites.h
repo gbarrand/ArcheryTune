@@ -54,22 +54,50 @@
 
 @section bush_prerequisites_windows Windows-10
 
-  On Windows-10 we build with VisualC++ (cl.exe) from a cygwin prompt.
- VisualC++ offers clearly the best performances at run time. (The cygwin/g++ is known
- to be a snail here and we did not tried to use clang++).
+  On Windows-10 we build with VisualC++ (cl.exe) from a CYGWIN prompt.
+ VisualC++ is mendatory since, by default, we do the graphics of our apps with the
+ Microsoft WIN32 libs (in particular opengl32.lib). Stricly speaking our apps may be built by using the CYGWIN g++
+ and X11 client libs, but this would need to pass by a local X11 server and would be clearly
+ less performant than being "pure Microsoft". (Moreover the CYGWIN/g++ is known
+ to be a snail compared to VisualC++). (We did not tried to use a clang++ coming from CYGWIN).
 
  Then you need:
 @verbatim
- - Visual Studio. We use the 2015 one.
- - cygwin with at least zip (bash is here by default). We have also installed tcsh
-   (because we prefer it as a prompt), git (to get code) and openssh (to log in
-   and out to remote machines), and... it must be all.
+ - Visual Studio. Note that we do not use the IDE, only the compiler and linker
+   and that a free version is available from Microsoft that permits to use these.
+ - CYGWIN with at least zip (bash is here by default). We installed git (to get code)
+   and openssh (to log in and out to remote machines), and... it must be all.
 @endverbatim
- If having to tweak bush/use_cc, use_cpp follow ${build_visual}. Note that the access
- to cl.exe to compile and link.exe to link is concentrated in the script bush/vc++.
+ If having to tweak bush/use_cc or use_cpp follow the string "${build_visual}". Note that the access
+ to cl.exe to compile and the Visual link.exe to link is concentrated in the script bush/vc++.
  In particular all other build scripts (for example bush/compile_one_cpp) uses bush/vc++
  with the same options than g++ and clang++ to declare include paths (-I), link path
  (-L), etc... The script bush/vc++ translates these to the /I, /L known by cl.exe, link.exe
- and does also the job to translate cygwin unix paths to Windows paths.
+ and does also the job to translate CYGWIN unix paths to Windows paths.
+
+  IMPORTANT : bush/vc++ assumes that "cl.exe" is in your PATH, then that the "vcvars.bat" of VisualC++
+ had been executed. (vcvars is a DOS script that setup the environment of VisualC++). Then to work, the
+ coarse graining procedure is something as :
+@verbatim
+ - install Visual Studio.
+ - install CYGWIN.
+ - create a command line window DOS prompt by arranging to run the Windows cmd.exe program.
+ - from here, arrange to "CALL VCVARS.BAT" of VisualC++. It should be somewhere under the C:\Program files
+   directory where VisualStudio is installed.
+ - from the same DOS prompt, launch CYGWIN. Then from the CYGWIN bash prompt, typing cl.exe should do something.
+ - from the CYGWIN prompt you can start to build some app by using bush.
+@endverbatim
+
+ (Note that there is a falltrap with "link.exe" which exists as a VisualStudio program to link an application
+ and a CYGWIN program found under /usr/bin. It is the one of Visual that should be used. The bush/find_link_exe
+ script is used by bush/vc++ to find the Visual one. You may have to customize it to find the link.exe under your
+ VisualC++ installation).
+
+@subsection bush_prerequisites_getline Programs that use Getline to enter commands
+
+  Programs, as gopaw, that use Getline to enter commands from the terminal, must be launched from a cmd.exe
+ command line DOS window, and not from the CYGWIN prompt. Getline does not work if the program is started from
+ a CYGWIN prompt. This goes for gopaw but also for apps that had been built to be able to receive commands
+ from the terminal and started with the "-terminal" option.
 
 */

@@ -214,6 +214,11 @@ elif [ ${build_visual} = "yes" ] ; then
     echo "bush/use_cc : build_visual : bush_home not defined."
     exit
   fi
+
+  ${bush_home}/check_app cl.exe 'bush/use_cc : cl.exe not found. You have to setup VisualC++.'
+  use_status=$?;
+  if [ ${use_status} != 0 ] ; then exit; fi
+
   cc_compiler=${bush_home}/vc++
 
   if [ "${build_set_x}" = "yes" ] ; then ccflags="${ccflags} -verbose"; fi

@@ -14,7 +14,7 @@ if [ "${use_gtk}" = "yes" ] ; then
 
   if [ `uname` = Darwin ] ; then
     if [ ! -d /opt/local/include/gtk-2.0 ] ; then
-      echo "bush/use/gtk : /opt/local/include/gtk-2.0 not found. Please install gtk2 with Macport."
+      echo "bush/use/gtk : /opt/local/include/gtk-2.0 not found. Please install gtk2 with MacPorts."
       echo "bush/use/gtk :   Darwin> cd /opt/local/bin;sudo ./port install gtk2 +no_x11+quartz"
       echo "bush/use/gtk : if installing with Fink, you have to edit bush/use/gtk to change the access paths."
       exit

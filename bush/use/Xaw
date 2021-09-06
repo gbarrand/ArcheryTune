@@ -14,7 +14,7 @@ if [ "${use_Xaw}" = "yes" ] ; then
   #//////////////////////////////////////////////
   #//////////////////////////////////////////////
   if [ `uname` = Darwin ] ; then
-    inc_dirs="/opt/local/include /usr/include /usr/X11/include"
+    inc_dirs="/opt/local/include"
   else
     inc_dirs="/usr/X11R6/include /usr/include"
   fi
@@ -25,12 +25,12 @@ if [ "${use_Xaw}" = "yes" ] ; then
   #//////////////////////////////////////////////
   #//////////////////////////////////////////////
   if [ `uname` = Darwin ] ; then
-    lib_dirs="/opt/local/${lib} /usr/${lib} /usr/X11/${lib}"
+    libs="${libs} /opt/local/lib/libXaw.dylib"
   else
     lib_dirs="/usr/X11R6/${lib} /usr/${lib} /usr/lib/x86_64-linux-gnu"
+    lib_to_find=Xaw
+    . ${bush_home}/find_lib
   fi
-  lib_to_find=Xaw
-  . ${bush_home}/find_lib
 
   #//////////////////////////////////////////////
   #//////////////////////////////////////////////

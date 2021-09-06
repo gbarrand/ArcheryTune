@@ -129,7 +129,7 @@ if [ "${use_sys_cernlib}" = "yes" ] ; then
     else
       echo "bush/use/cernlib :"
       echo " You don't have cernlib under /cern/pro/lib"
-      echo " and you don't have defined CERNLIB envirnment variable."
+      echo " and you don't have defined CERNLIB environment variable."
       echo " If you have them elsewhere, change bush/use/cernlib."
       exit
     fi

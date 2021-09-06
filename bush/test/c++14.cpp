@@ -4,6 +4,6 @@
 #include <vector>
 
 int main() {
- std::vector< int> ourVector={0,1,2,3,4,};
+ std::vector<int> ourVector={0,1,2,3,4,};
  return 0;
 }

@@ -43,13 +43,10 @@ if [ ${build_gnu} = "yes" ] ; then
     cpp_linker=g++
   fi
 
-  if [ ${build_gnu11} = yes ] ; then
-    cppflags="${cppflags} -std=gnu++11"   # cygwin+gnu on ourex/geant4.10.x.
-  elif [ ${build_cxx11} = yes ] ; then
-    cppflags="${cppflags} -std=c++11"
-  elif [ ${build_cxx14} = yes ] ; then
-    cppflags="${cppflags} -std=c++14"
-  fi
+ #if [ ${build_gnu11} = yes ] ; then cppflags="${cppflags} -std=gnu++11";fi
+ #if [ ${build_cxx11} = yes ] ; then cppflags="${cppflags} -std=c++11";fi
+ #if [ ${build_cxx14} = yes ] ; then cppflags="${cppflags} -std=c++14";fi
+ #if [ ${build_cxx17} = yes ] ; then cppflags="${cppflags} -std=c++17";fi
 
 elif [ ${build_intel} = "yes" ] ; then
   config_name=intel
@@ -80,19 +77,17 @@ elif [ ${build_clang} = "yes" ] ; then
  #cppflags="${cppflags} -std=c++98"
  #cppflags="${cppflags} -ansi"
 
-  if [ ${build_cxx11} = "yes" ] ; then
-    cppflags="${cppflags} -std=c++11"
-   #cppflags="${cppflags} -stdlib=libc++"
-
-    if [ "`uname -n | grep iridium`" != "" ] ; then
-      cppflags="${cppflags} -I/usr/include/c++/v1"
-      cpp_linker_flags="${cpp_linker_flags} /usr/lib64/libc++.so"
-    fi
-
-  elif [ ${build_cxx14} = "yes" ] ; then
-    cppflags="${cppflags} -std=c++14"
-   #cppflags="${cppflags} -stdlib=libc++"
-  fi
+ #if [ ${build_cxx11} = "yes" ] ; then
+ #  cppflags="${cppflags} -std=c++11"
+ # #cppflags="${cppflags} -stdlib=libc++"
+ #  if [ "`uname -n | grep iridium`" != "" ] ; then
+ #    cppflags="${cppflags} -I/usr/include/c++/v1"
+ #    cpp_linker_flags="${cpp_linker_flags} /usr/lib64/libc++.so"
+ #  fi
+ #fi
+  
+ #if [ ${build_cxx14} = yes ] ; then cppflags="${cppflags} -std=c++14";fi
+ #if [ ${build_cxx17} = yes ] ; then cppflags="${cppflags} -std=c++17";fi
 
 elif [ ${build_emcc} = "yes" ] ; then
   config_name=emcc
@@ -104,11 +99,9 @@ elif [ ${build_emcc} = "yes" ] ; then
   cpp_compiler=em++
   cpp_linker=em++
 
-  if [ ${build_cxx11} = "yes" ] ; then
-    cppflags="${cppflags} -std=c++11"
-  elif [ ${build_cxx14} = "yes" ] ; then
-    cppflags="${cppflags} -std=c++14"
-  fi
+ #if [ ${build_cxx11} = yes ] ; then cppflags="${cppflags} -std=c++11";fi
+ #if [ ${build_cxx14} = yes ] ; then cppflags="${cppflags} -std=c++14";fi
+ #if [ ${build_cxx17} = yes ] ; then cppflags="${cppflags} -std=c++17";fi
 
 elif [ ${build_cling_clang} = "yes" ] ; then
   config_name=cling_clang
@@ -127,13 +120,9 @@ elif [ ${build_cling_clang} = "yes" ] ; then
   cpp_compiler=${cling_home}/bin/clang++
   cpp_linker=${cpp_compiler}
 
-  if [ ${build_cxx11} = "yes" ] ; then
-    cppflags="${cppflags} -std=c++11"
-   #cppflags="${cppflags} -stdlib=libc++"
-  elif [ ${build_cxx14} = "yes" ] ; then
-    cppflags="${cppflags} -std=c++14"
-   #cppflags="${cppflags} -stdlib=libc++"
-  fi
+ #if [ ${build_cxx11} = yes ] ; then cppflags="${cppflags} -std=c++11";fi
+ #if [ ${build_cxx14} = yes ] ; then cppflags="${cppflags} -std=c++14";fi
+ #if [ ${build_cxx17} = yes ] ; then cppflags="${cppflags} -std=c++17";fi
 
 elif [ ${build_sdk_mac} = "yes" -o ${build_sdk_mac_gnu} = "yes" ] ; then
 
@@ -144,20 +133,17 @@ elif [ ${build_sdk_mac} = "yes" -o ${build_sdk_mac_gnu} = "yes" ] ; then
     config_name=sdk_mac
     cpp_compiler=clang++
     cpp_linker=clang++
-    if [ ${build_cxx11} = "yes" ] ; then
-      cppflags="${cppflags} -std=c++11 -stdlib=libc++"
-    elif [ ${build_cxx14} = "yes" ] ; then
-      cppflags="${cppflags} -std=c++14 -stdlib=libc++"
-    fi
+   #if [ ${build_cxx11} = "yes" ] ; then cppflags="${cppflags} -std=c++11 -stdlib=libc++";fi
+   #if [ ${build_cxx14} = "yes" ] ; then cppflags="${cppflags} -std=c++14 -stdlib=libc++";fi
+   #if [ ${build_cxx17} = "yes" ] ; then cppflags="${cppflags} -std=c++17 -stdlib=libc++";fi
+
   else
     config_name=sdk_mac_gnu
     cpp_compiler=g++
     cpp_linker=g++
-    if [ ${build_cxx11} = "yes" ] ; then
-      cppflags="${cppflags} -std=c++11"
-    elif [ ${build_cxx14} = "yes" ] ; then
-      cppflags="${cppflags} -std=c++14"
-    fi
+   #if [ ${build_cxx11} = yes ] ; then cppflags="${cppflags} -std=c++11";fi
+   #if [ ${build_cxx14} = yes ] ; then cppflags="${cppflags} -std=c++14";fi
+   #if [ ${build_cxx17} = yes ] ; then cppflags="${cppflags} -std=c++17";fi
     #Darwin : NOTE : we need a g++ knowing also objective-c++. /opt/local/bin/g++-mp-4.8 does not work.
   fi
 
@@ -172,13 +158,13 @@ elif [ ${build_sdk_mac} = "yes" -o ${build_sdk_mac_gnu} = "yes" ] ; then
     macosx_sdk="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
   fi
 
-  if [ ${build_cxx11} = "yes" -o ${build_cxx14} = "yes" ] ; then
-    #macosx_target=10.7
-    # Xcode-8 : to avoid warning :
-    #  clang: warning: libstdc++ is deprecated; move to libc++ with a minimum deployment target of OS X 10.9
-    macosx_target=10.9
-    # Xcode-8 : end.
-  else
+ #if [ ${build_cxx11} = "yes" -o ${build_cxx14} = "yes" ] ; then
+ #  #macosx_target=10.7
+ #  # Xcode-8 : to avoid warning :
+ #  #  clang: warning: libstdc++ is deprecated; move to libc++ with a minimum deployment target of OS X 10.9
+ #  macosx_target=10.9
+ #  # Xcode-8 : end.
+ #else
     if [ "`echo ${osx_vers} | sed -e 's:10.6::g'`" != "${osx_vers}" ] ; then # old screenwall macs.
      #macosx_target=10.6
       macosx_target=10.5
@@ -189,7 +175,7 @@ elif [ ${build_sdk_mac} = "yes" -o ${build_sdk_mac_gnu} = "yes" ] ; then
       cppflags="${cppflags} -stdlib=libc++"
       # Xcode-8 : end.
     fi
-  fi
+ #fi
 
   if [ "${build_macosx_target}" != "" ] ; then
     macosx_target=${build_macosx_target}  # used in MEMPHYS/mgr/build_app_vis.
@@ -222,20 +208,20 @@ elif [ ${build_sdk_ios} = "yes" -o ${build_sdk_ios_gnu} = "yes" ] ; then
     cpp_linker=clang++
     # for ioda, to avoid the "out of range problem" :
     cppflags="${cppflags} -mno-thumb"
-    if [ ${build_cxx11} = "yes" ] ; then
-      cppflags="${cppflags} -std=c++11 -stdlib=libc++"
-    elif [ ${build_cxx14} = "yes" ] ; then
-      cppflags="${cppflags} -std=c++14 -stdlib=libc++"
-    fi
+    #if [ ${build_cxx11} = "yes" ] ; then
+    #  cppflags="${cppflags} -std=c++11 -stdlib=libc++"
+    #elif [ ${build_cxx14} = "yes" ] ; then
+    #  cppflags="${cppflags} -std=c++14 -stdlib=libc++"
+    #elif [ ${build_cxx17} = "yes" ] ; then
+    #  cppflags="${cppflags} -std=c++17 -stdlib=libc++"
+    #fi
   else
     config_name=sdk_ios_gnu
     cpp_compiler=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/llvm-g++-4.2
     cpp_linker=${cpp_compiler}
-    if [ ${build_cxx11} = "yes" ] ; then
-      cppflags="${cppflags} -std=c++11"
-    elif [ ${build_cxx14} = "yes" ] ; then
-      cppflags="${cppflags} -std=c++14"
-    fi
+    #if [ ${build_cxx11} = yes ] ; then cppflags="${cppflags} -std=c++11";fi
+    #if [ ${build_cxx14} = yes ] ; then cppflags="${cppflags} -std=c++14";fi
+    #if [ ${build_cxx17} = yes ] ; then cppflags="${cppflags} -std=c++17";fi
   fi
 
   ios_sdk="/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk"
@@ -317,17 +303,28 @@ elif [ ${build_visual} = "yes" ] ; then
     echo "bush/use_cpp : build_visual : bush_home not defined."
     exit
   fi
+
+  ${bush_home}/check_app cl.exe 'bush/use_cpp : cl.exe not found. You have to setup VisualC++.'
+  use_status=$?;
+  if [ ${use_status} != 0 ] ; then exit; fi
+
   cpp_compiler=${bush_home}/vc++
 
-  if [ ${build_cxx11} = "yes" ] ; then
-    cppflags="${cppflags} -std=c++11"
-  elif [ ${build_cxx14} = "yes" ] ; then
-    if [ "`uname -n`" == "PC-PANO" ] ; then
-      echo 'bush/use_cpp : c++14 not available on this machine.'
-      exit
-    fi
-    cppflags="${cppflags} -std=c++14"
-  fi
+ #if [ ${build_cxx11} = "yes" ] ; then cppflags="${cppflags} -std=c++11";fi
+ #if [ ${build_cxx14} = "yes" ] ; then
+ #  if [ "`uname -n`" = "PC-PANO" ] ; then
+ #    echo 'bush/use_cpp : c++14 not available on this machine.'
+ #    exit
+ #  fi
+ #  cppflags="${cppflags} -std=c++14"
+ #fi
+ #if [ ${build_cxx17} = "yes" ] ; then
+ #  if [ "`uname -n`" = "PC-PANO" ] ; then
+ #    echo 'bush/use_cpp : c++14 not available on this machine.'
+ #    exit
+ #  fi
+ #  cppflags="${cppflags} -std=c++17"
+ #fi
 
   if [ "${build_set_x}" = "yes" ] ; then cppflags="${cppflags} -verbose"; fi
 
@@ -342,14 +339,12 @@ elif [ ${build_sdk_android} = "yes" ] ; then
 
   cpp_compiler=${ndk_cpp_compiler}
 
-  if [ ${build_cxx11} = "yes" ] ; then
+  #if [ ${build_cxx11} = yes ] ; then cppflags="${cppflags} -std=c++11";fi
+  #if [ ${build_cxx14} = yes ] ; then cppflags="${cppflags} -std=c++14";fi
+  #if [ ${build_cxx17} = yes ] ; then cppflags="${cppflags} -std=c++17";fi
+
+  if [ ${build_ndk_vers} = r17 ] ; then
     cppflags="${cppflags} -std=c++11"
-  elif [ ${build_cxx14} = "yes" ] ; then
-    cppflags="${cppflags} -std=c++14"
-  else
-    if [ ${build_ndk_vers} = r17 ] ; then
-      cppflags="${cppflags} -std=c++11"
-    fi
   fi
 
   cppflags="${cppflags} ${ndk_cppflags}"
@@ -428,12 +423,12 @@ elif [ ${build_sdk_android} = "yes" ] ; then
 
 else
 
-  if [ ${build_cxx11} = "yes" -o ${build_gnu11} = "yes" -o ${build_cxx14} = "yes" ] ; then
-    G4_cppflags="-W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long -Wwrite-strings -Wpointer-arith -Woverloaded-virtual"
-  else
-    G4_cppflags="-W -Wall -ansi -pedantic -Wno-non-virtual-dtor -Wno-long-long -Wwrite-strings -Wpointer-arith -Woverloaded-virtual"
-    G4_cppflags="${G4_cppflags} -Wshadow"
-  fi
+  G4_cppflags="-W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long -Wwrite-strings -Wpointer-arith -Woverloaded-virtual"
+  G4_cppflags="${G4_cppflags} -Wshadow"
+  #if [ ${build_cxx11} = "yes" -o ${build_gnu11} = "yes" -o ${build_cxx14} = "yes" ] ; then
+  #else
+  #  G4_cppflags="-W -Wall -ansi -pedantic -Wno-non-virtual-dtor -Wno-long-long -Wwrite-strings -Wpointer-arith -Woverloaded-virtual"
+  #fi
 
 fi
 

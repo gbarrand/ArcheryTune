@@ -3,6 +3,11 @@
 
 if [ "${build_distrib}" = "yes" ] ; then
 
+if [ "${app}" = "" ] ; then
+  echo 'bush/app_distrib : app variable not defined.'
+  exit
+fi
+
 if [ "${build_app_distrib_dir}" = "" ] ; then build_app_distrib_dir="${app}"; fi
 
 /bin/rm -R -f ${build_path}/distrib/${build_app_distrib_dir}
@@ -10,10 +15,6 @@ if [ "${build_app_distrib_dir}" = "" ] ; then build_app_distrib_dir="${app}"; fi
 target=
 if [ ${build_offscreen} = "yes" ] ; then
   target=offscreen
-elif [ ${build_webgl} = "yes" ] ; then
-  target=WebGL
-elif [ ${build_tntnet} = "yes" ] ; then
-  target=tntnet
 elif [ ${build_wx} = "yes" ] ; then
   target=wx
 elif [ ${build_sdl2} = "yes" ] ; then
@@ -40,6 +41,10 @@ elif [ ${build_wasm} = "yes" ] ; then
     /bin/mkdir -p ${head}
 
     find ${build_path} -maxdepth 1 -name '*' -type f -exec /bin/cp {} ${head}/. \;
+    
+    if [ -d ${build_path}/xterm ] ; then
+      /bin/cp -R ${build_path}/xterm ${head}/.
+    fi
 
     ${bush_home}/find_rm ${build_path} '*.o'
 
@@ -113,10 +118,10 @@ elif [ ${build_sdk_android} = "yes" ] ; then
   # to upload on a device :
   # adb -d install -r ${app}-release.apk
 
-elif [ ${build_cocoa} = "yes" -o ${build_cocoa_gnu} = "yes" ] ; then
+elif [ ${build_cocoa} = "yes" -o ${build_cocoa_gnu} = "yes" -o ${build_macos_metal} = "yes" ] ; then
 
   if [ ${build_verbose} = yes ] ; then
-    echo "bush/app_distrib : for cocoa/coca_gnu ..."
+    echo "bush/app_distrib : for cocoa, coca_gnu or macos_metal ..."
   fi
 
   if [ ! -f "${file_exe}" ] ; then

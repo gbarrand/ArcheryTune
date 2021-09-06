@@ -94,7 +94,8 @@ elif [ `uname` = Darwin ] ; then
   ar_cmd=ar
   ranlib_cmd=ranlib
 
-  #ranlib_flags=-no_warning_for_no_symbols
+  ar_flags="${ar_flags} -S"  # -S so that ar does not do ranlib.
+  ranlib_flags="${ranlib_flags} -no_warning_for_no_symbols"
 
 else
   shex=so

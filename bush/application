@@ -5,6 +5,17 @@
 #////////////////////////////////////
 #////////////////////////////////////
 
+if [ "${app}" = "" ] ; then
+  if [ "${app_exe}" = "" ] ; then
+    echo "bush/application : variables app and app_exe not defined."
+    exit
+  fi
+  app="`basename ${app_exe}`"
+  #if [ ${build_verbose} = yes ] ; then
+    echo "bush/application : warning : app variable not defined, we take basename of ${app_exe}. Got app=${app}"
+  #fi
+fi
+
 if [ "${app_src}" = "" ] ; then
   echo "bush/application : variable app_src not defined."
   exit
@@ -24,6 +35,16 @@ fi
 if [ ${build_clean} = "yes" ] ; then
   /bin/rm -R -f ${build_path}
   exit
+fi
+
+if [ ${build_check_all} = "yes" ] ; then
+  if [ -d ../${app} ] ; then
+    find ../${app} -name "*" -type f -print >> cpp_tmp
+    build_app=no
+  else    
+    echo "bush/application : directory ../${app} not found."
+    exit
+  fi  
 fi
 
 . ${bush_home}/compile
@@ -150,10 +171,6 @@ elif [ "${suffix}" = "java" ] ; then
   # build of the .apk done in app_distrib.
 
   link_it=no
-
-elif [ "${suffix}" = "ecpp" ] ; then
-
-. ${bush_home}/build_ecpp
 
 else
   echo "bush/application : suffix ${suffix} not treated"

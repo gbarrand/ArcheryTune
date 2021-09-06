@@ -16,7 +16,7 @@ version="`${bush_home}/app_vers`"
 save_dir=`pwd`
 
 inlib_incs=./inlib_incs
-c++ -o ${inlib_incs} ${inlib_home}/apps/incs.cpp
+c++ -o ${inlib_incs} -I${inlib_home} ${inlib_home}/apps/incs.cpp
 use_status=$?;if [ ${use_status} != 0 ] ; then exit ${use_status};fi
 
 to=/tmp/${app}
@@ -108,14 +108,12 @@ fi
 /bin/mkdir -p ${to}/inexlib/ourex
 
 items=
-items="${items} freetype jpeg png expat zip zlib csz"
-#items="${items} glutess"
+items="${items} freetype jpeg png expat zip zlib csz Getline xterm_js"
 if [ ${app} = g4exa       ] ; then items="${items} AIDA";fi
 if [ ${app} = g4view      ] ; then items="${items} pythia8";fi
-if [ ${app} = TouchSky    ] ; then items="${items} cfitsio hdf5 wcslib lua";fi
-if [ ${app} = gopaw       ] ; then items="${items} KUIP Getline Python hdf5 cfitsio";fi
-if [ ${app} = EsbRootView ] ; then items="${items} Getline";fi
-if [ ${app} = ioda     ] ; then
+if [ ${app} = TouchSky    ] ; then items="${items} cfitsio hdf5 wcslib lua SOPHYA";fi
+if [ ${app} = gopaw       ] ; then items="${items} KUIP Python hdf5 cfitsio";fi
+if [ ${app} = ioda        ] ; then
   items="${items} CoinGL HEPVis"
   items="${items} graphviz Python lua"
   items="${items} hdf5 cfitsio wcslib"
@@ -145,6 +143,10 @@ fi
 if [ -d ../docker ] ; then
   /bin/cp -R ../docker  ${to}/${app}/.
 fi
+
+/bin/mkdir -p ${to}/inexlib/exlib/exlib/wasm \;
+find ${exlib_home}/exlib/wasm -name '*.js' -exec /bin/cp {} ${to}/inexlib/exlib/exlib/wasm/. \;
+find ${exlib_home}/exlib/wasm -name '*.html' -exec /bin/cp {} ${to}/inexlib/exlib/exlib/wasm/. \;
 
 /bin/cp -R ../Android ${to}/${app}/.
 
@@ -190,12 +192,13 @@ if [ ${app} = g4view ] ; then
   /bin/mkdir -p ${to}/inexlib/inlib/inlib/yacc
   /bin/cp -R ${inlib_home}/inlib/yacc   ${to}/inexlib/inlib/inlib/.
   /bin/cp ${inlib_home}/inlib/mathT  ${to}/inexlib/inlib/inlib/.
+  /bin/cp ${inlib_home}/inlib/svalues  ${to}/inexlib/inlib/inlib/.
   /bin/cp ${bush_home}/app_README_g4 ${to}/README
 fi
 
 if [ ${app} = g4exa ] ; then
   /bin/mkdir -p ${to}/inexlib/exlib/examples/geant4/A01
-  /bin/cp -R ${exlib_home}/examples/geant4/A01/include ${to}/inexlib/exlib/examples/geant4/A01/.
+  /bin/cp -R ${exlib_home}/examples/geant4/A01/A01 ${to}/inexlib/exlib/examples/geant4/A01/.
   /bin/cp -R ${exlib_home}/examples/geant4/A01/src ${to}/inexlib/exlib/examples/geant4/A01/.
   /bin/cp ${exlib_home}/examples/geant4/A01/_A01EventAction.hh ${to}/inexlib/exlib/examples/geant4/A01/.
   /bin/cp ${exlib_home}/examples/geant4/A01/set_plots ${to}/inexlib/exlib/examples/geant4/A01/.
@@ -210,7 +213,7 @@ if [ ${app} = MEMPHYS_vis ] ; then
   /bin/cp -R ../../MEMPHYS/MEMPHYS ${to}/MEMPHYS/.
   /bin/cp -R ../../MEMPHYS/source  ${to}/MEMPHYS/.
   /bin/cp ../doc/README_for_pack ${to}/README
-  /bin/cp ${bush_home}/app_README_g4 ${to}/README
+  #/bin/cp ${bush_home}/app_README_g4 ${to}/README
 fi
 
 if [ ${app} = TouchSky ] ; then
@@ -282,7 +285,8 @@ fi
 /bin/mkdir -p ${to}/inexlib/exlib/inlib/wall
 #/bin/cp ${inlib_home}/inlib/wall/args ${to}/inexlib/inlib/inlib/wall/.
 
-/bin/cp -R ../Cocoa   ${to}/${app}/.
+/bin/cp -R ../icons  ${to}/${app}/.
+/bin/cp -R ../Cocoa  ${to}/${app}/.
 /bin/cp -R ../iOS    ${to}/${app}/.
 
 if [ -f ../${app}.license ] ; then

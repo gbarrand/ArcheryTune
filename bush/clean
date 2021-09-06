@@ -50,4 +50,5 @@ elif [ ${build_rma} = "yes" ] ; then
 
 fi
 
-for file in "${to_rm}" ; do /bin/rm -f ${file}; done
+for item in "${to_rm}" ; do /bin/rm -f ${item}; done
+for item in "${to_rm_dir}" ; do /bin/rm -R -f ${item}; done

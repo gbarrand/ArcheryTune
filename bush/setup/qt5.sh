@@ -4,7 +4,8 @@ if [ "`uname -n`" = barrand-centos7.lal.in2p3.fr -o "`uname -n`" = barrand-cento
 fi
 
 if [ "`uname | grep CYGWIN`" != "" ] ; then
-  Qt_home=/cygdrive/c/Qt/5.12.3/msvc2017_64
+ #Qt_home=/cygdrive/c/Qt/5.12.3/msvc2017_64
+  Qt_home=/cygdrive/c/Qt/5.15.2/msvc2019_64
   export PATH="${Qt_home}/bin:${PATH}"
 fi
 

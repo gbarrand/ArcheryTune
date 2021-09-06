@@ -15,7 +15,7 @@ else
       if ( "${lib_curr}" == "" ) then
         setenv LD_LIBRARY_PATH "${item}"
       else
-        if ( `echo "${lib_curr}" | grep "${item}" ` == "" ) then
+        if ( "`echo ${lib_curr} | grep ${item}`" == "" ) then
           setenv LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:${item}"
         endif
       endif

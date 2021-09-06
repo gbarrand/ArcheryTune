@@ -10,7 +10,10 @@ if ( "`uname | grep CYGWIN`" != "" ) then
 else
 
   set wxWidgets_home=
-  if ( "`uname -n`" == deco.lal.in2p3.fr ) then
+  if ( "`uname`" == Darwin ) then
+    # sudo port install wxWidgets-3.2    
+    set wxWidgets_home=/opt/local/Library/Frameworks/wxWidgets.framework/Versions/wxWidgets/3.1
+  else if ( "`uname -n`" == deco.lal.in2p3.fr ) then
     set wxWidgets_home=/exp/si/barrand/usr/local/wxWidgets/3.1.0
   else if ( -d /usr/local/wxWidgets/3.1.3 ) then
     set wxWidgets_home=/usr/local/wxWidgets/3.1.3

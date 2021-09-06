@@ -44,12 +44,7 @@ else
     fi
 
   elif [ `uname` = "Linux" ] ; then
-    if [ "`uname -r | grep Microsoft`" != "" ] ; then
-      build_visual=yes
-      if [ ${build_verbose} = yes ] ; then echo "bush/guess_compiler : visual (guessed)";fi
-    else
-      build_gnu=yes
-      if [ ${build_verbose} = yes ] ; then echo "bush/guess_compiler : gnu (guessed)";fi
-    fi
+    build_gnu=yes
+    if [ ${build_verbose} = yes ] ; then echo "bush/guess_compiler : gnu (guessed)";fi
   fi
 fi

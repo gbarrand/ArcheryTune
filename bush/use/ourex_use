@@ -43,8 +43,8 @@ if [ ! -f ${pack_product_lib} ] ; then
 fi
 
 if [ ! -f ${pack_product_lib} ] ; then
-  echo "bush/use/ourex_use : directory ${pack_product_lib} not found."
-  exit
+  echo "bush/use/ourex_use : ${pack_product_lib} not found."
+  #exit
 fi
 
 if [ "${use_archive}" = "yes" ] ; then

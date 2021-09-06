@@ -17,7 +17,7 @@ if [ "${use_SDL2}" = "yes" ] ; then
     ccflags="${ccflags} -I/opt/local/include"
     cppflags="${cppflags} -I/opt/local/include"
 
-    libs="${libs} -L/opt/local/lib -lSDL2"
+    libs="${libs} /opt/local/lib/libSDL2.dylib"
 
   else
 

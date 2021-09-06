@@ -6,6 +6,11 @@ if [ "${auto_use_pack}" = "" ] ; then
   exit
 fi
 
+if [ "${auto_use_file}" = "" ] ; then
+  echo 'bush/auto_use : variable auto_use_file not defined.'
+  exit
+fi
+
 #//////////////////////////////////////////////////////////////////////////
 #/// look for an //${auto_use_pack}_build_use in ${auto_use_file} file ////
 #//////////////////////////////////////////////////////////////////////////
@@ -144,6 +149,28 @@ if [ "${app_scrfiles}" != "" ] ; then
       else
         cppfiles="${cppfiles} ${item}"
       fi
+    fi
+  done
+fi
+
+app_resfiles="`grep ${auto_use_pack}_build_resfile ${auto_use_file}`"
+if [ "${app_resfiles}" != "" ] ; then
+  app_resfiles=`echo ${app_resfiles} | sed -e "s:${auto_use_pack}_build_resfile::g"`
+  for item in ${app_resfiles} ; do
+    if [ ${item} != "//" ] ; then
+      #echo "app : resfile ${item}"
+      resfiles="${resfiles} ${item}"
+    fi
+  done
+fi
+
+app_resdirs="`grep ${auto_use_pack}_build_resdir ${auto_use_file}`"
+if [ "${app_resdirs}" != "" ] ; then
+  app_resdirs=`echo ${app_resdirs} | sed -e "s:${auto_use_pack}_build_resdir::g"`
+  for item in ${app_resdirs} ; do
+    if [ ${item} != "//" ] ; then
+      #echo "app : resdir ${item}"
+      resdirs="${resdirs} ${item}"
     fi
   done
 fi

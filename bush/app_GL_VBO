@@ -24,8 +24,8 @@ elif [ "${build_no_gl}" = "yes" ] ; then
   echo dummy > /dev/null
 
 else
-  if [ `uname` = Darwin ] ; then
-    cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
+  if [ `uname` = Darwin ] ; then  # use MacPorts GLX.
+    #cppflags="${cppflags} -DEXLIB_HAS_GL_VBO"
     cppflags="${cppflags} -DEXLIB_HAS_GL_LIST"
   else
     cppflags="${cppflags} -DEXLIB_HAS_GL_LIST"

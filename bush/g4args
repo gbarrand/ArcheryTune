@@ -28,6 +28,3 @@ if [ "`uname -n`" = "PC-PANO" ] ; then
   build_geant4_82=no
 fi
 
-if [ ${build_geant4_10x} = "yes" ] ; then
-  build_args="${build_args} -c++11 -bdir_suffix=_c++11"
-fi

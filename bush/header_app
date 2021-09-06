@@ -8,7 +8,7 @@ app="`dirname ${app}`"
 app="`basename ${app}`"
 APP="`echo ${app} | tr '[:lower:]' '[:upper:]'`"
 
-app_name=${app}
+#app_name=${app}
 app_src=
 
 if [ ${build_visual} = "yes" ] ; then
